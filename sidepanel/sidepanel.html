@@ -336,6 +336,33 @@
     }
     @keyframes fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
 
+    /* No API Key Banner */
+    .no-api-banner {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; padding: 16px 18px; border-radius: var(--radius);
+      background: var(--blue-bg); border: 1px solid rgba(96,165,250,0.18);
+      max-width: 280px; width: 100%;
+      opacity: 0;
+      animation: fade-up 0.5s 1.8s ease forwards;
+    }
+    .no-api-banner-icon svg {
+      width: 22px; height: 22px; fill: none; stroke: var(--blue);
+      stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .no-api-banner-text {
+      font-size: 12px; color: var(--text-secondary); line-height: 1.65; text-align: center;
+    }
+    .no-api-banner-link {
+      color: var(--accent-light); text-decoration: none;
+    }
+    .no-api-banner-link:hover { text-decoration: underline; }
+    .no-api-settings-btn {
+      background: none; border: none; color: var(--blue); cursor: pointer;
+      font-size: 12px; font-family: var(--sans); font-weight: 600; padding: 0;
+      text-decoration: underline; line-height: inherit;
+    }
+    .no-api-settings-btn:hover { color: var(--text-primary); }
+
     /* Suggestion Chips */
     .suggestions {
       display: flex; flex-direction: column; gap: 8px;
@@ -1066,6 +1093,16 @@
         </div>
         <div class="empty-tagline"><span class="tagline-text" id="taglineText"></span></div>
         <div class="empty-desc">Ask a question or tell me what to do. I'll figure out the rest.</div>
+
+        <!-- No API Key Banner (shown when Ollama Cloud key is missing) -->
+        <div class="no-api-banner hidden" id="noApiBanner">
+          <div class="no-api-banner-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          </div>
+          <div class="no-api-banner-text">
+            Copy your API key from <a class="no-api-banner-link" href="https://ollama.com/settings/keys" target="_blank">ollama.com/settings/keys</a> and paste it in <button class="no-api-settings-btn" id="noApiSettingsBtn">Ollama Cloud</button> in Settings.
+          </div>
+        </div>
 
         <div class="suggestions" id="suggestionsContainer">
           <!-- Chips rendered dynamically by JS -->

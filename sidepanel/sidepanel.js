@@ -56,6 +56,8 @@
 
   var personalInfoBtn = document.getElementById("personalInfoBtn");
   var personalInfoDrawer = document.getElementById("personalInfoDrawer");
+  var noApiBanner    = document.getElementById("noApiBanner");
+  var noApiSettingsBtn = document.getElementById("noApiSettingsBtn");
 
   var isRunning = false;
   var isRecording = false;
@@ -63,6 +65,7 @@
   var autoScroll = true;
   var seenLogIds = {};
   var selectedProvider = "ollama_cloud";
+  var loadedProviders = null;
   var agentStepCount = 0;
   var agentLogBubble = null; // The current agent log message bubble (for appending steps)
   var agentLogSteps  = null; // The steps container inside the agent log bubble
@@ -210,6 +213,19 @@
       container.appendChild(btn);
     });
   }
+  function updateEmptyState(providers) {
+    var chips = document.getElementById("suggestionsContainer");
+    if (!noApiBanner || !chips) return;
+    var key = providers && providers.ollama_cloud && providers.ollama_cloud.apiKey;
+    if (!key || !key.trim()) {
+      noApiBanner.classList.remove("hidden");
+      chips.classList.add("hidden");
+    } else {
+      noApiBanner.classList.add("hidden");
+      chips.classList.remove("hidden");
+    }
+  }
+
   var placeholderIdx = 0;
   var placeholderTimer = null;
 
@@ -918,6 +934,7 @@
     if (tagEl) { tagEl.textContent = ""; tagEl.classList.remove("done"); }
     typeTagline();
     renderRandomChips();
+    updateEmptyState(loadedProviders);
   }
 
   /* ═══════════════════════════════════════════
@@ -1280,6 +1297,8 @@
       wallTimeout: (parseInt(cfgWallTimeout.value, 10) || 300) * 1000
     };
     await sendMsg({ type: "SAVE_CONFIG", config: config });
+    loadedProviders = providers;
+    updateEmptyState(providers);
     toggleSettings();
   }
 
@@ -1328,6 +1347,7 @@
       cfgDelay.value    = cfg.interStepDelay || 2000;
       cfgTimeout.value  = cfg.llmTimeout || 15000;
       cfgWallTimeout.value = Math.round((cfg.wallTimeout || 300000) / 1000);
+      loadedProviders = cfg.providers || {};
     }
 
     stream.addEventListener("scroll", function() {
@@ -1337,6 +1357,7 @@
 
     startPlaceholderRotation();
     renderRandomChips();
+    updateEmptyState(loadedProviders);
 
     // Tagline typewriter animation
     typeTagline();
@@ -1452,6 +1473,7 @@
   settingsBtn.addEventListener("click", toggleSettings);
   saveBtn.addEventListener("click", saveSettings);
   closeCfgBtn.addEventListener("click", toggleSettings);
+  if (noApiSettingsBtn) noApiSettingsBtn.addEventListener("click", toggleSettings);
 
   // Ollama Cloud model dropdowns — show/hide custom input
   function setupModelDropdown(selectId, customId) {
