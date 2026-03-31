@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "WebWright: built for action, not just browsing",
+  "version": "2.0.0",
+  "description": "An autonomous AI agent that perceives, reasons, and acts on web pages to achieve your goals.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "storage",
+    "tabs",
+    "debugger",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://ollama.com/*"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}

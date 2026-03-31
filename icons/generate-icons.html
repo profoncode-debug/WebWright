@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebWright Icon Generator</title>
+  <style>
+    body { font-family: system-ui; background: #1a1a2e; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 40px; gap: 30px; }
+    h1 { margin: 0; }
+    .icon-row { display: flex; gap: 40px; align-items: end; }
+    .icon-box { text-align: center; }
+    .icon-box canvas { border: 1px solid #333; border-radius: 8px; }
+    .icon-box p { margin: 8px 0 4px; font-size: 13px; color: #aaa; }
+    button { padding: 10px 24px; font-size: 15px; background: #7c6aef; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+    button:hover { background: #6b5bd4; }
+    .instructions { max-width: 500px; text-align: center; color: #999; font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>WebWright Icon Generator</h1>
+  <p class="instructions">Click "Download All" to save the 3 PNG icon files. Then replace the existing files in the <code>icons/</code> folder.</p>
+
+  <div class="icon-row">
+    <div class="icon-box">
+      <canvas id="c128" width="128" height="128"></canvas>
+      <p>128 x 128</p>
+    </div>
+    <div class="icon-box">
+      <canvas id="c48" width="48" height="48"></canvas>
+      <p>48 x 48</p>
+    </div>
+    <div class="icon-box">
+      <canvas id="c16" width="16" height="16"></canvas>
+      <p>16 x 16</p>
+    </div>
+  </div>
+
+  <button onclick="downloadAll()">Download All</button>
+
+  <script>
+    function drawIcon(canvas) {
+      const s = canvas.width;
+      const ctx = canvas.getContext('2d');
+      const r = s * 0.18; // corner radius
+
+      // Rounded rect background with purple gradient
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(s - r, 0);
+      ctx.arcTo(s, 0, s, r, r);
+      ctx.lineTo(s, s - r);
+      ctx.arcTo(s, s, s - r, s, r);
+      ctx.lineTo(r, s);
+      ctx.arcTo(0, s, 0, s - r, r);
+      ctx.lineTo(0, r);
+      ctx.arcTo(0, 0, r, 0, r);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, s, s);
+      grad.addColorStop(0, '#7c6aef');
+      grad.addColorStop(0.5, '#a78bfa');
+      grad.addColorStop(1, '#c4b5fd');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Subtle inner highlight
+      const hGrad = ctx.createLinearGradient(0, 0, s * 0.6, s * 0.6);
+      hGrad.addColorStop(0, 'rgba(255,255,255,0.18)');
+      hGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hGrad;
+      ctx.fill();
+
+      // Draw shield + magnifying glass icon in white
+      ctx.save();
+      const padding = s * 0.18;
+      const iconSize = s - padding * 2;
+      ctx.translate(padding, padding);
+      const scale = iconSize / 24;
+      ctx.scale(scale, scale);
+
+      ctx.strokeStyle = '#fff';
+      ctx.fillStyle = 'none';
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // Shield path
+      ctx.beginPath();
+      ctx.moveTo(12, 2);
+      ctx.lineTo(3, 7);
+      ctx.lineTo(3, 12);
+      // Approximate the curve c0 5.55 3.84 10.74 9 12
+      // Shield bottom: cubic bezier approximation
+      ctx.bezierCurveTo(3, 17.55, 6.84, 22.74, 12, 24);
+      ctx.bezierCurveTo(17.16, 22.74, 21, 17.55, 21, 12);
+      ctx.lineTo(21, 7);
+      ctx.lineTo(12, 2);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Magnifying glass lens (circle)
+      ctx.beginPath();
+      ctx.arc(13.5, 11, 3, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Magnifying glass handle
+      ctx.beginPath();
+      ctx.moveTo(15.7, 13.2);
+      ctx.lineTo(18, 15.5);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // Render all three sizes
+    ['c128', 'c48', 'c16'].forEach(id => {
+      drawIcon(document.getElementById(id));
+    });
+
+    function downloadAll() {
+      [
+        { id: 'c16', name: 'icon16.png' },
+        { id: 'c48', name: 'icon48.png' },
+        { id: 'c128', name: 'icon128.png' }
+      ].forEach(({ id, name }) => {
+        const link = document.createElement('a');
+        link.download = name;
+        link.href = document.getElementById(id).toDataURL('image/png');
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>

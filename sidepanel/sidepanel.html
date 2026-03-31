@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebWright</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       Tokens
+       ═══════════════════════════════════════════ */
+    :root {
+      --bg-root: #09090b;
+      --bg-1: #0f0f13;
+      --bg-2: #15151b;
+      --bg-3: #1b1b23;
+      --bg-4: #22222d;
+      --bg-5: #2a2a37;
+
+      --text-primary: #ececf1;
+      --text-secondary: #a1a1b5;
+      --text-tertiary: #6b6b80;
+      --text-muted: #45455a;
+
+      --accent: #7c6aef;
+      --accent-light: #9d8ff5;
+      --accent-bg: rgba(124,106,239,0.08);
+      --accent-bg-h: rgba(124,106,239,0.14);
+      --accent-glow: rgba(124,106,239,0.30);
+
+      --green: #34d399;
+      --green-bg: rgba(52,211,153,0.08);
+      --green-glow: rgba(52,211,153,0.25);
+
+      --red: #f87171;
+      --red-bg: rgba(248,113,113,0.08);
+
+      --amber: #fbbf24;
+      --amber-bg: rgba(251,191,36,0.08);
+      --amber-glow: rgba(251,191,36,0.20);
+
+      --cyan: #22d3ee;
+      --cyan-bg: rgba(34,211,238,0.08);
+
+      --orange: #fb923c;
+      --orange-bg: rgba(251,146,60,0.08);
+
+      --blue: #60a5fa;
+      --blue-bg: rgba(96,165,250,0.08);
+
+      --border: rgba(255,255,255,0.06);
+      --border-h: rgba(255,255,255,0.10);
+      --border-accent: rgba(124,106,239,0.25);
+
+      --radius: 10px;
+      --radius-sm: 6px;
+      --radius-lg: 14px;
+
+      --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+      --shadow-glow: 0 0 40px -8px var(--accent-glow);
+    }
+
+    /* ═══════════════════════════════════════════
+       Reset
+       ═══════════════════════════════════════════ */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-root);
+      color: var(--text-primary);
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg-5); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    .hidden { display: none !important; }
+
+    .icon {
+      width: 16px; height: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon svg {
+      width: 100%; height: 100%;
+      fill: none; stroke: currentColor;
+      stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    /* ═══════════════════════════════════════════
+       Header
+       ═══════════════════════════════════════════ */
+    .header {
+      flex-shrink: 0;
+      height: 48px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 100;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 5%, var(--accent-glow) 50%, transparent 95%);
+      opacity: 0.5;
+    }
+
+    .logo-group { display: flex; align-items: center; gap: 9px; }
+
+    .logo-mark {
+      width: 26px; height: 26px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent) 0%, #a78bfa 50%, #c4b5fd 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 12px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+      position: relative; overflow: hidden;
+    }
+    .logo-mark::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+      border-radius: inherit;
+    }
+    .logo-mark svg {
+      width: 13px; height: 13px;
+      fill: none; stroke: #fff; stroke-width: 2.2;
+      stroke-linecap: round; stroke-linejoin: round;
+      position: relative; z-index: 1;
+    }
+
+    .logo-text { font-weight: 700; font-size: 14px; letter-spacing: -0.4px; }
+    .logo-text span { font-weight: 400; color: var(--text-tertiary); }
+
+    .header-actions { display: flex; gap: 2px; }
+
+    .hdr-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .hdr-btn:hover { background: var(--bg-3); color: var(--text-secondary); border-color: var(--border); }
+    .hdr-btn.active { color: var(--accent); background: var(--accent-bg); border-color: var(--border-accent); }
+
+    /* ═══════════════════════════════════════════
+       Status Strip
+       ═══════════════════════════════════════════ */
+    .status-strip {
+      flex-shrink: 0; height: 32px; padding: 0 12px;
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-root);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-muted); flex-shrink: 0;
+      transition: all 0.35s ease; position: relative;
+    }
+    .status-dot::after {
+      content: '';
+      position: absolute; inset: -3px; border-radius: 50%;
+      opacity: 0; transition: opacity 0.35s ease;
+    }
+    .status-dot.active {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green-glow);
+      animation: dot-breathe 2s ease-in-out infinite;
+    }
+    .status-dot.active::after { background: var(--green); opacity: 0.15; animation: dot-ring 2s ease-in-out infinite; }
+    .status-dot.thinking {
+      background: var(--amber);
+      box-shadow: 0 0 8px var(--amber-glow);
+      animation: dot-breathe 1s ease-in-out infinite;
+    }
+    .status-dot.thinking::after { background: var(--amber); opacity: 0.15; animation: dot-ring 1s ease-in-out infinite; }
+    .status-dot.error { background: var(--red); box-shadow: 0 0 8px rgba(248,113,113,0.3); }
+
+    @keyframes dot-breathe { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
+    @keyframes dot-ring { 0%,100%{transform:scale(1);opacity:0.15} 50%{transform:scale(1.8);opacity:0} }
+
+    .status-msg {
+      flex: 1; color: var(--text-tertiary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 11px; font-weight: 500;
+    }
+
+    .step-chip {
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+      color: var(--text-tertiary); background: var(--bg-3);
+      padding: 2px 8px; border-radius: 99px;
+      border: 1px solid var(--border); flex-shrink: 0;
+    }
+
+    .mode-chip {
+      font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 99px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .mode-chip.agent { background: var(--accent-bg); color: var(--accent-light); border: 1px solid var(--border-accent); }
+    .mode-chip.chat { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+    /* ═══════════════════════════════════════════
+       Activity Bar
+       ═══════════════════════════════════════════ */
+    .activity-bar {
+      height: 2px; background: transparent;
+      position: relative; overflow: hidden; flex-shrink: 0;
+    }
+    .activity-bar.active::after {
+      content: '';
+      position: absolute; top: 0; left: -40%;
+      width: 40%; height: 100%;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent-light), transparent);
+      animation: shimmer 2s cubic-bezier(0.4,0,0.2,1) infinite;
+      border-radius: 2px;
+    }
+    @keyframes shimmer { 0% { left: -40%; } 100% { left: 100%; } }
+
+    /* ═══════════════════════════════════════════
+       Unified Stream — Messages + Activity Timeline
+       ═══════════════════════════════════════════ */
+    .stream { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+
+    .stream-inner {
+      display: flex; flex-direction: column; justify-content: flex-end;
+      min-height: 100%;
+      padding: 8px 0;
+    }
+
+    /* ── Empty State ── */
+    .stream-empty {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 20px; text-align: center;
+    }
+
+    /* ─── Orb: clean glow with subtle pulse ─── */
+    .empty-orb {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: var(--bg-2);
+      border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px;
+      position: relative;
+      animation: orb-enter 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .empty-orb::before {
+      content: ''; position: absolute; inset: -1px; border-radius: inherit;
+      background: linear-gradient(135deg, rgba(124,106,239,0.15), rgba(124,106,239,0.05));
+      opacity: 0;
+      animation: orb-glow 3s 0.5s ease-in-out infinite;
+      z-index: -1;
+    }
+    .empty-orb svg {
+      width: 28px; height: 28px; fill: none; stroke: var(--accent-light);
+      stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+      position: relative; z-index: 1;
+      filter: drop-shadow(0 0 6px rgba(124,106,239,0.35));
+    }
+    @keyframes orb-enter {
+      0% { opacity: 0; transform: scale(0.7); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes orb-glow {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
+    /* ─── Tagline: typewriter with glowing cursor ─── */
+    .empty-tagline {
+      font-size: 16px; font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      min-height: 24px;
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .tagline-text {
+      display: inline;
+      border-right: 2px solid var(--accent-light);
+      animation: tagline-blink 0.65s step-end infinite;
+    }
+    .tagline-text.done {
+      border-right-color: transparent;
+      animation: none;
+    }
+    @keyframes tagline-blink {
+      50% { border-right-color: transparent; }
+    }
+    /* Glow sweep across text after typing finishes */
+    .tagline-text.done::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(124,106,239,0.25) 50%, transparent 100%);
+      animation: tagline-glow-sweep 1.2s 0.2s ease-out forwards;
+    }
+    @keyframes tagline-glow-sweep {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    .empty-desc {
+      font-size: 12px; color: var(--text-muted); line-height: 1.65;
+      margin-bottom: 20px; max-width: 240px;
+      opacity: 0;
+      animation: fade-up 0.5s 1.8s ease forwards;
+    }
+    @keyframes fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Suggestion Chips */
+    .suggestions {
+      display: flex; flex-direction: column; gap: 8px;
+      width: 100%; max-width: 280px;
+    }
+    .suggestion-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      font-family: var(--sans); font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: left;
+      opacity: 0;
+      animation: chip-in 0.45s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+    .suggestion-chip:nth-child(1) { animation-delay: 2.0s; }
+    .suggestion-chip:nth-child(2) { animation-delay: 2.15s; }
+    .suggestion-chip:nth-child(3) { animation-delay: 2.3s; }
+    @keyframes chip-in {
+      0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .suggestion-chip:hover {
+      background: var(--accent-bg);
+      border-color: var(--border-accent);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .suggestion-chip .chip-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      background: var(--bg-3); border: 1px solid var(--border);
+    }
+    .suggestion-chip:hover .chip-icon {
+      background: var(--accent-bg-h); border-color: var(--border-accent);
+    }
+    .suggestion-chip .chip-icon svg {
+      width: 14px; height: 14px; fill: none; stroke: var(--text-tertiary);
+      stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .suggestion-chip:hover .chip-icon svg { stroke: var(--accent-light); }
+    .suggestion-chip .chip-text { flex: 1; }
+    .suggestion-chip .chip-label {
+      font-size: 12px; font-weight: 500; color: var(--text-primary);
+    }
+    .suggestion-chip .chip-desc {
+      font-size: 10px; color: var(--text-muted); margin-top: 1px;
+    }
+    .suggestion-chip:hover .chip-desc { color: var(--text-tertiary); }
+
+    /* ── Chat Messages ── */
+    .chat-msg {
+      margin: 0 10px 10px;
+      animation: msg-in 0.35s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes msg-in { 0%{opacity:0;transform:translateY(8px) scale(0.98)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+
+    .chat-msg.user { display: flex; justify-content: flex-end; }
+    .chat-msg.assistant { display: flex; justify-content: flex-start; }
+    .chat-msg.system-info { display: flex; justify-content: center; }
+
+    .chat-bubble {
+      max-width: 88%; padding: 10px 13px;
+      border-radius: 12px; font-size: 13px; line-height: 1.6;
+      word-wrap: break-word;
+    }
+    .chat-msg.user .chat-bubble {
+      background: var(--accent); color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-msg.assistant .chat-bubble {
+      background: var(--bg-2); color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.system-info .chat-bubble {
+      background: var(--bg-3); color: var(--text-tertiary);
+      font-size: 11px; padding: 6px 12px;
+      border-radius: 99px; border: 1px solid var(--border);
+    }
+
+    /* Chat markdown */
+    .chat-bubble p { margin: 0 0 8px; }
+    .chat-bubble p:last-child { margin-bottom: 0; }
+    .chat-bubble strong { font-weight: 600; color: var(--text-primary); }
+    .chat-bubble em { font-style: italic; }
+    .chat-bubble code {
+      background: rgba(255,255,255,0.06);
+      padding: 1px 5px; border-radius: 4px;
+      font-family: var(--mono); font-size: 11.5px;
+    }
+    .chat-bubble pre {
+      background: var(--bg-root); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 10px;
+      margin: 8px 0; overflow-x: auto;
+      font-family: var(--mono); font-size: 11px; line-height: 1.5;
+    }
+    .chat-bubble pre code { background: none; padding: 0; font-size: inherit; }
+    .chat-bubble ul, .chat-bubble ol { margin: 6px 0; padding-left: 18px; }
+    .chat-bubble li { margin-bottom: 3px; }
+    .chat-bubble h1, .chat-bubble h2, .chat-bubble h3,
+    .chat-bubble h4, .chat-bubble h5, .chat-bubble h6 {
+      font-weight: 600; margin: 10px 0 5px; color: var(--text-primary);
+    }
+    .chat-bubble h1 { font-size: 16px; }
+    .chat-bubble h2 { font-size: 14px; }
+    .chat-bubble h3 { font-size: 13px; }
+    .chat-bubble blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 10px; margin: 6px 0; color: var(--text-secondary);
+    }
+    .chat-bubble hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+    /* ── Shared Keyframes ── */
+    @keyframes step-in {
+      0% { opacity: 0; transform: translateY(6px) scale(0.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes typewriter-cursor {
+      50% { border-color: transparent; }
+    }
+    @keyframes thinking-pulse { 0%,100%{opacity:0.4;transform:scale(0.85)} 50%{opacity:1;transform:scale(1.1)} }
+
+    /* Chat typing indicator */
+    .chat-typing {
+      display: none; padding: 4px 10px; margin: 0 10px;
+    }
+    .chat-typing.visible { display: flex; align-items: center; gap: 8px; }
+    .chat-typing-dots { display: flex; gap: 4px; }
+    .chat-typing-dots span {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--text-muted);
+      animation: typing-pulse 1.4s ease-in-out infinite;
+    }
+    .chat-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-pulse { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.15)} }
+    .chat-typing-label { font-size: 11px; color: var(--text-muted); }
+
+    /* ═══════════════════════════════════════════
+       Control Bar — Single Send Button
+       ═══════════════════════════════════════════ */
+    .control-bar {
+      flex-shrink: 0;
+      padding: 8px 10px 10px;
+      background: var(--bg-1);
+      border-top: 1px solid var(--border);
+    }
+
+    .input-container {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      background: var(--bg-root);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-container:focus-within {
+      border-color: rgba(124,106,239,0.5);
+      box-shadow: 0 0 0 3px var(--accent-bg);
+    }
+
+    .goal-input {
+      width: 100%; padding: 10px 12px 10px 14px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: var(--sans); font-size: 13.5px; line-height: 1.45;
+      resize: none; outline: none;
+      min-height: 42px; max-height: 88px;
+    }
+    .goal-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
+    .goal-input:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .input-actions {
+      display: flex;
+      gap: 4px;
+      padding: 0 6px 6px 0;
+      align-self: flex-end;
+      flex-shrink: 0;
+    }
+
+    /* Mode buttons (Chat / Agent) */
+    .mode-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .mode-btn svg {
+      width: 15px; height: 15px;
+      fill: none; stroke: currentColor;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .mode-btn:active { transform: scale(0.92); }
+    .mode-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .chat-mode-btn {
+      background: var(--accent);
+      color: #fff;
+    }
+    .chat-mode-btn:hover { background: var(--accent-light); }
+
+    .agent-mode-btn {
+      background: rgba(124,106,239,0.12);
+      color: var(--accent-light);
+      border: 1px solid rgba(124,106,239,0.18);
+    }
+    .agent-mode-btn:hover { background: rgba(124,106,239,0.22); }
+
+    /* Tab Choice Popover */
+    .tab-choice-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .tab-choice-overlay.hidden { display: none; }
+    .tab-choice-popover {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      animation: msg-in 0.25s ease-out;
+      min-width: 240px;
+      text-align: center;
+    }
+    .tab-choice-title {
+      font-size: 13px; font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+    .tab-choice-buttons {
+      display: flex; gap: 10px;
+    }
+    .tab-choice-btn {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      padding: 14px 12px;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-family: var(--sans);
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-choice-btn:hover {
+      background: var(--accent-bg);
+      border-color: rgba(124,106,239,0.3);
+      color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(124,106,239,0.15);
+    }
+    .tab-choice-btn:active { transform: scale(0.97); }
+
+    /* Agent log messages rendered inline in chat */
+    .chat-msg.agent-log {
+      display: flex; justify-content: flex-start;
+    }
+    .chat-msg.agent-log .chat-bubble {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      padding: 0;
+      max-width: 92%;
+    }
+    .agent-log-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 12px 6px;
+      font-size: 10px; font-weight: 600;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .agent-log-header svg {
+      width: 12px; height: 12px;
+      fill: none; stroke: currentColor;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .agent-log-steps {
+      padding: 0 12px 10px;
+    }
+    .agent-step-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 4px 0;
+      font-size: 12px; color: var(--text-secondary);
+      line-height: 1.4;
+      animation: step-in 0.45s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .agent-step-item + .agent-step-item {
+      border-top: 1px solid var(--border);
+      padding-top: 6px;
+    }
+    .agent-step-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+    .agent-step-dot.acting { background: var(--accent-light); }
+    .agent-step-dot.success { background: var(--green); }
+    .agent-step-dot.error { background: var(--red); }
+    .agent-step-dot.info { background: var(--text-muted); }
+    .agent-step-dot.thinking { background: var(--amber); animation: thinking-pulse 1.5s ease-in-out infinite; }
+    .agent-step-text { flex: 1; min-width: 0; }
+    .agent-step-text.typewriter {
+      border-right: 2px solid var(--accent-light);
+      animation: typewriter-cursor 0.6s step-end infinite;
+    }
+
+    /* Expandable step detail */
+    .agent-step-item.has-detail {
+      cursor: pointer;
+      flex-wrap: wrap;
+    }
+    .agent-step-item.has-detail:hover {
+      background: var(--bg-3);
+      border-radius: var(--radius-sm);
+    }
+    .agent-step-expand {
+      font-size: 8px;
+      color: var(--text-muted);
+      margin-left: auto;
+      margin-top: 5px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .agent-step-item.expanded .agent-step-expand {
+      transform: rotate(90deg);
+    }
+    .agent-step-detail {
+      display: none;
+      width: 100%;
+      margin-top: 6px;
+      padding: 8px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      animation: step-in 0.3s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .agent-step-item.expanded .agent-step-detail {
+      display: block;
+    }
+    .detail-section + .detail-section {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .detail-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-light);
+      margin-bottom: 4px;
+    }
+    .detail-content {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 200px;
+      overflow-y: auto;
+      margin: 0;
+      padding: 6px;
+      background: var(--bg-1);
+      border-radius: 4px;
+    }
+
+    /* Agent done summary inline */
+    .agent-done-summary {
+      margin: 6px 0 2px;
+      padding: 8px 10px;
+      background: rgba(52,211,153,0.06);
+      border: 1px solid rgba(52,211,153,0.12);
+      border-radius: var(--radius-sm);
+      font-size: 12px; line-height: 1.5;
+      color: var(--text-primary);
+    }
+    .agent-done-summary .done-check {
+      color: var(--green); font-weight: 700; margin-right: 6px;
+    }
+    .agent-done-summary .done-bullets {
+      list-style: none; margin: 4px 0 0; padding: 0;
+    }
+    .agent-done-summary .done-bullets li {
+      padding: 1px 0; position: relative; padding-left: 12px;
+    }
+    .agent-done-summary .done-bullets li::before {
+      content: "–"; position: absolute; left: 0; color: var(--green);
+    }
+
+    /* Contextual action cards after agent completion */
+    .agent-action-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 0 2px;
+      animation: step-in 0.4s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .agent-action-card {
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .agent-action-card:hover {
+      background: var(--accent-bg);
+      border-color: var(--border-accent);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+
+    /* Stop button */
+    .stop-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--red-bg);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 8px;
+      color: var(--red);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .stop-btn:hover { background: rgba(248,113,113,0.14); }
+    .stop-btn svg {
+      width: 12px; height: 12px;
+      fill: currentColor; stroke: none;
+    }
+
+    /* ═══════════════════════════════════════════
+       Personal Info Drawer
+       ═══════════════════════════════════════════ */
+    .personal-info-drawer { flex-shrink:0; border-top:1px solid var(--border); background:var(--bg-1); max-height:0; overflow:hidden; transition:max-height .4s cubic-bezier(.16,1,.3,1); }
+    .personal-info-drawer.open { max-height:55vh; }
+    .personal-info-inner { padding:12px 10px; max-height:calc(55vh - 2px); overflow-y:auto; }
+    .personal-info-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+    .personal-info-head-text { font-size:12px; font-weight:600; color:var(--text-primary); }
+    .personal-info-hint { font-size:10px; color:var(--text-muted); margin-bottom:10px; line-height:1.4; }
+    .personal-info-fields textarea.field-input { resize:vertical; min-height:36px; }
+
+    /* ═══════════════════════════════════════════
+       Workflow Drawer & Recording
+       ═══════════════════════════════════════════ */
+    .workflow-drawer {
+      flex-shrink: 0; border-top: 1px solid var(--border);
+      background: var(--bg-1); max-height: 0; overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    .workflow-drawer.open { max-height: 50vh; }
+    .workflow-inner { padding: 12px 10px; max-height: calc(50vh - 2px); overflow-y: auto; }
+    .workflow-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .workflow-head-text { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .workflow-actions-bar { margin-bottom: 10px; }
+    .workflow-list { display: flex; flex-direction: column; gap: 6px; }
+    .workflow-empty { text-align: center; color: var(--text-muted); font-size: 11px; padding: 20px; }
+
+    .workflow-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; background: var(--bg-2);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+    .workflow-item:hover { background: var(--accent-bg); border-color: var(--border-accent); }
+    .workflow-item-info { flex: 1; min-width: 0; }
+    .workflow-item-name { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .workflow-item-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .workflow-item-btns { display: flex; gap: 2px; }
+    .wf-item-btn {
+      width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; border-radius: 4px;
+      color: var(--text-tertiary); cursor: pointer; transition: all 0.15s;
+    }
+    .wf-item-btn:hover { background: var(--bg-3); color: var(--text-secondary); }
+    .wf-item-btn.delete:hover { color: #f87171; }
+    .wf-item-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Workflow step details (collapsible) */
+    .workflow-item { flex-wrap: wrap; cursor: pointer; }
+    .workflow-step-list {
+      display: none; width: 100%; margin-top: 6px;
+      padding: 4px 0 2px 6px; border-top: 1px solid var(--border);
+    }
+    .workflow-item.expanded .workflow-step-list { display: block; }
+    .workflow-step-list ol {
+      margin: 0; padding: 0 0 0 18px;
+      list-style: decimal; font-size: 10px; color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .workflow-step-list li {
+      padding: 1px 0; white-space: nowrap;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .workflow-step-list .step-text {
+      flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    }
+    .step-actions { display: none; flex-shrink: 0; gap: 2px; }
+    .workflow-step-list li:hover .step-actions { display: flex; }
+    .step-action-btn {
+      width: 16px; height: 16px; padding: 0; border: none; border-radius: 3px;
+      background: transparent; color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-action-btn:hover { background: var(--bg-3); color: var(--text-secondary); }
+    .step-action-btn.remove:hover { color: #f87171; }
+    .step-action-btn svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    .workflow-item-meta .expand-arrow {
+      display: inline-block; transition: transform 0.2s;
+      font-size: 8px; margin-left: 4px;
+    }
+    .workflow-item.expanded .expand-arrow { transform: rotate(90deg); }
+
+    /* Recording bar */
+    .recording-bar {
+      flex-shrink: 0; height: 36px; padding: 0 12px;
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(248,113,113,0.08); border-top: 1px solid rgba(248,113,113,0.15);
+    }
+    .recording-bar.hidden { display: none; }
+    .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #f87171; flex-shrink: 0; animation: rec-pulse 1s ease-in-out infinite; }
+    @keyframes rec-pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .rec-label { flex: 1; font-size: 11px; font-weight: 500; color: #f87171; }
+    .rec-stop-btn {
+      padding: 3px 10px; font-size: 10px; font-weight: 500; border-radius: 4px;
+      background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.2);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .rec-stop-btn:hover { background: rgba(248,113,113,0.25); }
+
+    /* Replay paused bar */
+    .replay-paused-bar {
+      flex-shrink: 0; height: 36px; padding: 0 12px;
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(251,191,36,0.08); border-top: 1px solid rgba(251,191,36,0.15);
+    }
+    .replay-paused-bar.hidden { display: none; }
+    .pause-label { flex: 1; font-size: 11px; font-weight: 500; color: var(--amber); }
+    .resume-btn {
+      padding: 3px 10px; font-size: 10px; font-weight: 500; border-radius: 4px;
+      background: rgba(251,191,36,0.15); color: var(--amber); border: 1px solid rgba(251,191,36,0.2);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .resume-btn:hover { background: rgba(251,191,36,0.25); }
+
+    /* Param form overlay */
+    .param-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200;
+    }
+    .param-overlay.hidden { display: none; }
+    .param-popover {
+      background: var(--bg-1); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; width: 280px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .param-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+    .param-field { margin-bottom: 10px; }
+    .param-field label { display: block; font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .param-field input {
+      width: 100%; padding: 6px 8px; font-size: 12px;
+      background: var(--bg-2); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text-primary); outline: none; box-sizing: border-box;
+    }
+    .param-field input:focus { border-color: var(--accent); }
+    .param-buttons { display: flex; gap: 8px; margin-top: 14px; }
+    .param-btn-run {
+      flex: 1; padding: 7px; font-size: 12px; font-weight: 500; border-radius: 6px;
+      background: var(--accent); color: #fff; border: none; cursor: pointer; transition: all 0.15s;
+    }
+    .param-btn-run:hover { background: var(--accent-light); }
+    .param-btn-cancel {
+      padding: 7px 12px; font-size: 12px; font-weight: 500; border-radius: 6px;
+      background: var(--bg-3); color: var(--text-secondary); border: 1px solid var(--border); cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════
+       Settings Drawer
+       ═══════════════════════════════════════════ */
+    .settings-drawer {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      background: var(--bg-1);
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    .settings-drawer.open { max-height: 60vh; }
+
+    .settings-inner {
+      padding: 12px 10px 10px;
+      max-height: calc(60vh - 2px);
+      overflow-y: auto;
+    }
+
+    .settings-head {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-head-text { font-weight: 600; font-size: 12px; color: var(--text-secondary); }
+
+    .provider-tabs { display: flex; gap: 3px; margin-bottom: 10px; flex-wrap: wrap; }
+    .provider-tab {
+      padding: 4px 9px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--bg-root);
+      color: var(--text-tertiary); font-family: var(--sans);
+      font-size: 10px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .provider-tab:hover { color: var(--text-secondary); border-color: var(--border-h); background: var(--bg-2); }
+    .provider-tab.selected { color: var(--accent-light); border-color: var(--border-accent); background: var(--accent-bg); }
+
+    .provider-config { display: none; }
+    .provider-config.active { display: block; }
+
+    .provider-section-label {
+      font-size: 9px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-muted); margin: 8px 0 6px;
+      padding-top: 6px; border-top: 1px solid var(--border);
+    }
+    .provider-section-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+
+    .field { margin-bottom: 7px; }
+    .field-label {
+      display: block; font-size: 10px; font-weight: 600;
+      color: var(--text-muted); margin-bottom: 3px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .field-input {
+      width: 100%; padding: 6px 9px;
+      background: var(--bg-root); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary);
+      font-family: var(--mono); font-size: 10.5px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field-input:focus { border-color: rgba(124,106,239,0.4); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .field-input::placeholder { color: var(--text-muted); }
+    select.field-input { appearance: auto; cursor: pointer; }
+
+    .field-row { display: flex; gap: 8px; }
+    .field-row .field { flex: 1; }
+
+    .field-hint { font-size: 9px; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+
+    .settings-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .btn-cfg {
+      flex: 1; height: 32px; border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--sans); font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .btn-cfg.primary { background: var(--accent); color: #fff; }
+    .btn-cfg.primary:hover { background: var(--accent-light); }
+    .btn-cfg.ghost { background: var(--bg-3); color: var(--text-tertiary); border: 1px solid var(--border); }
+    .btn-cfg.ghost:hover { color: var(--text-secondary); border-color: var(--border-h); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-group">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z"/><circle cx="13.5" cy="11" r="3"/><line x1="15.7" y1="13.2" x2="18" y2="15.5"/></svg>
+      </div>
+      <div class="logo-text">WebWright</div>
+    </div>
+    <div class="header-actions">
+      <button class="hdr-btn" id="personalInfoBtn" title="Personal Info">
+        <span class="icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      </button>
+      <button class="hdr-btn" id="workflowBtn" title="Workflows">
+        <span class="icon"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg></span>
+      </button>
+      <button class="hdr-btn" id="clearLogsBtn" title="Clear">
+        <span class="icon"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></span>
+      </button>
+      <button class="hdr-btn" id="settingsBtn" title="Settings">
+        <span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Status Strip -->
+  <div class="status-strip">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-msg" id="statusMsg">Ready</span>
+    <span class="mode-chip hidden" id="modeChip"></span>
+    <span class="step-chip hidden" id="stepChip">0 / 20</span>
+  </div>
+
+  <!-- Unified Stream -->
+  <div class="stream" id="stream">
+    <div class="stream-inner" id="streamInner">
+      <!-- Empty State -->
+      <div class="stream-empty" id="streamEmpty">
+        <div class="empty-orb">
+          <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z"/><circle cx="13.5" cy="11" r="3"/><line x1="15.7" y1="13.2" x2="18" y2="15.5"/></svg>
+        </div>
+        <div class="empty-tagline"><span class="tagline-text" id="taglineText"></span></div>
+        <div class="empty-desc">Ask a question or tell me what to do. I'll figure out the rest.</div>
+
+        <div class="suggestions" id="suggestionsContainer">
+          <!-- Chips rendered dynamically by JS -->
+        </div>
+      </div>
+
+      <!-- Typing indicator for chat -->
+      <div class="chat-typing" id="chatTyping">
+        <div class="chat-typing-dots"><span></span><span></span><span></span></div>
+        <span class="chat-typing-label">Thinking...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Drawer -->
+  <div class="settings-drawer" id="settingsDrawer">
+    <div class="settings-inner">
+      <div class="settings-head">
+        <span class="icon" style="color:var(--text-muted)"><svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="settings-head-text">Configuration</span>
+      </div>
+
+      <div class="provider-tabs" id="providerTabs">
+        <div class="provider-tab selected" data-provider="ollama_cloud">Ollama Cloud</div>
+        <div class="provider-tab" data-provider="ollama_local">Ollama Local</div>
+        <div class="provider-tab" data-provider="chatgpt">ChatGPT</div>
+        <div class="provider-tab" data-provider="claude">Claude</div>
+        <div class="provider-tab" data-provider="gemini">Gemini</div>
+        <div class="provider-tab" data-provider="deepseek">DeepSeek</div>
+        <div class="provider-tab" data-provider="grok">Grok</div>
+        <div class="provider-tab" data-provider="custom">Custom</div>
+      </div>
+
+      <div class="provider-config active" id="cfg-ollama_cloud">
+        <div class="field"><label class="field-label">Endpoint</label><input class="field-input" data-cfg="ollama_cloud.endpoint" type="text" value="https://ollama.com" spellcheck="false" /></div>
+        <div class="field"><label class="field-label">API Key</label><input class="field-input" data-cfg="ollama_cloud.apiKey" type="password" placeholder="Bearer token" /></div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Primary Model</label>
+            <select class="field-input" data-cfg="ollama_cloud.model" id="ollamaCloudModel">
+              <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
+              <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
+              <option value="glm-5:cloud">glm-5:cloud</option>
+              <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
+              <option value="deepseek-v3.2:cloud">deepseek-v3.2:cloud</option>
+              <option value="__custom__">Custom</option>
+            </select>
+            <input class="field-input hidden" id="ollamaCloudModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
+          </div>
+          <div class="field">
+            <label class="field-label">Vision Model</label>
+            <select class="field-input" data-cfg="ollama_cloud.visionModel" id="ollamaCloudVisionModel">
+              <option value="qwen3.5:397b-cloud">qwen3.5:397b-cloud</option>
+              <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="ministral-3:14b-cloud">ministral-3:14b-cloud</option>
+              <option value="devstral-small-2:24b-cloud">devstral-small-2:24b-cloud</option>
+              <option value="gemma3:27b-cloud">gemma3:27b-cloud</option>
+              <option value="__custom__">Custom</option>
+            </select>
+            <input class="field-input hidden" id="ollamaCloudVisionModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
+          </div>
+        </div>
+      </div>
+
+      <div class="provider-config" id="cfg-ollama_local">
+        <div class="field"><label class="field-label">Endpoint</label><input class="field-input" data-cfg="ollama_local.endpoint" type="text" value="http://localhost:11434" spellcheck="false" /></div>
+        <div class="field"><label class="field-label">API Key</label><input class="field-input" data-cfg="ollama_local.apiKey" type="password" placeholder="Optional" /></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Primary Model</label><input class="field-input" data-cfg="ollama_local.model" type="text" value="qwen2.5-coder:7b" spellcheck="false" /></div>
+          <div class="field"><label class="field-label">Vision Model</label><input class="field-input" data-cfg="ollama_local.visionModel" type="text" value="llava:13b" spellcheck="false" placeholder="Blank = off" /></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:6px;line-height:1.4;">Tip: If you get a 403 error, set <code style="background:var(--bg-3);padding:1px 4px;border-radius:3px;">OLLAMA_ORIGINS=*</code> in your environment and restart Ollama.</div>
+      </div>
+
+      <div class="provider-config" id="cfg-chatgpt">
+        <div class="field"><label class="field-label">Endpoint</label><input class="field-input" data-cfg="chatgpt.endpoint" type="text" value="https://api.openai.com" spellcheck="false" /></div>
+        <div class="field"><label class="field-label">API Key</label><input class="field-input" data-cfg="chatgpt.apiKey" type="password" placeholder="sk-..." /></div>
+        <div class="field"><label class="field-label">Model</label><input class="field-input" data-cfg="chatgpt.model" type="text" value="gpt-4o" spellcheck="false" /><div class="field-hint">Vision is automatic for GPT-4o</div></div>
+      </div>
+
+      <div class="provider-config" id="cfg-claude">
+        <div class="field"><label class="field-label">Endpoint</label><input class="field-input" data-cfg="claude.endpoint" type="text" value="https://api.anthropic.com" spellcheck="false" /></div>
+        <div class="field"><label class="field-label">API Key</label><input class="field-input" data-cfg="claude.apiKey" type="password" placeholder="sk-ant-..." /></div>
+        <div class="field"><label class="field-label">Model</label><input class="field-input" data-cfg="claude.model" type="text" value="claude-sonnet-4-20250514" spellcheck="false" /><div class="field-hint">Vision is automatic for Claude</div></div>
+      </div>
+
+      <div class="provider-config" id="cfg-gemini">
+        <div class="field"><label class="field-label">Endpoint</label><input class="field-input" data-cfg="gemini.endpoint" type="text" value="https://generativelanguage.googleapis.com" spellcheck="false" /></div>
+        <div class="field"><label class="field-label">API Key</label><input class="field-input" data-cfg="gemini.apiKey" type="password" placeholder="AIza..." /></div>
+        <div class="field"><label class="field-label">Model</label><input class="field-input" data-cfg="gemini.model" type="text" value="gemini-2.0-flash" spellcheck="false" /><div class="field-hint">Vision is automatic for Gemini</div></div>
+      </div>
+
+      <div class="provider-config" id="cfg-deepseek">
+        <div class="field"><label class="field-label">Endpoint</label><input class="field-input" data-cfg="deepseek.endpoint" type="text" value="https://api.deepseek.com" spellcheck="false" /></div>
+        <div class="field"><label class="field-label">API Key</label><input class="field-input" data-cfg="deepseek.apiKey" type="password" placeholder="sk-..." /></div>
+        <div class="field"><label class="field-label">Model</label><input class="field-input" data-cfg="deepseek.model" type="text" value="deepseek-chat" spellcheck="false" /><div class="field-hint">deepseek-chat, deepseek-reasoner</div></div>
+      </div>
+
+      <div class="provider-config" id="cfg-grok">
+        <div class="field"><label class="field-label">Endpoint</label><input class="field-input" data-cfg="grok.endpoint" type="text" value="https://api.x.ai" spellcheck="false" /></div>
+        <div class="field"><label class="field-label">API Key</label><input class="field-input" data-cfg="grok.apiKey" type="password" placeholder="xai-..." /></div>
+        <div class="field"><label class="field-label">Model</label><input class="field-input" data-cfg="grok.model" type="text" value="grok-3-mini" spellcheck="false" /><div class="field-hint">grok-3, grok-3-mini, grok-2</div></div>
+      </div>
+
+      <div class="provider-config" id="cfg-custom">
+        <div class="field">
+          <label class="field-label">API Format</label>
+          <select class="field-input" data-cfg="custom.apiFormat">
+            <option value="openai">OpenAI-Compatible</option>
+            <option value="ollama">Ollama</option>
+            <option value="claude">Claude / Anthropic</option>
+            <option value="gemini">Gemini / Google</option>
+          </select>
+          <div class="field-hint">Choose the API format your endpoint uses</div>
+        </div>
+        <div class="field"><label class="field-label">Endpoint</label><input class="field-input" data-cfg="custom.endpoint" type="text" placeholder="https://your-api.com" spellcheck="false" /></div>
+        <div class="field"><label class="field-label">API Key</label><input class="field-input" data-cfg="custom.apiKey" type="password" placeholder="Your API key" /></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Model</label><input class="field-input" data-cfg="custom.model" type="text" placeholder="model-name" spellcheck="false" /></div>
+          <div class="field"><label class="field-label">Vision Model</label><input class="field-input" data-cfg="custom.visionModel" type="text" placeholder="Blank = same as primary" spellcheck="false" /></div>
+        </div>
+        <div class="field-hint">Works with any OpenAI-compatible API (LiteLLM, vLLM, Together, Groq, Fireworks, etc.)</div>
+      </div>
+
+      <div class="provider-section-label" style="margin-top:10px">General</div>
+      <div class="field-row">
+        <div class="field"><label class="field-label">Max Steps</label><input class="field-input" id="cfgMaxSteps" type="number" min="1" max="100" value="20" /></div>
+        <div class="field"><label class="field-label">Delay (ms)</label><input class="field-input" id="cfgDelay" type="number" min="500" max="10000" step="100" value="2000" /></div>
+        <div class="field"><label class="field-label">Timeout (ms)</label><input class="field-input" id="cfgTimeout" type="number" min="5000" max="120000" step="1000" value="15000" /></div>
+        <div class="field"><label class="field-label">Wall Timeout (s)</label><input class="field-input" id="cfgWallTimeout" type="number" min="30" max="600" step="30" value="300" /></div>
+      </div>
+
+      <div class="settings-actions">
+        <button class="btn-cfg primary" id="saveBtn">Save</button>
+        <button class="btn-cfg ghost" id="closeCfgBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflow Drawer -->
+  <div class="workflow-drawer" id="workflowDrawer">
+    <div class="workflow-inner">
+      <div class="workflow-head">
+        <span class="workflow-head-text">Workflows</span>
+        <button class="hdr-btn" id="closeWorkflowBtn" title="Close">
+          <span class="icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+        </button>
+      </div>
+      <div class="workflow-actions-bar">
+        <button class="btn-cfg primary" id="recordBtn" style="width:100%">
+          <svg viewBox="0 0 24 24" width="12" height="12" style="fill:currentColor;stroke:none;margin-right:4px;vertical-align:-1px"><circle cx="12" cy="12" r="6"/></svg>
+          Start Recording
+        </button>
+      </div>
+      <div class="workflow-list" id="workflowList">
+        <div class="workflow-empty" id="workflowEmpty">No saved workflows yet. Start recording to create one.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal Info Drawer -->
+  <div class="personal-info-drawer" id="personalInfoDrawer">
+    <div class="personal-info-inner">
+      <div class="personal-info-head">
+        <span class="personal-info-head-text">Personal Info</span>
+        <button class="hdr-btn" id="closePersonalInfoBtn" title="Close">
+          <span class="icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+        </button>
+      </div>
+      <div class="personal-info-hint">Stored locally only. Used to auto-fill forms when you ask the agent.</div>
+      <div class="personal-info-fields">
+        <div class="field-row">
+          <div class="field"><label class="field-label">Name</label><input class="field-input" data-pinfo="name" type="text" placeholder="Full name" spellcheck="false" /></div>
+          <div class="field"><label class="field-label">Age</label><input class="field-input" data-pinfo="age" type="text" placeholder="e.g. 25" /></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Sex</label>
+            <select class="field-input" data-pinfo="sex"><option value="">--</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
+          </div>
+          <div class="field"><label class="field-label">Father's Name</label><input class="field-input" data-pinfo="fatherName" type="text" spellcheck="false" /></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Mother's Name</label><input class="field-input" data-pinfo="motherName" type="text" spellcheck="false" /></div>
+        </div>
+        <div class="field"><label class="field-label">Address</label><textarea class="field-input" data-pinfo="address" rows="2" placeholder="Full address" spellcheck="false"></textarea></div>
+        <div class="provider-section-label">Custom Fields</div>
+        <div class="field-row"><div class="field" style="flex:0.4"><input class="field-input" data-pinfo-label="0" placeholder="Label" /></div><div class="field" style="flex:0.6"><input class="field-input" data-pinfo-value="0" placeholder="Value" /></div></div>
+        <div class="field-row"><div class="field" style="flex:0.4"><input class="field-input" data-pinfo-label="1" placeholder="Label" /></div><div class="field" style="flex:0.6"><input class="field-input" data-pinfo-value="1" placeholder="Value" /></div></div>
+        <div class="field-row"><div class="field" style="flex:0.4"><input class="field-input" data-pinfo-label="2" placeholder="Label" /></div><div class="field" style="flex:0.6"><input class="field-input" data-pinfo-value="2" placeholder="Value" /></div></div>
+        <div class="field-row"><div class="field" style="flex:0.4"><input class="field-input" data-pinfo-label="3" placeholder="Label" /></div><div class="field" style="flex:0.6"><input class="field-input" data-pinfo-value="3" placeholder="Value" /></div></div>
+        <div class="field-row"><div class="field" style="flex:0.4"><input class="field-input" data-pinfo-label="4" placeholder="Label" /></div><div class="field" style="flex:0.6"><input class="field-input" data-pinfo-value="4" placeholder="Value" /></div></div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-cfg primary" id="savePersonalInfoBtn">Save</button>
+        <button class="btn-cfg ghost" id="cancelPersonalInfoBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recording Bar -->
+  <div class="recording-bar hidden" id="recordingBar">
+    <div class="rec-dot"></div>
+    <span class="rec-label">Recording... <span id="recStepCount">0</span> steps</span>
+    <button class="rec-stop-btn" id="stopRecordBtn">Stop</button>
+  </div>
+
+  <!-- Replay Paused Bar -->
+  <div class="replay-paused-bar hidden" id="replayPausedBar">
+    <span class="pause-label" id="pauseLabel">Paused</span>
+    <button class="resume-btn" id="resumeReplayBtn">Resume</button>
+  </div>
+
+  <!-- Param Form Overlay -->
+  <div class="param-overlay hidden" id="paramOverlay">
+    <div class="param-popover">
+      <div class="param-title" id="paramTitle">Workflow Parameters</div>
+      <div id="paramFields"></div>
+      <div class="param-buttons">
+        <button class="param-btn-cancel" id="paramCancelBtn">Cancel</button>
+        <button class="param-btn-run" id="paramRunBtn">Run Workflow</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Bar -->
+  <div class="activity-bar" id="activityBar"></div>
+
+  <!-- Control Bar -->
+  <div class="control-bar">
+    <div class="input-container">
+      <textarea class="goal-input" id="goalInput" placeholder="Ask anything or tell me what to do..." rows="1" spellcheck="false"></textarea>
+      <div class="input-actions" id="inputActions">
+        <button class="mode-btn chat-mode-btn" id="chatBtn" title="Chat">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </button>
+        <button class="mode-btn agent-mode-btn" id="agentBtn" title="Agent (Ctrl+Enter)">
+          <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </button>
+      </div>
+      <div class="input-actions hidden" id="stopActions">
+        <button class="stop-btn" id="stopBtn" title="Stop agent">
+          <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Choice Popover -->
+  <div class="tab-choice-overlay hidden" id="tabChoiceOverlay">
+    <div class="tab-choice-popover">
+      <div class="tab-choice-title">Where should the agent work?</div>
+      <div class="tab-choice-buttons">
+        <button class="tab-choice-btn" id="tabChoiceThis">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          This tab
+        </button>
+        <button class="tab-choice-btn" id="tabChoiceNew">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          New tab
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
