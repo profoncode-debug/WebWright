@@ -99,6 +99,13 @@
     "Check stock market today...",
     "Search for biryani recipe...",
     "Open WhatsApp Web...",
+    "If LLM times out, increase timeout in Settings...",
+    "Slow responses? Try a faster model in Settings...",
+    "Agent stuck? Check LLM timeout in Settings...",
+    "For best results, keep tasks focused and specific...",
+    "Switch to Vision mode for complex visual pages...",
+    "Payments and passwords need your manual input...",
+    "Use agent mode for multi-step tasks...",
   ];
 
   /* ── Suggestion Pool (50+) ── */
@@ -546,6 +553,7 @@
     // Normal step
     data._label = label; // pass label for dot color detection
     var text = friendlyLabel(kind, data, label);
+    if (text && text.length > 50) text = text.slice(0, 47) + "…";
     if (!text) return;
 
     // Deduplicate

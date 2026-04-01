@@ -1081,6 +1081,7 @@ RULES:
 - STOPPING: Declare "done" immediately when evidence shows the goal is achieved (confirmation/success page, changed button text, URL containing "confirm"/"success"/"thank"/"complete"/"done"/"receipt"/"booking", requested content visible, or stateAfter showing the change happened). Do NOT over-act after completion — it wastes steps and can undo work.
 - If an action result says "success", that only means the click/keystroke fired — wait one step to see the page response, then declare "done" if evidence is present.
 - If stuck or goal impossible, use "error".
+- PAYMENTS & PASSWORDS: If you encounter a payment form (credit card, UPI, billing address) or a password / PIN entry field, STOP immediately. Use the "error" action: set "reason" to explain you reached a payment or password step, "completed" to what you accomplished so far, and "manual_steps" to the exact steps the user must take to finish. NEVER fill in payment details or passwords.
 - LOOP/REPEAT: Review your action history. Never repeat an action on the same element unless the page visibly changed (different URL, new stateAfter, new elements). Same action 2+ times with no progress = loop — try a completely different approach. Never re-type a value you already submitted — an empty field after submit means it was sent successfully.
 - TRUST CURRENT STATE: The "Current URL", "Page Title", and "Interactive Elements" below reflect the page RIGHT NOW. Ignore any conflicting URLs or state from previous reasoning or older history entries — pages change after navigation.
 - Target elements using "id" from the Interactive Elements list ONLY. Never invent or guess ids.
@@ -1231,6 +1232,7 @@ ${somElements && somElements.length > 100 ? `- Many numbered elements present. S
 - STOP immediately when screenshot shows goal achieved (success/confirmation page, changed text, requested content visible). Do not over-act.
 - If same coordinates/element clicked 2+ times with no visible change, you're in a loop — try a different element or approach.
 - If truly stuck, use "error".
+- PAYMENTS & PASSWORDS: If you encounter a payment form (credit card, UPI, billing address) or a password / PIN entry field, STOP immediately. Use the "error" action: set "reason" to explain you reached a payment or password step, "completed" to what you accomplished so far, and "manual_steps" to the exact steps the user must take to finish. NEVER fill in payment details or passwords.
 - Never return a "selector" field.
 
 SCREENSHOT SIZE: ${screenshotW}px wide × ${screenshotH}px tall
