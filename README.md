@@ -16,7 +16,7 @@ An autonomous AI agent that lives in your browser sidebar — it sees web pages,
 
 ## What is WebWright?
 
-WebWright is a Chrome extension that turns your browser into an AI-powered assistant. Instead of just answering questions, it **actually does things** — fills forms, navigates sites, clicks buttons, searches the web, books tickets, and more.
+WebWright is a Chrome extension that turns your browser into an AI-powered assistant. Instead of just answering questions, it **actually does things** — fills forms, navigates sites, clicks buttons, searches the web, books tickets, and more. No Mac Mini , no VPS , no high RAM usage, JUST <1 MB
 
 Type a goal like *"Search Amazon for wireless headphones under $50"* and the agent takes over: it navigates to Amazon, types the search query, applies filters, and reports back what it found. All while you watch the real-time action log in the sidebar.
 
