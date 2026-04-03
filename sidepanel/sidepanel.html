@@ -1173,8 +1173,8 @@
           <div class="field">
             <label class="field-label">Primary Model</label>
             <select class="field-input" data-cfg="ollama_cloud.model" id="ollamaCloudModel">
-              <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
               <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
               <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
               <option value="glm-5:cloud">glm-5:cloud</option>
               <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
@@ -1186,8 +1186,8 @@
           <div class="field">
             <label class="field-label">Vision Model</label>
             <select class="field-input" data-cfg="ollama_cloud.visionModel" id="ollamaCloudVisionModel">
-              <option value="qwen3.5:397b-cloud">qwen3.5:397b-cloud</option>
               <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="qwen3.5:397b-cloud">qwen3.5:397b-cloud</option>
               <option value="ministral-3:14b-cloud">ministral-3:14b-cloud</option>
               <option value="devstral-small-2:24b-cloud">devstral-small-2:24b-cloud</option>
               <option value="gemma3:27b-cloud">gemma3:27b-cloud</option>
@@ -1262,7 +1262,7 @@
       <div class="field-row">
         <div class="field"><label class="field-label">Max Steps</label><input class="field-input" id="cfgMaxSteps" type="number" min="1" max="100" value="20" /></div>
         <div class="field"><label class="field-label">Delay (ms)</label><input class="field-input" id="cfgDelay" type="number" min="500" max="10000" step="100" value="2000" /></div>
-        <div class="field"><label class="field-label">Timeout (ms)</label><input class="field-input" id="cfgTimeout" type="number" min="5000" max="120000" step="1000" value="15000" /></div>
+        <div class="field"><label class="field-label">Timeout (ms)</label><input class="field-input" id="cfgTimeout" type="number" min="5000" max="120000" step="1000" value="60000" /></div>
         <div class="field"><label class="field-label">Wall Timeout (s)</label><input class="field-input" id="cfgWallTimeout" type="number" min="30" max="600" step="30" value="300" /></div>
       </div>
 

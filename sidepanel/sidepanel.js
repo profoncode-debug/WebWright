@@ -75,40 +75,16 @@
 
   /* ── Rotating Placeholders ── */
   var placeholders = [
-    "Ask anything or tell me what to do...",
-    "Summarize this page...",
-    "Search for flights to Tokyo...",
-    "Check my Gmail inbox...",
-    "What does this article say?",
-    "Order food from Swiggy...",
-    "Find the best price for...",
-    "Open Instagram...",
-    "Check today's weather...",
-    "Search YouTube for tutorials...",
-    "Open Amazon and search for deals...",
-    "What's trending on Twitter?",
-    "Translate this page to English...",
-    "Check live cricket scores...",
-    "Book a cab on Uber...",
-    "Find hotels in Goa...",
-    "Compare laptop prices online...",
-    "Open Netflix and browse movies...",
-    "Check my Outlook inbox...",
-    "Create a new Google Doc...",
-    "Find the best restaurants nearby...",
-    "Check stock market today...",
-    "Search for biryani recipe...",
-    "Open WhatsApp Web...",
-    "Tip: Increase LLM timeout for slower Vision models in Settings...",
-    "Tip: Vision auto-escalates when DOM mode gets stuck...",
-    "Tip: Set a Vision model in Settings for visual page support...",
-    "Tip: Increase Wall Timeout for long multi-step tasks in Settings...",
-    "Tip: Lower Step Delay for faster task execution in Settings...",
-    "Tip: Raise Max Steps for complex multi-page tasks in Settings...",
-    "Tip: Agent looping? Try a smarter model in Settings...",
-    "Tip: Payments and passwords always need your manual input...",
-    "Tip: Use Ctrl+Enter to run in agent mode...",
-    "Tip: Press Enter to chat, Ctrl+Enter to automate...",
+    "Tip: LLM timing out? Increase timeout in Settings",
+    "Tip: Vision escalates automatically when DOM fails",
+    "Tip: Set a Vision model in Settings",
+    "Tip: Long tasks? Raise Wall Timeout in Settings",
+    "Tip: Speed up tasks — lower Step Delay in Settings",
+    "Tip: More steps? Raise Max Steps in Settings",
+    "Tip: Agent looping? Try a smarter model",
+    "Tip: Payments & passwords need your input",
+    "Tip: Ctrl+Enter to run agent mode",
+    "Tip: Enter = chat  •  Ctrl+Enter = automate",
     "Tip: Claude Opus 4.6 works best currently...",
   ];
 
@@ -834,6 +810,11 @@
 
     addChatMessage("assistant", result.content);
     setStatus("idle", "Chat ready");
+
+    // Auto-trigger agent mode if LLM redirects the user there
+    if (result.content && result.content.includes("Try using Agent mode")) {
+      setTimeout(function() { showTabChoice(text); }, 400);
+    }
   }
 
   /* ═══════════════════════════════════════════

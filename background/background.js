@@ -249,8 +249,8 @@ const PROVIDER_DEFAULTS = {
   ollama_cloud: {
     endpoint: "https://ollama.com",
     apiKey: "",
-    model: "gpt-oss:120b-cloud",
-    visionModel: "qwen3.5:397b-cloud"
+    model: "kimi-k2.5:cloud",
+    visionModel: "kimi-k2.5:cloud"
   },
   ollama_local: {
     endpoint: "http://localhost:11434",
@@ -297,7 +297,7 @@ const DEFAULT_CONFIG = {
   providers: JSON.parse(JSON.stringify(PROVIDER_DEFAULTS)),
   maxSteps: 20,
   interStepDelay: 2000,
-  llmTimeout: 15000,
+  llmTimeout: 60000,
   wallTimeout: 300000
 };
 
