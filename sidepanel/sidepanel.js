@@ -99,13 +99,17 @@
     "Check stock market today...",
     "Search for biryani recipe...",
     "Open WhatsApp Web...",
-    "If LLM times out, increase timeout in Settings...",
-    "Slow responses? Try a faster model in Settings...",
-    "Agent stuck? Check LLM timeout in Settings...",
-    "For best results, keep tasks focused and specific...",
-    "Switch to Vision mode for complex visual pages...",
-    "Payments and passwords need your manual input...",
-    "Use agent mode for multi-step tasks...",
+    "Tip: Increase LLM timeout for slower Vision models in Settings...",
+    "Tip: Vision auto-escalates when DOM mode gets stuck...",
+    "Tip: Set a Vision model in Settings for visual page support...",
+    "Tip: Increase Wall Timeout for long multi-step tasks in Settings...",
+    "Tip: Lower Step Delay for faster task execution in Settings...",
+    "Tip: Raise Max Steps for complex multi-page tasks in Settings...",
+    "Tip: Agent looping? Try a smarter model in Settings...",
+    "Tip: Payments and passwords always need your manual input...",
+    "Tip: Use Ctrl+Enter to run in agent mode...",
+    "Tip: Press Enter to chat, Ctrl+Enter to automate...",
+    "Tip: Claude Opus 4.6 works best currently...",
   ];
 
   /* ── Suggestion Pool (50+) ── */
@@ -748,7 +752,7 @@
       var actions = [
         { label: "Summarize", action: "chat", text: "Summarize" },
         { label: "Ask a question", action: "focus" },
-        { label: "Extract key info", action: "chat", text: "Extract the key information from this page as bullet points" }
+        { label: "Extract info", action: "chat", text: "Extract the key information from this page as bullet points" }
       ];
       actions.forEach(function(a) {
         var btn = document.createElement("button");

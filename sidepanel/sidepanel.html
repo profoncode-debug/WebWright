@@ -118,6 +118,11 @@
       position: relative;
       z-index: 100;
     }
+    .header::before {
+      content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(124,106,239,0.55), rgba(192,132,252,0.35), transparent);
+      pointer-events: none; z-index: 1;
+    }
     .header::after {
       content: '';
       position: absolute;
@@ -132,9 +137,9 @@
     .logo-mark {
       width: 26px; height: 26px;
       border-radius: 7px;
-      background: linear-gradient(135deg, var(--accent) 0%, #a78bfa 50%, #c4b5fd 100%);
+      background: linear-gradient(135deg, #6d57e8 0%, #9d8ff5 55%, #c4b5fd 100%);
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 12px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+      box-shadow: 0 2px 14px rgba(124,106,239,0.55), inset 0 1px 0 rgba(255,255,255,0.18);
       position: relative; overflow: hidden;
     }
     .logo-mark::before {
@@ -150,8 +155,13 @@
       position: relative; z-index: 1;
     }
 
-    .logo-text { font-weight: 700; font-size: 14px; letter-spacing: -0.4px; }
-    .logo-text span { font-weight: 400; color: var(--text-tertiary); }
+    .logo-text {
+      font-weight: 700; font-size: 14px; letter-spacing: -0.4px;
+      background: linear-gradient(100deg, #ececf1 30%, #a78bfa 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-text span { font-weight: 400; }
 
     .header-actions { display: flex; gap: 2px; }
 
@@ -202,7 +212,7 @@
     .status-dot.thinking::after { background: var(--amber); opacity: 0.15; animation: dot-ring 1s ease-in-out infinite; }
     .status-dot.error { background: var(--red); box-shadow: 0 0 8px rgba(248,113,113,0.3); }
 
-    @keyframes dot-breathe { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
+    @keyframes dot-breathe { 0%,100%{opacity:0.5;box-shadow:0 0 0 0 currentColor} 50%{opacity:1;box-shadow:0 0 5px 2px currentColor} }
     @keyframes dot-ring { 0%,100%{transform:scale(1);opacity:0.15} 50%{transform:scale(1.8);opacity:0} }
 
     .status-msg {
@@ -264,8 +274,9 @@
     /* ─── Orb: clean glow with subtle pulse ─── */
     .empty-orb {
       width: 64px; height: 64px; border-radius: 18px;
-      background: var(--bg-2);
-      border: 1.5px solid var(--border);
+      background: linear-gradient(135deg, rgba(124,106,239,0.18), rgba(167,139,250,0.08));
+      border: 1.5px solid rgba(124,106,239,0.35);
+      box-shadow: 0 0 32px -4px rgba(124,106,239,0.45), 0 0 64px -16px rgba(192,132,252,0.25);
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 20px;
       position: relative;
@@ -277,6 +288,16 @@
       opacity: 0;
       animation: orb-glow 3s 0.5s ease-in-out infinite;
       z-index: -1;
+    }
+    .empty-orb::after {
+      content: ''; position: absolute; inset: -7px;
+      border-radius: 24px; border: 1px solid rgba(124,106,239,0.18);
+      animation: orb-ring-pulse 3s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes orb-ring-pulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50%       { opacity: 1;   transform: scale(1.05); }
     }
     .empty-orb svg {
       width: 28px; height: 28px; fill: none; stroke: var(--accent-light);
@@ -296,7 +317,9 @@
     /* ─── Tagline: typewriter with glowing cursor ─── */
     .empty-tagline {
       font-size: 16px; font-weight: 700;
-      color: var(--text-primary);
+      background: linear-gradient(135deg, #a78bfa 0%, #7c6aef 40%, #c084fc 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: 6px;
       min-height: 24px;
       position: relative;
@@ -373,6 +396,7 @@
       padding: 10px 14px;
       background: var(--bg-2);
       border: 1px solid var(--border);
+      border-left: 2px solid rgba(124,106,239,0.45);
       border-radius: var(--radius);
       color: var(--text-secondary);
       font-family: var(--sans); font-size: 12px; font-weight: 500;
@@ -390,11 +414,12 @@
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     .suggestion-chip:hover {
-      background: var(--accent-bg);
+      background: var(--accent-bg-h);
       border-color: var(--border-accent);
+      border-left-color: var(--accent-light);
       color: var(--text-primary);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 4px 18px -4px rgba(124,106,239,0.30);
     }
     .suggestion-chip .chip-icon {
       width: 28px; height: 28px; border-radius: 8px;
@@ -525,11 +550,14 @@
       background: var(--bg-root);
       border: 1.5px solid var(--border);
       border-radius: 12px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }
     .input-container:focus-within {
-      border-color: rgba(124,106,239,0.5);
-      box-shadow: 0 0 0 3px var(--accent-bg);
+      border-color: transparent;
+      box-shadow:
+        0 0 0 1.5px var(--accent),
+        0 0 0 4px rgba(124,106,239,0.18),
+        0 0 20px -4px rgba(124,106,239,0.35);
     }
 
     .goal-input {
@@ -653,6 +681,8 @@
       color: var(--amber);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      background: linear-gradient(90deg, rgba(124,106,239,0.07), transparent);
+      border-left: 2px solid var(--accent);
     }
     .agent-log-header svg {
       width: 12px; height: 12px;
@@ -1100,7 +1130,7 @@
             <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
           </div>
           <div class="no-api-banner-text">
-            Copy your API key from <a class="no-api-banner-link" href="https://ollama.com/settings/keys" target="_blank">ollama.com/settings/keys</a> and paste it in <button class="no-api-settings-btn" id="noApiSettingsBtn">Ollama Cloud</button> in Settings.
+            Copy your API key from <a class="no-api-banner-link" href="https://ollama.com/settings/keys" target="_blank">ollama.com/settings/keys</a> and paste it in <button class="no-api-settings-btn" id="noApiSettingsBtn">Ollama Cloud (free)</button> in Settings.
           </div>
         </div>
 
