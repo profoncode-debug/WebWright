@@ -75,17 +75,18 @@
 
   /* ── Rotating Placeholders ── */
   var placeholders = [
-    "Tip: LLM timing out? Increase timeout in Settings",
-    "Tip: Vision escalates automatically when DOM fails",
-    "Tip: Set a Vision model in Settings",
-    "Tip: Long tasks? Raise Wall Timeout in Settings",
-    "Tip: Speed up tasks — lower Step Delay in Settings",
-    "Tip: More steps? Raise Max Steps in Settings",
-    "Tip: Agent looping? Try a smarter model",
-    "Tip: Payments & passwords need your input",
-    "Tip: Ctrl+Enter to run agent mode",
-    "Tip: Enter = chat  •  Ctrl+Enter = automate",
-    "Tip: Claude Opus 4.6 works best currently...",
+    "LLM timing out? Increase timeout",
+    "Vision escalates automatically ",
+    "Set a Vision model if not done yet.",
+    "Long tasks? Use Kimi k 2.5 ",
+    "Speed up tasks — lower Step Delay ",
+    "More steps? Raise Max Steps in Settings",
+    "Agent looping? Try a smarter model",
+    "Payments & passwords need your input",
+    "Ctrl+Enter to run agent mode",
+    "Enter = chat  •  Ctrl+Enter = automate",
+    "Claude Sonnet 4.6 best for paid",
+    "Agent hallucinating? Try better models."
   ];
 
   /* ── Suggestion Pool (50+) ── */
