@@ -997,6 +997,133 @@
     }
 
     /* ═══════════════════════════════════════════
+       Research Drawer
+       ═══════════════════════════════════════════ */
+    .research-drawer {
+      flex-shrink: 0; border-top: 1px solid var(--border);
+      background: var(--bg-1); max-height: 0; overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    .research-drawer.open { max-height: 70vh; }
+    .research-inner { padding: 12px 10px; max-height: calc(70vh - 2px); overflow-y: auto; }
+    .research-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .research-head-text { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .research-hint { font-size: 10px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
+
+    .research-input-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .research-query-input {
+      flex: 1; padding: 7px 9px;
+      background: var(--bg-root); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary);
+      font-family: var(--sans); font-size: 11px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .research-query-input:focus { border-color: rgba(124,106,239,0.4); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .research-query-input::placeholder { color: var(--text-muted); }
+
+    .research-start-btn {
+      padding: 7px 14px; font-size: 11px; font-weight: 600;
+      border-radius: var(--radius-sm); border: none;
+      background: var(--accent); color: #fff; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .research-start-btn:hover { background: var(--accent-light); }
+    .research-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .research-abort-btn {
+      padding: 7px 14px; font-size: 11px; font-weight: 600;
+      border-radius: var(--radius-sm); border: 1px solid rgba(248,113,113,0.3);
+      background: rgba(248,113,113,0.08); color: #f87171; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap; display: none;
+    }
+    .research-abort-btn:hover { background: rgba(248,113,113,0.18); }
+    .research-abort-btn.visible { display: inline-block; }
+
+    .research-progress { margin-bottom: 10px; }
+    .research-progress.hidden { display: none; }
+    .research-progress-title { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .research-source-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 8px; font-size: 11px; color: var(--text-secondary);
+      border-radius: var(--radius-sm); transition: background 0.15s;
+    }
+    .research-source-row:nth-child(even) { background: var(--bg-2); }
+    .research-source-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-muted); flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .research-source-dot.active { background: var(--amber); box-shadow: 0 0 6px var(--amber-glow); animation: dot-breathe 1s ease-in-out infinite; }
+    .research-source-dot.done { background: var(--green); box-shadow: 0 0 6px var(--green-glow); }
+    .research-source-dot.error { background: var(--red); box-shadow: 0 0 6px rgba(248,113,113,0.3); }
+    .research-source-dot.skipped { background: var(--text-muted); opacity: 0.4; }
+    .research-source-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .research-source-status { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+
+    .research-view-btn {
+      width: 100%; padding: 8px; font-size: 11px; font-weight: 600;
+      border-radius: var(--radius-sm); border: none;
+      background: var(--accent); color: #fff; cursor: pointer;
+      transition: all 0.15s; margin-bottom: 10px; display: none;
+    }
+    .research-view-btn:hover { background: var(--accent-light); }
+    .research-view-btn.visible { display: block; }
+
+    .research-reports-section { border-top: 1px solid var(--border); padding-top: 8px; }
+    .research-reports-section.hidden { display: none; }
+    .research-reports-title { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .research-report-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 8px; background: var(--bg-2);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      margin-bottom: 4px; cursor: pointer; transition: all 0.15s;
+    }
+    .research-report-item:hover { background: var(--accent-bg); border-color: var(--border-accent); }
+    .research-report-info { flex: 1; min-width: 0; }
+    .research-report-query { font-size: 11px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .research-report-meta { font-size: 9px; color: var(--text-muted); margin-top: 1px; }
+    .research-report-delete {
+      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; border-radius: 4px;
+      color: var(--text-tertiary); cursor: pointer; transition: all 0.15s;
+    }
+    .research-report-delete:hover { background: var(--bg-3); color: #f87171; }
+    .research-report-delete svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Research Report in Chat */
+    .research-report { margin: 4px 0; }
+    .research-report-heading {
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid var(--accent);
+    }
+    .research-source-card {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 6px;
+    }
+    .research-source-card-head {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+    }
+    .research-source-card-num {
+      font-size: 9px; font-weight: 700; color: #fff;
+      background: var(--accent); width: 18px; height: 18px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .research-source-card-title {
+      font-size: 11px; font-weight: 600; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
+    }
+    .research-source-card-title a { color: var(--accent); text-decoration: none; }
+    .research-source-card-title a:hover { text-decoration: underline; }
+    .research-source-card-summary {
+      font-size: 10.5px; color: var(--text-secondary); line-height: 1.5;
+    }
+    .research-source-card-url {
+      font-size: 9px; color: var(--text-muted); margin-top: 3px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ═══════════════════════════════════════════
        Settings Drawer
        ═══════════════════════════════════════════ */
     .settings-drawer {
@@ -1090,6 +1217,9 @@
       <div class="logo-text">WebWright</div>
     </div>
     <div class="header-actions">
+      <button class="hdr-btn" id="researchBtn" title="Research Mode">
+        <span class="icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="11" cy="14" r="3"/><line x1="13.1" y1="16.1" x2="15" y2="18"/></svg></span>
+      </button>
       <button class="hdr-btn" id="personalInfoBtn" title="Personal Info">
         <span class="icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
       </button>
@@ -1290,6 +1420,33 @@
       </div>
       <div class="workflow-list" id="workflowList">
         <div class="workflow-empty" id="workflowEmpty">No saved workflows yet. Start recording to create one.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Research Drawer -->
+  <div class="research-drawer" id="researchDrawer">
+    <div class="research-inner">
+      <div class="research-head">
+        <span class="research-head-text">Research Mode</span>
+        <button class="hdr-btn" id="closeResearchBtn" title="Close">
+          <span class="icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+        </button>
+      </div>
+      <div class="research-hint">Enter a topic to research across 10+ sources. Results are synthesized into a comprehensive report.</div>
+      <div class="research-input-row">
+        <input class="research-query-input" id="researchQueryInput" type="text" placeholder="e.g. quantum computing breakthroughs" spellcheck="false" />
+        <button class="research-start-btn" id="researchStartBtn">Research</button>
+        <button class="research-abort-btn" id="researchAbortBtn">Abort</button>
+      </div>
+      <div class="research-progress hidden" id="researchProgress">
+        <div class="research-progress-title">Sources</div>
+        <div id="researchSourceList"></div>
+      </div>
+      <button class="research-view-btn" id="researchViewBtn">View Report</button>
+      <div class="research-reports-section hidden" id="researchReportsSection">
+        <div class="research-reports-title">Previous Reports</div>
+        <div id="researchReportsList"></div>
       </div>
     </div>
   </div>

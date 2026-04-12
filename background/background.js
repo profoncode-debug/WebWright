@@ -242,6 +242,25 @@ const chatState = {
 };
 
 /* ───────────────────────────────────────────
+ * Research State
+ * ─────────────────────────────────────────── */
+
+const researchState = {
+  running: false,
+  aborted: false,
+  query: "",
+  tabId: null,
+  sources: [],       // { name, url, status, statusText }
+  results: [],       // completed source results
+  currentSourceIndex: 0,
+  reportId: null,
+  visitedUrls: new Set()
+};
+
+const RESEARCH_KEY = "webwright_research_reports";
+const MAX_RESEARCH_REPORTS = 5;
+
+/* ───────────────────────────────────────────
  * Provider Defaults
  * ─────────────────────────────────────────── */
 
@@ -3518,10 +3537,348 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       })();
       return true;
     }
+
+    // ══════════════════════════════════════════
+    // Research Mode Messages
+    // ══════════════════════════════════════════
+
+    case "RESEARCH_START": {
+      const query = msg.query;
+      if (!query) { sendResponse({ error: "Empty query." }); return true; }
+      if (researchState.running) { sendResponse({ error: "Research already running." }); return true; }
+      if (agentState.running) { sendResponse({ error: "Agent is running. Wait for it to finish." }); return true; }
+      (async () => {
+        try {
+          await loadConfig();
+          runResearchPipeline(query);
+          sendResponse({ success: true });
+        } catch (err) {
+          sendResponse({ error: err.message });
+        }
+      })();
+      return true;
+    }
+    case "RESEARCH_ABORT": {
+      researchState.aborted = true;
+      sendResponse({ success: true });
+      return true;
+    }
+    case "RESEARCH_LIST_REPORTS": {
+      (async () => {
+        const reports = await loadResearchReports();
+        sendResponse({ reports: reports.map(r => ({ id: r.id, query: r.query, createdAt: r.createdAt, status: r.status, sources: r.sources ? r.sources.map(s => ({ sourceName: s.sourceName })) : [] })) });
+      })();
+      return true;
+    }
+    case "RESEARCH_VIEW_REPORT": {
+      (async () => {
+        const reports = await loadResearchReports();
+        const rpt = reports.find(r => r.id === msg.id);
+        if (!rpt) { sendResponse({ error: "Report not found." }); return; }
+        sendResponse({ success: true, report: rpt });
+      })();
+      return true;
+    }
+    case "RESEARCH_DELETE_REPORT": {
+      (async () => {
+        await deleteResearchReport(msg.id);
+        sendResponse({ success: true });
+      })();
+      return true;
+    }
   }
 });
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ═══════════════════════════════════════════
+ * RESEARCH MODE — Pipeline & Storage
+ * ═══════════════════════════════════════════ */
+
+async function loadResearchReports() {
+  try {
+    const result = await chrome.storage.local.get(RESEARCH_KEY);
+    return result[RESEARCH_KEY] || [];
+  } catch { return []; }
+}
+
+async function saveResearchReport(report) {
+  const reports = await loadResearchReports();
+  reports.push(report);
+  const trimmed = reports.length > MAX_RESEARCH_REPORTS ? reports.slice(reports.length - MAX_RESEARCH_REPORTS) : reports;
+  await chrome.storage.local.set({ [RESEARCH_KEY]: trimmed });
+}
+
+async function deleteResearchReport(id) {
+  const reports = await loadResearchReports();
+  const filtered = reports.filter(r => r.id !== id);
+  await chrome.storage.local.set({ [RESEARCH_KEY]: filtered });
+}
+
+function broadcastResearchProgress() {
+  chrome.runtime.sendMessage({
+    type: "RESEARCH_PROGRESS",
+    sources: researchState.sources.map(s => ({ name: s.name, status: s.status, statusText: s.statusText }))
+  }).catch(() => {});
+}
+
+function broadcastResearchStatus(status, message, reportId) {
+  chrome.runtime.sendMessage({
+    type: "RESEARCH_STATUS",
+    status: status,
+    message: message || "",
+    reportId: reportId || null
+  }).catch(() => {});
+}
+
+function resetResearchState() {
+  researchState.running = false;
+  researchState.aborted = false;
+  researchState.query = "";
+  researchState.tabId = null;
+  researchState.sources = [];
+  researchState.results = [];
+  researchState.currentSourceIndex = 0;
+  researchState.reportId = null;
+  researchState.visitedUrls = new Set();
+}
+
+
+async function runResearchPipeline(query) {
+  resetResearchState();
+  researchState.running = true;
+  researchState.query = query;
+  researchState.reportId = "res_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+
+  let tab;
+  try {
+    tab = await chrome.tabs.create({ url: "about:blank", active: false });
+    researchState.tabId = tab.id;
+  } catch (err) {
+    broadcastResearchStatus("error", "Failed to create tab: " + err.message);
+    resetResearchState();
+    return;
+  }
+
+  const encodedQuery = encodeURIComponent(query);
+
+  /* ─── Phase 1: Google Search — screenshot AI summary + extract top 10 URLs ─── */
+  researchState.sources = [{ name: "Google Search", url: "https://www.google.com/search?q=" + encodedQuery, status: "active", statusText: "Searching..." }];
+  broadcastResearchProgress();
+
+  let googleResultUrls = [];
+  try {
+    await chrome.tabs.update(researchState.tabId, { url: "https://www.google.com/search?q=" + encodedQuery });
+    await waitForTabLoad(researchState.tabId, 30000);
+    await sleep(2000);
+
+    // Screenshot the Google page → vision LLM for overview summary
+    let googleSummaryText = "";
+    try {
+      const screenshot = await captureScreenshot(researchState.tabId);
+      if (screenshot) {
+        researchState.sources[0].statusText = "Summarizing...";
+        broadcastResearchProgress();
+        const visionPrompt = [
+          { role: "system", content: "You summarize Google search results pages. Focus on the AI Overview/summary at the top if present, plus the key information visible." },
+          { role: "user", content: `Summarize the overview and key information from this Google search results page about "${query}". Be concise (3-5 sentences).` }
+        ];
+        const visionResult = await callLLM(visionPrompt, agentState.visionModel || agentState.model, "ResearchGoogleVision", screenshot, { forceJson: false, timeout: 45000 });
+        googleSummaryText = visionResult._rawContent || visionResult.content || "";
+      }
+    } catch { /* vision failed */ }
+
+    // Extract SERP text for URL extraction
+    await ensureContentScript(researchState.tabId);
+    const summary = await capturePageSummary(researchState.tabId);
+    const serpText = typeof summary === "string" ? summary : (summary.text || summary.content || JSON.stringify(summary));
+
+    // Store Google overview as the first source result
+    researchState.results.push({
+      url: "https://www.google.com/search?q=" + encodedQuery,
+      title: "Google Search Overview",
+      sourceName: "Google Search",
+      summary: googleSummaryText || serpText.slice(0, 1000),
+      extractionMethod: googleSummaryText ? "vision" : "text",
+      timestamp: new Date().toISOString()
+    });
+
+    // Extract top 10 result URLs directly from Google DOM (not LLM — text has no URLs)
+    try {
+      const [{ result: domLinks }] = await chrome.scripting.executeScript({
+        target: { tabId: researchState.tabId },
+        func: () => {
+          const results = [];
+          const seen = new Set();
+          // Google organic results: div.g with an <a> containing <h3>
+          document.querySelectorAll("div.g").forEach(g => {
+            const a = g.querySelector("a[href]");
+            const h3 = g.querySelector("h3");
+            if (a && a.href && a.href.startsWith("http") && !a.href.includes("google.com")) {
+              if (!seen.has(a.href)) {
+                seen.add(a.href);
+                results.push({ url: a.href, title: h3 ? h3.textContent.trim() : "" });
+              }
+            }
+          });
+          // Fallback: any <a> with <h3> child (covers layout variations)
+          if (results.length < 5) {
+            document.querySelectorAll("a[href]").forEach(a => {
+              const h3 = a.querySelector("h3");
+              if (h3 && a.href.startsWith("http") && !a.href.includes("google.com") && !seen.has(a.href)) {
+                seen.add(a.href);
+                results.push({ url: a.href, title: h3.textContent.trim() });
+              }
+            });
+          }
+          return results.slice(0, 10);
+        }
+      });
+      if (domLinks && domLinks.length > 0) {
+        googleResultUrls = domLinks;
+      }
+    } catch { /* DOM extraction failed */ }
+
+    researchState.sources[0].status = "done";
+    researchState.sources[0].statusText = "Done";
+    researchState.visitedUrls.add("https://www.google.com/search?q=" + encodedQuery);
+  } catch (err) {
+    researchState.sources[0].status = "error";
+    researchState.sources[0].statusText = err.message.slice(0, 40);
+  }
+  broadcastResearchProgress();
+
+  if (researchState.aborted) { await finalizeResearch(); return; }
+
+  /* ─── Phase 2: Visit top 10 Google results ─── */
+  googleResultUrls.forEach((r, i) => {
+    researchState.sources.push({
+      name: r.title ? r.title.slice(0, 80) : "Result #" + (i + 1),
+      url: r.url, status: "pending", statusText: "Pending"
+    });
+  });
+  broadcastResearchProgress();
+
+  for (let i = 0; i < googleResultUrls.length; i++) {
+    if (researchState.aborted) break;
+
+    const src = googleResultUrls[i];
+    const sourceIdx = i + 1; // +1 because Google SERP is index 0
+    researchState.sources[sourceIdx].status = "active";
+    researchState.sources[sourceIdx].statusText = "Navigating...";
+    broadcastResearchProgress();
+
+    try {
+      researchState.visitedUrls.add(src.url);
+
+      await chrome.tabs.update(researchState.tabId, { url: src.url });
+      await waitForTabLoad(researchState.tabId, 30000);
+      await sleep(2000);
+
+      let extractedText = "";
+      let extractionMethod = "text";
+
+      try {
+        await ensureContentScript(researchState.tabId);
+        const pageSummary = await capturePageSummary(researchState.tabId);
+        extractedText = typeof pageSummary === "string" ? pageSummary : (pageSummary.text || pageSummary.content || JSON.stringify(pageSummary));
+      } catch {
+        extractedText = "";
+      }
+
+      // Cap at 1000 chars for summarization
+      extractedText = extractedText.slice(0, 1000);
+
+      // If text is sparse (<100 chars), try screenshot + vision
+      if (extractedText.trim().length < 100) {
+        try {
+          const screenshot = await captureScreenshot(researchState.tabId);
+          if (screenshot && (agentState.visionModel || agentState.model)) {
+            extractionMethod = "vision";
+            researchState.sources[sourceIdx].statusText = "Vision extract...";
+            broadcastResearchProgress();
+            const visionPrompt = [
+              { role: "system", content: "You extract and summarize the main content visible on this web page screenshot." },
+              { role: "user", content: `Describe the main content of this page relevant to the research query: "${query}". Focus on factual information, key points, and notable details. Be concise (3-5 sentences).` }
+            ];
+            const visionResult = await callLLM(visionPrompt, agentState.visionModel || agentState.model, "ResearchVision", screenshot, { forceJson: false, timeout: 45000 });
+            extractedText = visionResult._rawContent || visionResult.content || extractedText;
+          }
+        } catch { /* vision failed, use whatever text we have */ }
+      }
+
+      // Skip if still no meaningful content
+      if (extractedText.trim().length < 30) {
+        researchState.sources[sourceIdx].status = "error";
+        researchState.sources[sourceIdx].statusText = "No content";
+        broadcastResearchProgress();
+        continue;
+      }
+
+      // Summarize this source
+      researchState.sources[sourceIdx].statusText = "Summarizing...";
+      broadcastResearchProgress();
+
+      const summarizePrompt = [
+        { role: "system", content: "You are a research assistant. Summarize the following web page content concisely, focusing on information relevant to the research query. Include key facts, dates, names, and notable details. Be factual and objective." },
+        { role: "user", content: `Research query: "${query}"\nSource: ${src.title || src.url}\n\nPage content:\n${extractedText}\n\nProvide a concise summary (3-5 sentences) of the most relevant information from this source.` }
+      ];
+      const summaryResult = await callLLM(summarizePrompt, agentState.model, "ResearchSummary", null, { forceJson: false, timeout: 45000 });
+      const summaryText = summaryResult._rawContent || summaryResult.content || "";
+
+      researchState.results.push({
+        url: src.url,
+        title: src.title || "Result #" + (i + 1),
+        sourceName: src.title || "Result #" + (i + 1),
+        summary: summaryText,
+        extractionMethod: extractionMethod,
+        timestamp: new Date().toISOString()
+      });
+
+      researchState.sources[sourceIdx].status = "done";
+      researchState.sources[sourceIdx].statusText = "Done";
+    } catch (err) {
+      researchState.sources[sourceIdx].status = "error";
+      researchState.sources[sourceIdx].statusText = err.message.slice(0, 40);
+    }
+
+    broadcastResearchProgress();
+    await sleep(800);
+  }
+
+  await finalizeResearch();
+}
+
+async function finalizeResearch() {
+  const report = {
+    id: researchState.reportId,
+    query: researchState.query,
+    createdAt: new Date().toISOString(),
+    status: researchState.aborted ? "aborted" : "done",
+    sources: researchState.results
+  };
+
+  await saveResearchReport(report);
+
+  // Clean up research tab
+  try {
+    if (researchState.tabId) await chrome.tabs.remove(researchState.tabId);
+  } catch { /* tab may already be closed */ }
+
+  const status = researchState.aborted ? "aborted" : "done";
+  const reportId = researchState.reportId;
+
+  // Broadcast done with full report data so sidepanel can render it
+  chrome.runtime.sendMessage({
+    type: "RESEARCH_STATUS",
+    status: status,
+    message: status === "done" ? "Research complete" : "Research aborted",
+    reportId: reportId,
+    report: report
+  }).catch(() => {});
+
+  resetResearchState();
+}
 
 /* ───────────────────────────────────────────
  * Workflow Recording Control

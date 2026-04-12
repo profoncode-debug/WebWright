@@ -56,6 +56,16 @@
 
   var personalInfoBtn = document.getElementById("personalInfoBtn");
   var personalInfoDrawer = document.getElementById("personalInfoDrawer");
+  var researchBtn    = document.getElementById("researchBtn");
+  var researchDrawer = document.getElementById("researchDrawer");
+  var researchQueryInput = document.getElementById("researchQueryInput");
+  var researchStartBtn = document.getElementById("researchStartBtn");
+  var researchAbortBtn = document.getElementById("researchAbortBtn");
+  var researchProgress = document.getElementById("researchProgress");
+  var researchSourceList = document.getElementById("researchSourceList");
+  var researchViewBtn = document.getElementById("researchViewBtn");
+  var researchReportsSection = document.getElementById("researchReportsSection");
+  var researchReportsList = document.getElementById("researchReportsList");
   var noApiBanner    = document.getElementById("noApiBanner");
   var noApiSettingsBtn = document.getElementById("noApiSettingsBtn");
 
@@ -947,6 +957,8 @@
       settingsBtn.classList.remove("active");
       personalInfoDrawer.classList.remove("open");
       personalInfoBtn.classList.remove("active");
+      researchDrawer.classList.remove("open");
+      researchBtn.classList.remove("active");
     }
   }
 
@@ -963,6 +975,8 @@
       settingsBtn.classList.remove("active");
       workflowDrawer.classList.remove("open");
       workflowBtn.classList.remove("active");
+      researchDrawer.classList.remove("open");
+      researchBtn.classList.remove("active");
     }
   }
 
@@ -1005,6 +1019,197 @@
   async function savePersonalInfo() {
     await sendMsg({ type: "SAVE_PERSONAL_INFO", info: readPersonalInfo() });
     togglePersonalInfo();
+  }
+
+  /* ═══════════════════════════════════════════
+   * Research Mode
+   * ═══════════════════════════════════════════ */
+
+  var researchRunning = false;
+  var lastResearchReportId = null;
+
+  function toggleResearch() {
+    researchDrawer.classList.toggle("open");
+    researchBtn.classList.toggle("active");
+    if (researchDrawer.classList.contains("open")) {
+      loadResearchReports();
+      settingsDrawer.classList.remove("open");
+      settingsBtn.classList.remove("active");
+      workflowDrawer.classList.remove("open");
+      workflowBtn.classList.remove("active");
+      personalInfoDrawer.classList.remove("open");
+      personalInfoBtn.classList.remove("active");
+    }
+  }
+
+  async function startResearch() {
+    var query = researchQueryInput.value.trim();
+    if (!query || researchRunning || isRunning) return;
+    researchRunning = true;
+    lastResearchReportId = null;
+    researchStartBtn.disabled = true;
+    researchAbortBtn.classList.add("visible");
+    researchViewBtn.classList.remove("visible");
+    researchProgress.classList.remove("hidden");
+    researchSourceList.innerHTML = "";
+    var r = await sendMsg({ type: "RESEARCH_START", query: query });
+    if (r && r.error) {
+      researchRunning = false;
+      researchStartBtn.disabled = false;
+      researchAbortBtn.classList.remove("visible");
+      addChatMessage("system-info", "Research error: " + r.error);
+    }
+  }
+
+  async function abortResearch() {
+    await sendMsg({ type: "RESEARCH_ABORT" });
+  }
+
+  function updateResearchSources(sources) {
+    researchSourceList.innerHTML = "";
+    sources.forEach(function(src) {
+      var row = document.createElement("div");
+      row.className = "research-source-row";
+      var dot = document.createElement("div");
+      dot.className = "research-source-dot";
+      if (src.status === "active") dot.classList.add("active");
+      else if (src.status === "done") dot.classList.add("done");
+      else if (src.status === "error") dot.classList.add("error");
+      else if (src.status === "skipped") dot.classList.add("skipped");
+      var name = document.createElement("span");
+      name.className = "research-source-name";
+      name.textContent = src.name;
+      var stat = document.createElement("span");
+      stat.className = "research-source-status";
+      stat.textContent = src.statusText || "";
+      row.appendChild(dot);
+      row.appendChild(name);
+      row.appendChild(stat);
+      researchSourceList.appendChild(row);
+    });
+  }
+
+  function onResearchDone(reportId) {
+    researchRunning = false;
+    lastResearchReportId = reportId;
+    researchStartBtn.disabled = false;
+    researchAbortBtn.classList.remove("visible");
+    if (reportId) researchViewBtn.classList.add("visible");
+    loadResearchReports();
+  }
+
+  function renderResearchReport(report) {
+    if (!report) return;
+    hideEmpty();
+
+    var msg = document.createElement("div");
+    msg.className = "chat-msg assistant";
+
+    var bubble = document.createElement("div");
+    bubble.className = "chat-bubble";
+
+    var container = document.createElement("div");
+    container.className = "research-report";
+
+    // Title
+    var heading = document.createElement("div");
+    heading.className = "research-report-heading";
+    heading.textContent = "Research: " + (report.query || "Unknown");
+    container.appendChild(heading);
+
+    // Source cards
+    var sources = report.sources || [];
+    sources.forEach(function(src, i) {
+      var card = document.createElement("div");
+      card.className = "research-source-card";
+
+      var head = document.createElement("div");
+      head.className = "research-source-card-head";
+
+      var num = document.createElement("div");
+      num.className = "research-source-card-num";
+      num.textContent = String(i + 1);
+
+      var title = document.createElement("div");
+      title.className = "research-source-card-title";
+      if (src.url) {
+        var a = document.createElement("a");
+        a.href = src.url;
+        a.target = "_blank";
+        a.textContent = src.title || src.sourceName || src.url;
+        title.appendChild(a);
+      } else {
+        title.textContent = src.title || src.sourceName || "Source " + (i + 1);
+      }
+
+      head.appendChild(num);
+      head.appendChild(title);
+      card.appendChild(head);
+
+      if (src.summary) {
+        var summary = document.createElement("div");
+        summary.className = "research-source-card-summary";
+        summary.innerHTML = renderMarkdown(src.summary);
+        card.appendChild(summary);
+      }
+
+      if (src.url) {
+        var urlLine = document.createElement("div");
+        urlLine.className = "research-source-card-url";
+        urlLine.textContent = src.url;
+        card.appendChild(urlLine);
+      }
+
+      container.appendChild(card);
+    });
+
+    bubble.appendChild(container);
+    msg.appendChild(bubble);
+    streamInner.insertBefore(msg, chatTyping);
+    scrollToBottom();
+  }
+
+  async function viewResearchReport(id) {
+    var r = await sendMsg({ type: "RESEARCH_VIEW_REPORT", id: id });
+    if (r && r.report) renderResearchReport(r.report);
+  }
+
+  async function deleteResearchReport(id) {
+    await sendMsg({ type: "RESEARCH_DELETE_REPORT", id: id });
+    loadResearchReports();
+  }
+
+  async function loadResearchReports() {
+    var r = await sendMsg({ type: "RESEARCH_LIST_REPORTS" });
+    if (!r || !r.reports || r.reports.length === 0) {
+      researchReportsSection.classList.add("hidden");
+      return;
+    }
+    researchReportsSection.classList.remove("hidden");
+    researchReportsList.innerHTML = "";
+    r.reports.forEach(function(rpt) {
+      var item = document.createElement("div");
+      item.className = "research-report-item";
+      var info = document.createElement("div");
+      info.className = "research-report-info";
+      var q = document.createElement("div");
+      q.className = "research-report-query";
+      q.textContent = rpt.query;
+      var meta = document.createElement("div");
+      meta.className = "research-report-meta";
+      meta.textContent = new Date(rpt.createdAt).toLocaleDateString() + " · " + (rpt.sources ? rpt.sources.length : 0) + " sources";
+      info.appendChild(q);
+      info.appendChild(meta);
+      info.addEventListener("click", function() { viewResearchReport(rpt.id); });
+      var del = document.createElement("button");
+      del.className = "research-report-delete";
+      del.title = "Delete";
+      del.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
+      del.addEventListener("click", function(e) { e.stopPropagation(); deleteResearchReport(rpt.id); });
+      item.appendChild(info);
+      item.appendChild(del);
+      researchReportsList.appendChild(item);
+    });
   }
 
   async function loadWorkflowList() {
@@ -1277,6 +1482,8 @@
       personalInfoBtn.classList.remove("active");
       workflowDrawer.classList.remove("open");
       workflowBtn.classList.remove("active");
+      researchDrawer.classList.remove("open");
+      researchBtn.classList.remove("active");
     }
   }
 
@@ -1439,6 +1646,26 @@
       replayPausedBar.classList.remove("hidden");
     }
 
+    // Research mode broadcasts
+    if (msg.type === "RESEARCH_PROGRESS") {
+      updateResearchSources(msg.sources || []);
+    }
+    if (msg.type === "RESEARCH_STATUS") {
+      if (msg.status === "done" || msg.status === "error" || msg.status === "aborted") {
+        onResearchDone(msg.reportId || null);
+        if (msg.status === "error") {
+          addChatMessage("system-info", "Research error: " + (msg.message || "Unknown error"));
+        } else if (msg.status === "done" && msg.report) {
+          renderResearchReport(msg.report);
+        } else if (msg.status === "aborted" && msg.report) {
+          addChatMessage("system-info", "Research aborted. Partial results:");
+          renderResearchReport(msg.report);
+        } else if (msg.status === "aborted") {
+          addChatMessage("system-info", "Research aborted.");
+        }
+      }
+    }
+
   });
 
   /* ═══════════════════════════════════════════
@@ -1487,6 +1714,18 @@
   document.getElementById("closePersonalInfoBtn").addEventListener("click", togglePersonalInfo);
   document.getElementById("cancelPersonalInfoBtn").addEventListener("click", togglePersonalInfo);
   document.getElementById("savePersonalInfoBtn").addEventListener("click", savePersonalInfo);
+
+  // Research Mode
+  researchBtn.addEventListener("click", toggleResearch);
+  document.getElementById("closeResearchBtn").addEventListener("click", toggleResearch);
+  researchStartBtn.addEventListener("click", startResearch);
+  researchAbortBtn.addEventListener("click", abortResearch);
+  researchViewBtn.addEventListener("click", function() {
+    if (lastResearchReportId) viewResearchReport(lastResearchReportId);
+  });
+  researchQueryInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); startResearch(); }
+  });
 
 
   // Keyboard: Enter = chat, Ctrl+Enter = agent
