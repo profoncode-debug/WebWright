@@ -43,6 +43,7 @@ const agentState = {
   apiKey: "",
   model: "",
   visionModel: "",
+  researchModel: "",
 
 };
 
@@ -254,7 +255,8 @@ const researchState = {
   results: [],       // completed source results
   currentSourceIndex: 0,
   reportId: null,
-  visitedUrls: new Set()
+  visitedUrls: new Set(),
+  abortController: null  // AbortController for instant cancellation
 };
 
 const RESEARCH_KEY = "webwright_research_reports";
@@ -269,7 +271,8 @@ const PROVIDER_DEFAULTS = {
     endpoint: "https://ollama.com",
     apiKey: "",
     model: "kimi-k2.5:cloud",
-    visionModel: "kimi-k2.5:cloud"
+    visionModel: "kimi-k2.5:cloud",
+    researchModel: "gemini-3-flash-preview:cloud"
   },
   ollama_local: {
     endpoint: "http://localhost:11434",
@@ -468,6 +471,8 @@ function applyConfig(cfg) {
   }
   // Store apiFormat for custom provider routing in callLLM
   agentState.apiFormat = p.apiFormat || "";
+  // Research model — falls back to primary model if not set
+  agentState.researchModel = p.researchModel || agentState.model;
 }
 
 /* ───────────────────────────────────────────
@@ -3249,10 +3254,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       loadConfig().then(async () => {
         if (wantsBg) {
           try {
-            const newTab = await chrome.tabs.create({ url: "https://www.google.com", active: false });
+            const newTab = await chrome.tabs.create({ url: "https://www.google.com", active: true });
             broadcastLog({
               kind: "system",
-              label: "Background Tab Created",
+              label: "New Tab Created",
               data: { reason: "Goal requested background execution. New tab opened without switching.", tabId: newTab.id }
             });
             runAgentLoop(goal, newTab.id);
@@ -3358,9 +3363,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             runAgentLoop(text, tabId);
             sendResponse({ success: true, tabId: tabId });
           } else {
-            // Create background tab for agent — google.com for content script injection,
+            // Create new tab for agent — google.com for content script injection,
             // agent will navigate directly to the relevant site on its first step.
-            const newTab = await chrome.tabs.create({ url: "https://www.google.com", active: false });
+            const newTab = await chrome.tabs.create({ url: "https://www.google.com", active: true });
             runAgentLoop(text, newTab.id);
             sendResponse({ success: true, tabId: newTab.id });
           }
@@ -3560,6 +3565,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     case "RESEARCH_ABORT": {
       researchState.aborted = true;
+      if (researchState.abortController) researchState.abortController.abort();
+      // Kill the research tab immediately so navigation stops
+      if (researchState.tabId) {
+        chrome.tabs.remove(researchState.tabId).catch(() => {});
+        researchState.tabId = null;
+      }
       sendResponse({ success: true });
       return true;
     }
@@ -3574,8 +3585,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       (async () => {
         const reports = await loadResearchReports();
         const rpt = reports.find(r => r.id === msg.id);
-        if (!rpt) { sendResponse({ error: "Report not found." }); return; }
-        sendResponse({ success: true, report: rpt });
+        if (!rpt || !rpt.htmlReport) { sendResponse({ error: "Report not found." }); return; }
+        const encoded = btoa(unescape(encodeURIComponent(rpt.htmlReport)));
+        await chrome.tabs.create({ url: "data:text/html;base64," + encoded });
+        sendResponse({ success: true });
       })();
       return true;
     }
@@ -3641,18 +3654,41 @@ function resetResearchState() {
   researchState.currentSourceIndex = 0;
   researchState.reportId = null;
   researchState.visitedUrls = new Set();
+  researchState.abortController = null;
+}
+
+// Returns a promise that rejects instantly when abort is signalled.
+// Race any blocking operation against this to make it cancellable.
+function researchAbortSignal() {
+  if (!researchState.abortController) return new Promise(() => {}); // never resolves
+  return new Promise((_, reject) => {
+    if (researchState.abortController.signal.aborted) { reject(new Error("aborted")); return; }
+    researchState.abortController.signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true });
+  });
+}
+
+// Abort-aware sleep — resolves after ms OR rejects instantly on abort
+function researchSleep(ms) {
+  return Promise.race([
+    new Promise(r => setTimeout(r, ms)),
+    researchAbortSignal()
+  ]);
 }
 
 
 async function runResearchPipeline(query) {
   resetResearchState();
   researchState.running = true;
+  researchState.abortController = new AbortController();
   researchState.query = query;
   researchState.reportId = "res_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
 
+  // Helper: race any promise against the abort signal
+  function raceAbort(p) { return Promise.race([p, researchAbortSignal()]); }
+
   let tab;
   try {
-    tab = await chrome.tabs.create({ url: "about:blank", active: false });
+    tab = await chrome.tabs.create({ url: "about:blank", active: true });
     researchState.tabId = tab.id;
   } catch (err) {
     broadcastResearchStatus("error", "Failed to create tab: " + err.message);
@@ -3668,14 +3704,14 @@ async function runResearchPipeline(query) {
 
   let googleResultUrls = [];
   try {
-    await chrome.tabs.update(researchState.tabId, { url: "https://www.google.com/search?q=" + encodedQuery });
-    await waitForTabLoad(researchState.tabId, 30000);
-    await sleep(2000);
+    await raceAbort(chrome.tabs.update(researchState.tabId, { url: "https://www.google.com/search?q=" + encodedQuery }));
+    await raceAbort(waitForTabLoad(researchState.tabId, 30000));
+    await researchSleep(2000);
 
     // Screenshot the Google page → vision LLM for overview summary
     let googleSummaryText = "";
     try {
-      const screenshot = await captureScreenshot(researchState.tabId);
+      const screenshot = await raceAbort(captureScreenshot(researchState.tabId));
       if (screenshot) {
         researchState.sources[0].statusText = "Summarizing...";
         broadcastResearchProgress();
@@ -3683,14 +3719,19 @@ async function runResearchPipeline(query) {
           { role: "system", content: "You summarize Google search results pages. Focus on the AI Overview/summary at the top if present, plus the key information visible." },
           { role: "user", content: `Summarize the overview and key information from this Google search results page about "${query}". Be concise (3-5 sentences).` }
         ];
-        const visionResult = await callLLM(visionPrompt, agentState.visionModel || agentState.model, "ResearchGoogleVision", screenshot, { forceJson: false, timeout: 45000 });
+        const visionResult = await raceAbort(callLLM(visionPrompt, agentState.researchModel, "ResearchGoogleVision", screenshot, { forceJson: false, timeout: 45000 }));
         googleSummaryText = visionResult._rawContent || visionResult.content || "";
       }
-    } catch { /* vision failed */ }
+    } catch (ex) {
+      if (researchState.aborted) throw ex;
+      /* vision failed */
+    }
+
+    if (researchState.aborted) throw new Error("aborted");
 
     // Extract SERP text for URL extraction
-    await ensureContentScript(researchState.tabId);
-    const summary = await capturePageSummary(researchState.tabId);
+    await raceAbort(ensureContentScript(researchState.tabId));
+    const summary = await raceAbort(capturePageSummary(researchState.tabId));
     const serpText = typeof summary === "string" ? summary : (summary.text || summary.content || JSON.stringify(summary));
 
     // Store Google overview as the first source result
@@ -3705,12 +3746,11 @@ async function runResearchPipeline(query) {
 
     // Extract top 10 result URLs directly from Google DOM (not LLM — text has no URLs)
     try {
-      const [{ result: domLinks }] = await chrome.scripting.executeScript({
+      const [{ result: domLinks }] = await raceAbort(chrome.scripting.executeScript({
         target: { tabId: researchState.tabId },
         func: () => {
           const results = [];
           const seen = new Set();
-          // Google organic results: div.g with an <a> containing <h3>
           document.querySelectorAll("div.g").forEach(g => {
             const a = g.querySelector("a[href]");
             const h3 = g.querySelector("h3");
@@ -3721,7 +3761,6 @@ async function runResearchPipeline(query) {
               }
             }
           });
-          // Fallback: any <a> with <h3> child (covers layout variations)
           if (results.length < 5) {
             document.querySelectorAll("a[href]").forEach(a => {
               const h3 = a.querySelector("h3");
@@ -3733,16 +3772,20 @@ async function runResearchPipeline(query) {
           }
           return results.slice(0, 10);
         }
-      });
+      }));
       if (domLinks && domLinks.length > 0) {
         googleResultUrls = domLinks;
       }
-    } catch { /* DOM extraction failed */ }
+    } catch (ex) {
+      if (researchState.aborted) throw ex;
+      /* DOM extraction failed */
+    }
 
     researchState.sources[0].status = "done";
     researchState.sources[0].statusText = "Done";
     researchState.visitedUrls.add("https://www.google.com/search?q=" + encodedQuery);
   } catch (err) {
+    if (researchState.aborted) { await finalizeResearch(); return; }
     researchState.sources[0].status = "error";
     researchState.sources[0].statusText = err.message.slice(0, 40);
   }
@@ -3765,85 +3808,116 @@ async function runResearchPipeline(query) {
     const src = googleResultUrls[i];
     const sourceIdx = i + 1; // +1 because Google SERP is index 0
     researchState.sources[sourceIdx].status = "active";
-    researchState.sources[sourceIdx].statusText = "Navigating...";
+    researchState.sources[sourceIdx].statusText = "Opening page...";
     broadcastResearchProgress();
 
     try {
-      researchState.visitedUrls.add(src.url);
+      await Promise.race([
+        (async () => {
+          researchState.visitedUrls.add(src.url);
 
-      await chrome.tabs.update(researchState.tabId, { url: src.url });
-      await waitForTabLoad(researchState.tabId, 30000);
-      await sleep(2000);
+          // All awaits race against both the 60s hard timeout AND the abort signal
+          await raceAbort(chrome.tabs.update(researchState.tabId, { url: src.url }));
+          await raceAbort(waitForTabLoad(researchState.tabId, 15000));
+          await researchSleep(1500);
 
-      let extractedText = "";
-      let extractionMethod = "text";
+          // Scrape text
+          researchState.sources[sourceIdx].statusText = "Scraping text...";
+          broadcastResearchProgress();
 
-      try {
-        await ensureContentScript(researchState.tabId);
-        const pageSummary = await capturePageSummary(researchState.tabId);
-        extractedText = typeof pageSummary === "string" ? pageSummary : (pageSummary.text || pageSummary.content || JSON.stringify(pageSummary));
-      } catch {
-        extractedText = "";
-      }
+          let extractedText = "";
+          let extractionMethod = "text";
 
-      // Cap at 1000 chars for summarization
-      extractedText = extractedText.slice(0, 1000);
-
-      // If text is sparse (<100 chars), try screenshot + vision
-      if (extractedText.trim().length < 100) {
-        try {
-          const screenshot = await captureScreenshot(researchState.tabId);
-          if (screenshot && (agentState.visionModel || agentState.model)) {
-            extractionMethod = "vision";
-            researchState.sources[sourceIdx].statusText = "Vision extract...";
-            broadcastResearchProgress();
-            const visionPrompt = [
-              { role: "system", content: "You extract and summarize the main content visible on this web page screenshot." },
-              { role: "user", content: `Describe the main content of this page relevant to the research query: "${query}". Focus on factual information, key points, and notable details. Be concise (3-5 sentences).` }
-            ];
-            const visionResult = await callLLM(visionPrompt, agentState.visionModel || agentState.model, "ResearchVision", screenshot, { forceJson: false, timeout: 45000 });
-            extractedText = visionResult._rawContent || visionResult.content || extractedText;
+          try {
+            await raceAbort(ensureContentScript(researchState.tabId));
+            const pageSummary = await raceAbort(capturePageSummary(researchState.tabId));
+            extractedText = typeof pageSummary === "string" ? pageSummary : (pageSummary.text || pageSummary.content || JSON.stringify(pageSummary));
+          } catch (ex) {
+            if (researchState.aborted) throw ex;
+            extractedText = "";
           }
-        } catch { /* vision failed, use whatever text we have */ }
-      }
 
-      // Skip if still no meaningful content
-      if (extractedText.trim().length < 30) {
-        researchState.sources[sourceIdx].status = "error";
-        researchState.sources[sourceIdx].statusText = "No content";
-        broadcastResearchProgress();
-        continue;
-      }
+          extractedText = extractedText.slice(0, 2500);
+          if (researchState.aborted) throw new Error("aborted");
 
-      // Summarize this source
-      researchState.sources[sourceIdx].statusText = "Summarizing...";
-      broadcastResearchProgress();
+          // If text is sparse (<100 chars), try screenshot + vision
+          if (extractedText.trim().length < 100) {
+            researchState.sources[sourceIdx].statusText = "Low text, capturing screenshot...";
+            broadcastResearchProgress();
+            try {
+              const screenshot = await raceAbort(captureScreenshot(researchState.tabId));
+              if (screenshot && (agentState.visionModel || agentState.model)) {
+                extractionMethod = "vision";
+                researchState.sources[sourceIdx].statusText = "Sent to vision LLM...";
+                broadcastResearchProgress();
+                const visionPrompt = [
+                  { role: "system", content: "You extract and summarize the main content visible on this web page screenshot." },
+                  { role: "user", content: `Describe the main content of this page relevant to the research query: "${query}". Focus on factual information, key points, and notable details.` }
+                ];
+                const visionResult = await raceAbort(callLLM(visionPrompt, agentState.researchModel, "ResearchVision", screenshot, { forceJson: false, timeout: 45000 }));
+                extractedText = visionResult._rawContent || visionResult.content || extractedText;
+              }
+            } catch (ex) {
+              if (researchState.aborted) throw ex;
+              /* vision failed, continue with whatever text we have */
+            }
+          }
 
-      const summarizePrompt = [
-        { role: "system", content: "You are a research assistant. Summarize the following web page content concisely, focusing on information relevant to the research query. Include key facts, dates, names, and notable details. Be factual and objective." },
-        { role: "user", content: `Research query: "${query}"\nSource: ${src.title || src.url}\n\nPage content:\n${extractedText}\n\nProvide a concise summary (3-5 sentences) of the most relevant information from this source.` }
-      ];
-      const summaryResult = await callLLM(summarizePrompt, agentState.model, "ResearchSummary", null, { forceJson: false, timeout: 45000 });
-      const summaryText = summaryResult._rawContent || summaryResult.content || "";
+          if (researchState.aborted) throw new Error("aborted");
 
-      researchState.results.push({
-        url: src.url,
-        title: src.title || "Result #" + (i + 1),
-        sourceName: src.title || "Result #" + (i + 1),
-        summary: summaryText,
-        extractionMethod: extractionMethod,
-        timestamp: new Date().toISOString()
-      });
+          // Skip if still no meaningful content
+          if (extractedText.trim().length < 30) {
+            researchState.sources[sourceIdx].status = "error";
+            researchState.sources[sourceIdx].statusText = "No content";
+            broadcastResearchProgress();
+            return;
+          }
 
-      researchState.sources[sourceIdx].status = "done";
-      researchState.sources[sourceIdx].statusText = "Done";
+          // Summarize this source
+          const charCount = extractedText.trim().length;
+          researchState.sources[sourceIdx].statusText = "Scraped " + charCount + " chars, sent to LLM...";
+          broadcastResearchProgress();
+
+          const summarizePrompt = [
+            { role: "system", content: "You are a research assistant. Summarize the following web page content in detail, focusing on information relevant to the research query. Include key facts, dates, names, statistics, and notable details. Be factual and objective." },
+            { role: "user", content: `Research query: "${query}"\nSource: ${src.title || src.url}\n\nPage content:\n${extractedText}\n\nProvide a detailed summary of 15-25 lines covering all the important information from this source relevant to the research query.` }
+          ];
+
+          researchState.sources[sourceIdx].statusText = "Waiting for summary...";
+          broadcastResearchProgress();
+
+          const summaryResult = await raceAbort(callLLM(summarizePrompt, agentState.researchModel, "ResearchSummary", null, { forceJson: false, timeout: 45000 }));
+          const summaryText = summaryResult._rawContent || summaryResult.content || "";
+
+          researchState.results.push({
+            url: src.url,
+            title: src.title || "Result #" + (i + 1),
+            sourceName: src.title || "Result #" + (i + 1),
+            summary: summaryText,
+            extractionMethod: extractionMethod,
+            timestamp: new Date().toISOString()
+          });
+
+          researchState.sources[sourceIdx].status = "done";
+          researchState.sources[sourceIdx].statusText = "Done";
+        })(),
+        // Hard 60s timeout per source
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout (60s)")), 60000)),
+        // Abort signal — rejects instantly when user clicks abort
+        researchAbortSignal()
+      ]);
     } catch (err) {
+      if (researchState.aborted) {
+        researchState.sources[sourceIdx].status = "error";
+        researchState.sources[sourceIdx].statusText = "Aborted";
+        break;
+      }
       researchState.sources[sourceIdx].status = "error";
       researchState.sources[sourceIdx].statusText = err.message.slice(0, 40);
     }
 
     broadcastResearchProgress();
-    await sleep(800);
+    try { await researchSleep(500); } catch { break; } // break if aborted during gap
   }
 
   await finalizeResearch();
@@ -3855,10 +3929,51 @@ async function finalizeResearch() {
     query: researchState.query,
     createdAt: new Date().toISOString(),
     status: researchState.aborted ? "aborted" : "done",
-    sources: researchState.results
+    sources: researchState.results,
+    conclusion: ""
   };
 
+  // Synthesize a final conclusion from all source summaries (skip if aborted)
+  if (researchState.results.length > 0 && !researchState.aborted) {
+    researchState.sources.push({ name: "Generating Conclusion", url: "", status: "active", statusText: "Synthesizing..." });
+    broadcastResearchProgress();
+
+    try {
+      let allSummaries = "";
+      researchState.results.forEach(function(s, i) {
+        allSummaries += "Source " + (i + 1) + " (" + (s.title || s.sourceName || s.url) + "):\n" + (s.summary || "No summary.") + "\n\n";
+      });
+      allSummaries = allSummaries.slice(0, 8000);
+
+      const conclusionPrompt = [
+        { role: "system", content: "You are a research analyst. Given multiple source summaries about a topic, write a comprehensive final conclusion. Structure it with clear paragraphs. Cover: key findings, common themes, notable details, and any conflicting information. Be factual, thorough, and well-organized. Use markdown formatting (bold for key terms, bullet lists where appropriate)." },
+        { role: "user", content: 'Research query: "' + researchState.query + '"\n\nSource summaries:\n' + allSummaries + "\nWrite a comprehensive conclusion synthesizing all the above sources. 15-25 lines." }
+      ];
+
+      // Race conclusion LLM call against abort signal
+      const conclusionResult = await Promise.race([
+        callLLM(conclusionPrompt, agentState.researchModel, "ResearchConclusion", null, { forceJson: false, timeout: 45000 }),
+        researchAbortSignal()
+      ]);
+      report.conclusion = conclusionResult._rawContent || conclusionResult.content || "";
+
+      researchState.sources[researchState.sources.length - 1].status = "done";
+      researchState.sources[researchState.sources.length - 1].statusText = "Done";
+    } catch {
+      researchState.sources[researchState.sources.length - 1].status = "error";
+      researchState.sources[researchState.sources.length - 1].statusText = researchState.aborted ? "Aborted" : "Failed";
+    }
+    broadcastResearchProgress();
+  }
+
+  report.htmlReport = generateResearchHTML(report);
   await saveResearchReport(report);
+
+  // Open report in new tab
+  try {
+    const encoded = btoa(unescape(encodeURIComponent(report.htmlReport)));
+    await chrome.tabs.create({ url: "data:text/html;base64," + encoded });
+  } catch { /* tab creation failed */ }
 
   // Clean up research tab
   try {
@@ -3867,17 +3982,326 @@ async function finalizeResearch() {
 
   const status = researchState.aborted ? "aborted" : "done";
   const reportId = researchState.reportId;
-
-  // Broadcast done with full report data so sidepanel can render it
-  chrome.runtime.sendMessage({
-    type: "RESEARCH_STATUS",
-    status: status,
-    message: status === "done" ? "Research complete" : "Research aborted",
-    reportId: reportId,
-    report: report
-  }).catch(() => {});
-
+  broadcastResearchStatus(status, status === "done" ? "Research complete" : "Research aborted", reportId);
   resetResearchState();
+}
+
+/* ── HTML Report Generator ── */
+function escapeHtml(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function summaryToHtml(text) {
+  if (!text) return "<p>No summary available.</p>";
+  return text.split(/\n\n+/).map(function(block) {
+    block = block.trim();
+    if (!block) return "";
+    block = escapeHtml(block);
+    block = block.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    block = block.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    if (/^[-•]\s/.test(block)) {
+      var items = block.split(/\n/).map(function(l) {
+        return "<li>" + l.replace(/^[-•]\s*/, "") + "</li>";
+      }).join("");
+      return "<ul>" + items + "</ul>";
+    }
+    block = block.replace(/\n/g, "<br>");
+    return "<p>" + block + "</p>";
+  }).join("");
+}
+
+function generateResearchHTML(report) {
+  const q = escapeHtml(report.query);
+  const date = new Date(report.createdAt).toLocaleString();
+  const sourceCount = report.sources ? report.sources.length : 0;
+
+  // Separate Google overview from other sources
+  let googleOverview = null;
+  const otherSources = [];
+  (report.sources || []).forEach(function(s) {
+    if (s.sourceName === "Google Search" || s.sourceName === "Google Search Overview") {
+      googleOverview = s;
+    } else {
+      otherSources.push(s);
+    }
+  });
+
+  // Conclusion section (synthesized from all sources)
+  let conclusionHtml = "";
+  if (report.conclusion) {
+    conclusionHtml = `
+      <section class="conclusion">
+        <div class="section-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Final Conclusion</div>
+        <div class="conclusion-body">${summaryToHtml(report.conclusion)}</div>
+      </section>`;
+  }
+
+  // Google overview section
+  let overviewHtml = "";
+  if (googleOverview && googleOverview.summary) {
+    overviewHtml = `
+      <section class="overview">
+        <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Google AI Overview</div>
+        <div class="prose">${summaryToHtml(googleOverview.summary)}</div>
+      </section>`;
+  }
+
+  // Source cards for masonry grid
+  let sourceCards = "";
+  otherSources.forEach(function(s, i) {
+    const title = escapeHtml(s.title || s.sourceName || "Source " + (i + 1));
+    const url = escapeHtml(s.url || "");
+    const bodyHtml = summaryToHtml(s.summary);
+    const method = s.extractionMethod === "vision"
+      ? '<span class="badge vision">Vision</span>'
+      : '<span class="badge text">Text</span>';
+    sourceCards += `
+      <article class="card">
+        <header class="card-head">
+          <span class="card-num">${i + 1}</span>
+          <div class="card-meta">
+            <a class="card-title" href="${url}" target="_blank" rel="noopener">${title}</a>
+            <div class="card-url">${url}</div>
+          </div>
+          ${method}
+        </header>
+        <div class="card-body prose">${bodyHtml}</div>
+      </article>`;
+  });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Research: ${q}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent: #7c6aef; --accent-light: #a78bfa; --accent-dim: rgba(124,106,239,0.10);
+      --bg: #f4f5f9; --bg-card: #ffffff; --bg-header: #111019;
+      --text: #1c1c2e; --text-body: #374151; --muted: #8b8da6;
+      --border: #e5e7eb; --radius: 16px;
+      --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --font-serif: "Source Serif 4", "Georgia", "Times New Roman", serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0b14; --bg-card: #151522; --bg-header: #0b0b14;
+        --text: #e8e9f0; --text-body: #c0c3d0; --muted: #6b6d82;
+        --border: #262638;
+      }
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg); color: var(--text);
+      line-height: 1.65; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--bg-header); color: #fff;
+      padding: 60px 32px 52px; text-align: center;
+      position: relative;
+    }
+    .header::after {
+      content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent));
+    }
+    .header h1 {
+      font-family: var(--font-sans);
+      font-size: 2.4em; font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1.15; margin-bottom: 8px;
+    }
+    .header .sub { font-size: 0.88em; color: rgba(255,255,255,0.4); font-weight: 400; }
+
+    /* ── Container ── */
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 0 28px 72px; }
+
+    /* ── Stats bar ── */
+    .stats {
+      display: flex; gap: 12px; justify-content: center;
+      margin: -22px auto 36px; position: relative; z-index: 1;
+    }
+    .stat {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 22px; text-align: center;
+      min-width: 110px; box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+    }
+    .stat b { display: block; font-size: 1.4em; font-weight: 700; color: var(--accent); }
+    .stat small {
+      font-size: 0.68em; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.8px; font-weight: 600;
+    }
+
+    /* ── Section labels ── */
+    .section-label {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 0.72em; font-weight: 700; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--accent);
+    }
+    .section-label svg { flex-shrink: 0; }
+
+    /* ── Prose (shared text styling) ── */
+    .prose {
+      font-family: var(--font-serif);
+      font-size: 0.95em; color: var(--text-body);
+      line-height: 1.9; letter-spacing: 0.006em;
+    }
+    .prose p { margin-bottom: 12px; }
+    .prose p:last-child { margin-bottom: 0; }
+    .prose strong { color: var(--text); font-weight: 600; }
+    .prose em { font-style: italic; }
+    .prose ul, .prose ol { margin: 8px 0 12px 22px; }
+    .prose li { margin-bottom: 5px; }
+
+    /* ── Conclusion ── */
+    .conclusion {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      border-top: 4px solid var(--accent);
+    }
+    .conclusion .conclusion-body {
+      font-family: var(--font-serif);
+      font-size: 1em; color: var(--text-body);
+      line-height: 1.95; letter-spacing: 0.006em;
+    }
+    .conclusion .conclusion-body p { margin-bottom: 14px; }
+    .conclusion .conclusion-body p:last-child { margin-bottom: 0; }
+    .conclusion .conclusion-body strong { color: var(--text); font-weight: 600; }
+    .conclusion .conclusion-body ul, .conclusion .conclusion-body ol { margin: 8px 0 14px 24px; }
+    .conclusion .conclusion-body li { margin-bottom: 6px; line-height: 1.8; }
+
+    /* ── Google overview ── */
+    .overview {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px 28px;
+      margin-bottom: 32px; box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+      border-left: 4px solid var(--accent);
+    }
+
+    /* ── Multi-column masonry grid ── */
+    .grid-label {
+      font-size: 0.72em; font-weight: 700; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 18px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--accent);
+      display: flex; align-items: center; gap: 7px;
+    }
+    .masonry {
+      columns: 2; column-gap: 20px;
+    }
+    .card {
+      break-inside: avoid;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s, border-color 0.2s;
+      display: inline-block; width: 100%;
+    }
+    .card:hover {
+      box-shadow: 0 4px 20px rgba(124,106,239,0.1);
+      border-color: rgba(124,106,239,0.35);
+    }
+    .card-head {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 0.72em; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-meta { flex: 1; min-width: 0; }
+    .card-title {
+      font-family: var(--font-sans);
+      font-size: 0.88em; font-weight: 600; color: var(--accent);
+      text-decoration: none; display: block;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .card-title:hover { text-decoration: underline; }
+    .card-url {
+      font-family: var(--font-sans);
+      font-size: 0.68em; color: var(--muted); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .badge {
+      font-family: var(--font-sans);
+      font-size: 0.58em; font-weight: 600; padding: 2px 7px;
+      border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .badge.text { background: var(--accent-dim); color: var(--accent); }
+    .badge.vision { background: rgba(251,191,36,0.15); color: #b45309; }
+    .card-body.prose { font-size: 0.88em; line-height: 1.82; }
+    .card-body.prose p { margin-bottom: 8px; }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center; padding: 28px 0; margin-top: 44px;
+      border-top: 1px solid var(--border);
+      font-size: 0.78em; color: var(--muted);
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; color: #111; }
+      .header { background: #111; }
+      .masonry { columns: 2; }
+      .card { box-shadow: none; break-inside: avoid; border: 1px solid #ddd; }
+      .conclusion, .overview { box-shadow: none; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .masonry { columns: 1; }
+    }
+    @media (max-width: 600px) {
+      .header h1 { font-size: 1.5em; }
+      .header { padding: 36px 16px 32px; }
+      .stats { flex-direction: column; align-items: center; }
+      .wrap { padding: 0 14px 40px; }
+      .conclusion, .overview { padding: 18px 20px; }
+      .card { padding: 16px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${q}</h1>
+    <div class="sub">Research Report &mdash; WebWright</div>
+  </div>
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><b>${sourceCount}</b><small>Sources</small></div>
+      <div class="stat"><b>${date.split(",")[0] || date}</b><small>Date</small></div>
+      <div class="stat"><b>${report.status === "done" ? "Complete" : "Partial"}</b><small>Status</small></div>
+    </div>
+    ${conclusionHtml}
+    ${overviewHtml}
+    <div class="grid-label"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Source Summaries</div>
+    <div class="masonry">
+      ${sourceCards}
+    </div>
+    <div class="footer">Generated by <strong>WebWright</strong> Research Mode</div>
+  </div>
+</body>
+</html>`;
 }
 
 /* ───────────────────────────────────────────

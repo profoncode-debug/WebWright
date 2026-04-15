@@ -50,6 +50,17 @@ When simple DOM reading isn't enough, WebWright automatically escalates:
 
 Each tier adds more visual context. The agent annotates screenshots with color-coded numbered markers (Set-of-Marks) so the LLM can see and understand every interactive element.
 
+### Research Mode — Deep Web Research
+Enter a topic and WebWright does the rest:
+1. Searches Google and captures the AI Overview via screenshot + vision LLM
+2. Extracts the top 10 organic result URLs directly from the SERP
+3. Visits each source, scrapes text (with vision fallback for low-text pages)
+4. Summarizes every source individually using a dedicated Research Model
+5. Synthesizes a final conclusion from all sources
+6. Opens a polished multi-column HTML report in a new tab
+
+Configure a separate **Research Model** in Ollama Cloud settings (defaults to Gemini Flash). Includes real-time progress tracking in the sidebar, instant abort, and previous report history.
+
 ### Workflows — Record and Replay
 - **Record** your browser actions (clicks, typing, navigation) across tabs
 - **Save** them as named workflows
@@ -104,6 +115,12 @@ Bring your own API key — or run fully local with Ollama.
 1. Navigate to any article or webpage
 2. Open the sidebar and type: *"Summarize this page"*
 3. Press **Enter** (or click the chat button)
+
+### Research a Topic
+1. Click the **Research** icon (magnifying glass) in the sidebar header
+2. Enter a topic: *"Quantum computing breakthroughs 2025"*
+3. Click **Research** and watch real-time progress as it searches Google and visits sources
+4. A formatted report opens in a new tab with a conclusion and multi-column source summaries
 
 ### Fill a Form
 1. Open the **Personal Info** drawer (person icon in header) and save your details
@@ -180,6 +197,7 @@ Here's a sample of the 52+ built-in task suggestions:
 | **Forms** | Fill out this form, Register an account, Complete checkout |
 | **Info** | Check today's weather, Show cricket live scores, Currency conversion |
 | **Page Analysis** | Summarize this article, List key points, Explain this page simply |
+| **Research** | Research quantum computing, Deep dive into climate change, Investigate any topic |
 
 ## Settings
 
@@ -192,6 +210,7 @@ Click the gear icon in the sidebar header:
 | Step Delay | 2000ms | Pause between actions |
 | LLM Timeout | 15s | Max wait per LLM call |
 | Wall Timeout | 300s | Max total task duration |
+| Research Model | gemini-3-flash-preview:cloud | LLM used for research summaries (Ollama Cloud) |
 
 ## Contributing
 

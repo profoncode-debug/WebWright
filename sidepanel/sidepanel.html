@@ -1090,39 +1090,6 @@
     .research-report-delete:hover { background: var(--bg-3); color: #f87171; }
     .research-report-delete svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-    /* Research Report in Chat */
-    .research-report { margin: 4px 0; }
-    .research-report-heading {
-      font-size: 13px; font-weight: 700; color: var(--accent);
-      margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid var(--accent);
-    }
-    .research-source-card {
-      background: var(--bg-2); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 6px;
-    }
-    .research-source-card-head {
-      display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
-    }
-    .research-source-card-num {
-      font-size: 9px; font-weight: 700; color: #fff;
-      background: var(--accent); width: 18px; height: 18px;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .research-source-card-title {
-      font-size: 11px; font-weight: 600; color: var(--text-primary);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
-    }
-    .research-source-card-title a { color: var(--accent); text-decoration: none; }
-    .research-source-card-title a:hover { text-decoration: underline; }
-    .research-source-card-summary {
-      font-size: 10.5px; color: var(--text-secondary); line-height: 1.5;
-    }
-    .research-source-card-url {
-      font-size: 9px; color: var(--text-muted); margin-top: 3px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-
     /* ═══════════════════════════════════════════
        Settings Drawer
        ═══════════════════════════════════════════ */
@@ -1326,6 +1293,19 @@
             <input class="field-input hidden" id="ollamaCloudVisionModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
           </div>
         </div>
+        <div class="field">
+          <label class="field-label">Research Model</label>
+          <select class="field-input" data-cfg="ollama_cloud.researchModel" id="ollamaCloudResearchModel">
+            <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
+            <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+            <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
+            <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
+            <option value="glm-5:cloud">glm-5:cloud</option>
+            <option value="deepseek-v3.2:cloud">deepseek-v3.2:cloud</option>
+            <option value="__custom__">Custom</option>
+          </select>
+          <input class="field-input hidden" id="ollamaCloudResearchModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
+        </div>
       </div>
 
       <div class="provider-config" id="cfg-ollama_local">
@@ -1433,7 +1413,7 @@
           <span class="icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
         </button>
       </div>
-      <div class="research-hint">Enter a topic to research across 10+ sources. Results are synthesized into a comprehensive report.</div>
+      <div class="research-hint">Enter a topic to research across Google's top results. Opens a professional report in a new tab.</div>
       <div class="research-input-row">
         <input class="research-query-input" id="researchQueryInput" type="text" placeholder="e.g. quantum computing breakthroughs" spellcheck="false" />
         <button class="research-start-btn" id="researchStartBtn">Research</button>

@@ -1062,6 +1062,11 @@
   }
 
   async function abortResearch() {
+    // Immediately update UI — don't wait for the background round-trip
+    researchRunning = false;
+    researchStartBtn.disabled = false;
+    researchAbortBtn.classList.remove("visible");
+    addChatMessage("system-info", "Research aborted.");
     await sendMsg({ type: "RESEARCH_ABORT" });
   }
 
@@ -1098,80 +1103,8 @@
     loadResearchReports();
   }
 
-  function renderResearchReport(report) {
-    if (!report) return;
-    hideEmpty();
-
-    var msg = document.createElement("div");
-    msg.className = "chat-msg assistant";
-
-    var bubble = document.createElement("div");
-    bubble.className = "chat-bubble";
-
-    var container = document.createElement("div");
-    container.className = "research-report";
-
-    // Title
-    var heading = document.createElement("div");
-    heading.className = "research-report-heading";
-    heading.textContent = "Research: " + (report.query || "Unknown");
-    container.appendChild(heading);
-
-    // Source cards
-    var sources = report.sources || [];
-    sources.forEach(function(src, i) {
-      var card = document.createElement("div");
-      card.className = "research-source-card";
-
-      var head = document.createElement("div");
-      head.className = "research-source-card-head";
-
-      var num = document.createElement("div");
-      num.className = "research-source-card-num";
-      num.textContent = String(i + 1);
-
-      var title = document.createElement("div");
-      title.className = "research-source-card-title";
-      if (src.url) {
-        var a = document.createElement("a");
-        a.href = src.url;
-        a.target = "_blank";
-        a.textContent = src.title || src.sourceName || src.url;
-        title.appendChild(a);
-      } else {
-        title.textContent = src.title || src.sourceName || "Source " + (i + 1);
-      }
-
-      head.appendChild(num);
-      head.appendChild(title);
-      card.appendChild(head);
-
-      if (src.summary) {
-        var summary = document.createElement("div");
-        summary.className = "research-source-card-summary";
-        summary.innerHTML = renderMarkdown(src.summary);
-        card.appendChild(summary);
-      }
-
-      if (src.url) {
-        var urlLine = document.createElement("div");
-        urlLine.className = "research-source-card-url";
-        urlLine.textContent = src.url;
-        card.appendChild(urlLine);
-      }
-
-      container.appendChild(card);
-    });
-
-    bubble.appendChild(container);
-    msg.appendChild(bubble);
-    streamInner.insertBefore(msg, chatTyping);
-    scrollToBottom();
-  }
-
   async function viewResearchReport(id) {
-    var r = await sendMsg({ type: "RESEARCH_VIEW_REPORT", id: id });
-    if (r && r.report) renderResearchReport(r.report);
+    await sendMsg({ type: "RESEARCH_VIEW_REPORT", id: id });
   }
 
   async function deleteResearchReport(id) {
@@ -1655,13 +1588,10 @@
         onResearchDone(msg.reportId || null);
         if (msg.status === "error") {
           addChatMessage("system-info", "Research error: " + (msg.message || "Unknown error"));
-        } else if (msg.status === "done" && msg.report) {
-          renderResearchReport(msg.report);
-        } else if (msg.status === "aborted" && msg.report) {
-          addChatMessage("system-info", "Research aborted. Partial results:");
-          renderResearchReport(msg.report);
+        } else if (msg.status === "done") {
+          addChatMessage("system-info", "Research complete! Report opened in new tab.");
         } else if (msg.status === "aborted") {
-          addChatMessage("system-info", "Research aborted.");
+          addChatMessage("system-info", "Research aborted. Partial report opened in new tab.");
         }
       }
     }
@@ -1708,6 +1638,7 @@
   }
   setupModelDropdown("ollamaCloudModel", "ollamaCloudModelCustom");
   setupModelDropdown("ollamaCloudVisionModel", "ollamaCloudVisionModelCustom");
+  setupModelDropdown("ollamaCloudResearchModel", "ollamaCloudResearchModelCustom");
 
   // Personal Info
   personalInfoBtn.addEventListener("click", togglePersonalInfo);
