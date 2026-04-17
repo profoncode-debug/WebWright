@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebWright — Privacy Policy</title>
+  <style>
+    :root { --accent: #7c6aef; --bg: #f5f6fa; --card: #fff; --text: #1c1c2e; --muted: #6b7280; --border: #e5e7eb; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0c0c14; --card: #151522; --text: #e8e9f0; --muted: #9ca3af; --border: #262638; }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    h1 { font-size: 2em; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+    .updated { font-size: 0.85em; color: var(--muted); margin-bottom: 32px; }
+    h2 { font-size: 1.15em; font-weight: 700; color: var(--accent); margin: 28px 0 10px; }
+    p, li { font-size: 0.95em; color: var(--text); margin-bottom: 10px; }
+    ul { padding-left: 20px; margin-bottom: 14px; }
+    li { margin-bottom: 6px; }
+    strong { font-weight: 600; }
+    a { color: var(--accent); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin: 16px 0; }
+    .footer { text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 0.82em; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>WebWright Privacy Policy</h1>
+    <div class="updated">Last updated: April 16, 2026</div>
+
+    <h2>Overview</h2>
+    <p>WebWright is a browser extension that uses AI to help you interact with web pages. Your privacy matters — this policy explains exactly what data the extension handles and how.</p>
+
+    <div class="card">
+      <strong>The short version:</strong> WebWright stores all your data locally on your device. It only sends data to the LLM provider <em>you</em> choose and configure. We do not operate any servers, collect any analytics, or have access to your data.
+    </div>
+
+    <h2>Data Stored Locally</h2>
+    <p>The following data is stored in your browser's local storage (<code>chrome.storage.local</code>) and never leaves your device unless you explicitly trigger an action that requires an LLM call:</p>
+    <ul>
+      <li><strong>Settings & API Keys</strong> — your chosen LLM provider, endpoint URLs, API keys, and model preferences.</li>
+      <li><strong>Personal Info</strong> — name, address, and custom fields you optionally save for form-filling. Only used when you ask the agent to fill a form.</li>
+      <li><strong>Workflows</strong> — recorded browser action sequences (clicks, typing, navigation) that you save for replay.</li>
+      <li><strong>Research Reports</strong> — summaries generated from web research, stored locally for your review.</li>
+      <li><strong>Chat History</strong> — conversation messages within the current session only. Not persisted across sessions.</li>
+    </ul>
+
+    <h2>Data Sent to External Services</h2>
+    <p>WebWright sends data to third-party LLM providers <strong>only when you initiate an action</strong> (chat, agent task, or research). The data sent includes:</p>
+    <ul>
+      <li><strong>Page content</strong> — text extracted from the current web page (for chat and agent modes).</li>
+      <li><strong>Screenshots</strong> — page screenshots sent to vision-capable models when the agent escalates to visual understanding.</li>
+      <li><strong>Your prompt/goal</strong> — the text you type to instruct the agent.</li>
+      <li><strong>Personal info</strong> — only when you explicitly ask the agent to fill a form, and only the fields relevant to that form.</li>
+    </ul>
+    <p>Data is sent to whichever provider you configure in Settings:</p>
+    <ul>
+      <li>Ollama Cloud (ollama.com)</li>
+      <li>Ollama Local (your own machine, localhost)</li>
+      <li>OpenAI (api.openai.com)</li>
+      <li>Anthropic / Claude (api.anthropic.com)</li>
+      <li>Google Gemini (generativelanguage.googleapis.com)</li>
+      <li>DeepSeek (api.deepseek.com)</li>
+      <li>xAI / Grok (api.x.ai)</li>
+      <li>Custom endpoint (user-defined)</li>
+    </ul>
+    <p>Each provider has its own privacy policy governing how they handle data you send. WebWright does not control or have access to data once it reaches the provider's API.</p>
+
+    <h2>Data We Do NOT Collect</h2>
+    <ul>
+      <li>No analytics or telemetry</li>
+      <li>No tracking pixels or fingerprinting</li>
+      <li>No browsing history collection</li>
+      <li>No data sent to WebWright developers or any first-party server</li>
+      <li>No advertising or third-party data sharing</li>
+    </ul>
+
+    <h2>Permissions Explained</h2>
+    <ul>
+      <li><strong>activeTab / tabs</strong> — to read and interact with the current page when you give the agent a task.</li>
+      <li><strong>scripting</strong> — to inject the content script that extracts page elements and executes actions.</li>
+      <li><strong>storage</strong> — to save your settings, personal info, workflows, and reports locally.</li>
+      <li><strong>sidePanel</strong> — to display the WebWright sidebar interface.</li>
+      <li><strong>webNavigation</strong> — to detect single-page app navigations so the agent knows when a page has changed.</li>
+      <li><strong>Host permissions (all URLs)</strong> — required because the agent can navigate to and interact with any website you direct it to. No data is accessed without your explicit instruction.</li>
+    </ul>
+
+    <h2>Your Controls</h2>
+    <ul>
+      <li>You can delete all stored data by removing the extension or clearing extension storage.</li>
+      <li>You can use Ollama Local to keep all LLM processing on your own machine with zero external data transfer.</li>
+      <li>Personal info fields are optional — you don't have to fill them.</li>
+      <li>You can delete individual research reports and workflows from the sidebar.</li>
+    </ul>
+
+    <h2>Changes to This Policy</h2>
+    <p>If this policy is updated, the "Last updated" date at the top will change. Significant changes will be noted in the extension's release notes.</p>
+
+    <h2>Contact</h2>
+    <p>For privacy questions or concerns, open an issue at <a href="https://github.com/ProfOnCode/webwright" target="_blank">github.com/ProfOnCode/webwright</a>.</p>
+
+    <div class="footer">WebWright &mdash; Built for action, not just browsing.</div>
+  </div>
+</body>
+</html>

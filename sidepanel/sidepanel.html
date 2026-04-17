@@ -546,51 +546,177 @@
     .input-container {
       position: relative;
       display: flex;
-      align-items: flex-end;
-      background: var(--bg-root);
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+      flex-direction: column;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0) 40%), var(--bg-root);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 1px 2px rgba(0,0,0,0.25);
+      transition: border-color 180ms cubic-bezier(.2,.8,.2,1),
+                  box-shadow 180ms cubic-bezier(.2,.8,.2,1),
+                  background 180ms cubic-bezier(.2,.8,.2,1);
     }
     .input-container:focus-within {
-      border-color: transparent;
+      border-color: rgba(124,106,239,0.55);
       box-shadow:
-        0 0 0 1.5px var(--accent),
-        0 0 0 4px rgba(124,106,239,0.18),
-        0 0 20px -4px rgba(124,106,239,0.35);
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        0 0 0 3px rgba(124,106,239,0.16),
+        0 8px 24px -10px rgba(124,106,239,0.45);
     }
 
     .goal-input {
-      width: 100%; padding: 10px 12px 10px 14px;
+      width: 100%;
+      padding: 12px 14px 6px 14px;
       background: transparent;
       border: none;
       color: var(--text-primary);
-      font-family: var(--sans); font-size: 13.5px; line-height: 1.45;
+      font-family: var(--sans); font-size: 13.5px; line-height: 1.5;
       resize: none; outline: none;
-      min-height: 42px; max-height: 88px;
+      min-height: 44px; max-height: 200px;
+      overflow-y: auto;
+      transition: height 120ms cubic-bezier(.2,.8,.2,1);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(124,106,239,0.35) transparent;
     }
+    .goal-input::-webkit-scrollbar { width: 6px; }
+    .goal-input::-webkit-scrollbar-thumb {
+      background: rgba(124,106,239,0.3);
+      border-radius: 3px;
+    }
+    .goal-input::-webkit-scrollbar-thumb:hover { background: rgba(124,106,239,0.5); }
     .goal-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
     .goal-input:disabled { opacity: 0.35; cursor: not-allowed; }
 
     .input-actions {
+      position: relative;
       display: flex;
-      gap: 4px;
-      padding: 0 6px 6px 0;
-      align-self: flex-end;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px 6px 8px;
       flex-shrink: 0;
     }
+    .input-actions .action-spacer { flex: 1; }
+
+    /* Quick/Pro mode pill */
+    .chat-mode-pill {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 26px;
+      padding: 0 9px 0 10px;
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-secondary);
+      font-family: var(--sans);
+      font-size: 11.5px; font-weight: 500;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      user-select: none;
+      transition: all 180ms cubic-bezier(.2,.8,.2,1);
+    }
+    .chat-mode-pill:hover {
+      background: rgba(124,106,239,0.10);
+      border-color: rgba(124,106,239,0.35);
+      color: var(--text-primary);
+    }
+    .chat-mode-pill[data-mode="pro"] {
+      background: linear-gradient(135deg, rgba(124,106,239,0.18), rgba(124,106,239,0.08));
+      border-color: rgba(124,106,239,0.45);
+      color: var(--accent-light);
+    }
+    .chat-mode-pill .pill-icon {
+      font-size: 12px;
+      line-height: 1;
+      display: inline-flex;
+    }
+    .chat-mode-pill .pill-label { line-height: 1; }
+    .chat-mode-pill .pill-chevron {
+      width: 10px; height: 10px;
+      opacity: 0.7;
+      transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+    }
+    .chat-mode-pill.open .pill-chevron { transform: rotate(180deg); }
+    .chat-mode-pill:active { transform: scale(0.97); }
+
+    /* Popover anchored above the pill */
+    .chat-mode-popover {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 8px;
+      min-width: 220px;
+      padding: 6px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow:
+        0 10px 30px -8px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.02) inset;
+      z-index: 50;
+      animation: mode-pop-in 160ms cubic-bezier(.2,.8,.2,1);
+    }
+    .chat-mode-popover.hidden { display: none; }
+    @keyframes mode-pop-in {
+      from { opacity: 0; transform: translateY(4px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .chat-mode-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 150ms ease;
+    }
+    .chat-mode-option:hover { background: rgba(124,106,239,0.10); }
+    .chat-mode-option.active {
+      background: rgba(124,106,239,0.16);
+    }
+    .chat-mode-option .opt-icon {
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(124,106,239,0.14);
+      border-radius: 6px;
+      font-size: 12px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .chat-mode-option .opt-text { flex: 1; min-width: 0; }
+    .chat-mode-option .opt-title {
+      font-size: 12.5px; font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .chat-mode-option .opt-desc {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      line-height: 1.35;
+      margin-top: 2px;
+    }
+    .chat-mode-option .opt-check {
+      width: 14px; height: 14px;
+      flex-shrink: 0;
+      color: var(--accent-light);
+      opacity: 0;
+      margin-top: 3px;
+    }
+    .chat-mode-option.active .opt-check { opacity: 1; }
+
 
     /* Mode buttons (Chat / Agent) */
     .mode-btn {
-      width: 32px; height: 32px;
+      width: 30px; height: 30px;
       display: flex; align-items: center; justify-content: center;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 180ms cubic-bezier(.2,.8,.2,1);
     }
     .mode-btn svg {
-      width: 15px; height: 15px;
+      width: 14px; height: 14px;
       fill: none; stroke: currentColor;
       stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
     }
@@ -1276,6 +1402,8 @@
               <option value="glm-5:cloud">glm-5:cloud</option>
               <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
               <option value="deepseek-v3.2:cloud">deepseek-v3.2:cloud</option>
+              <option value="gemma4:31b-cloud">gemma4:31b-cloud</option>
+              <option value="qwen3.6:35b-a3b-bf16">qwen3.6:35b-a3b-bf16</option>
               <option value="__custom__">Custom</option>
             </select>
             <input class="field-input hidden" id="ollamaCloudModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
@@ -1288,23 +1416,48 @@
               <option value="ministral-3:14b-cloud">ministral-3:14b-cloud</option>
               <option value="devstral-small-2:24b-cloud">devstral-small-2:24b-cloud</option>
               <option value="gemma3:27b-cloud">gemma3:27b-cloud</option>
+              <option value="gemma4:31b-cloud">gemma4:31b-cloud</option>
+              <option value="qwen3.6:35b-a3b-bf16">qwen3.6:35b-a3b-bf16</option>
               <option value="__custom__">Custom</option>
             </select>
             <input class="field-input hidden" id="ollamaCloudVisionModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
           </div>
         </div>
-        <div class="field">
-          <label class="field-label">Research Model</label>
-          <select class="field-input" data-cfg="ollama_cloud.researchModel" id="ollamaCloudResearchModel">
-            <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
-            <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
-            <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
-            <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
-            <option value="glm-5:cloud">glm-5:cloud</option>
-            <option value="deepseek-v3.2:cloud">deepseek-v3.2:cloud</option>
-            <option value="__custom__">Custom</option>
-          </select>
-          <input class="field-input hidden" id="ollamaCloudResearchModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Research Model</label>
+            <select class="field-input" data-cfg="ollama_cloud.researchModel" id="ollamaCloudResearchModel">
+              <option value="gemma4:31b-cloud">gemma4:31b-cloud</option>
+              <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
+              <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
+              <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
+              <option value="glm-5:cloud">glm-5:cloud</option>
+              <option value="deepseek-v3.2:cloud">deepseek-v3.2:cloud</option>
+              <option value="qwen3.6:35b-a3b-bf16">qwen3.6:35b-a3b-bf16</option>
+              <option value="__custom__">Custom</option>
+            </select>
+            <input class="field-input hidden" id="ollamaCloudResearchModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
+          </div>
+          <div class="field">
+            <label class="field-label">Chat Model</label>
+            <select class="field-input" data-cfg="ollama_cloud.chatModel" id="ollamaCloudChatModel">
+              <option value="gemma4:31b-cloud">gemma4:31b-cloud</option>
+              <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
+              <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
+              <option value="glm-5:cloud">glm-5:cloud</option>
+              <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
+              <option value="deepseek-v3.2:cloud">deepseek-v3.2:cloud</option>
+              <option value="qwen3.5:397b-cloud">qwen3.5:397b-cloud</option>
+              <option value="ministral-3:14b-cloud">ministral-3:14b-cloud</option>
+              <option value="devstral-small-2:24b-cloud">devstral-small-2:24b-cloud</option>
+              <option value="gemma3:27b-cloud">gemma3:27b-cloud</option>
+              <option value="qwen3.6:35b-a3b-bf16">qwen3.6:35b-a3b-bf16</option>
+              <option value="__custom__">Custom</option>
+            </select>
+            <input class="field-input hidden" id="ollamaCloudChatModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
+          </div>
         </div>
       </div>
 
@@ -1503,6 +1656,30 @@
     <div class="input-container">
       <textarea class="goal-input" id="goalInput" placeholder="Ask anything or tell me what to do..." rows="1" spellcheck="false"></textarea>
       <div class="input-actions" id="inputActions">
+        <button class="chat-mode-pill" id="chatModePill" data-mode="quick" type="button" aria-haspopup="menu" aria-expanded="false" title="Chat mode">
+          <span class="pill-icon" id="chatModePillIcon">⚡</span>
+          <span class="pill-label" id="chatModePillLabel">Quick</span>
+          <svg class="pill-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="chat-mode-popover hidden" id="chatModePopover" role="menu">
+          <div class="chat-mode-option" data-value="quick" role="menuitemradio">
+            <div class="opt-icon">⚡</div>
+            <div class="opt-text">
+              <div class="opt-title">Quick</div>
+              <div class="opt-desc">Text only, fastest responses.</div>
+            </div>
+            <svg class="opt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="chat-mode-option" data-value="pro" role="menuitemradio">
+            <div class="opt-icon">✨</div>
+            <div class="opt-text">
+              <div class="opt-title">Pro</div>
+              <div class="opt-desc">Attach a screenshot for better understanding.</div>
+            </div>
+            <svg class="opt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+        <div class="action-spacer"></div>
         <button class="mode-btn chat-mode-btn" id="chatBtn" title="Chat">
           <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         </button>
@@ -1511,6 +1688,7 @@
         </button>
       </div>
       <div class="input-actions hidden" id="stopActions">
+        <div class="action-spacer"></div>
         <button class="stop-btn" id="stopBtn" title="Stop agent">
           <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
         </button>

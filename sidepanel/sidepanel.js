@@ -69,6 +69,18 @@
   var noApiBanner    = document.getElementById("noApiBanner");
   var noApiSettingsBtn = document.getElementById("noApiSettingsBtn");
 
+  var chatModePill     = document.getElementById("chatModePill");
+  var chatModePopover  = document.getElementById("chatModePopover");
+  var chatModePillIcon = document.getElementById("chatModePillIcon");
+  var chatModePillLabel = document.getElementById("chatModePillLabel");
+
+  var chatMode = (function() {
+    try {
+      var stored = localStorage.getItem("webwright.chatMode");
+      return stored === "pro" ? "pro" : "quick";
+    } catch (e) { return "quick"; }
+  })();
+
   var isRunning = false;
   var isRecording = false;
   var currentMode = null; // "chat" | "agent" | null
@@ -713,24 +725,30 @@
       pendingThinking = null;
     }
 
-    // Add summary
-    var summaryEl = document.createElement("div");
-    summaryEl.className = "agent-done-summary";
-    // Parse bullet points from summary (lines starting with "- ")
+    // Normalize summary text
     if (typeof summary !== "string") summary = Array.isArray(summary) ? summary.join("\n") : String(summary || "Task complete!");
     summary = summary.trim() || "Task complete!";
-    var bulletLines = summary.split(/\r?\n/).filter(function(l) { return l.trim().indexOf("- ") === 0; });
-    if (bulletLines.length > 0) {
-      var listHtml = '<span class="done-check">&#10003;</span><ul class="done-bullets">';
-      bulletLines.forEach(function(line) {
-        listHtml += '<li>' + esc(line.trim().slice(2)) + '</li>';
-      });
-      listHtml += '</ul>';
-      summaryEl.innerHTML = listHtml;
+
+    if (type === "done") {
+      // Render the final summary as a normal assistant chat bubble below the agent-log bubble
+      addChatMessage("assistant", summary);
     } else {
-      summaryEl.innerHTML = '<span class="done-check">&#10003;</span>' + esc(summary);
+      // Progress/stopped report — keep the existing inline summary rendering
+      var summaryEl = document.createElement("div");
+      summaryEl.className = "agent-done-summary";
+      var bulletLines = summary.split(/\r?\n/).filter(function(l) { return l.trim().indexOf("- ") === 0; });
+      if (bulletLines.length > 0) {
+        var listHtml = '<span class="done-check">&#10003;</span><ul class="done-bullets">';
+        bulletLines.forEach(function(line) {
+          listHtml += '<li>' + esc(line.trim().slice(2)) + '</li>';
+        });
+        listHtml += '</ul>';
+        summaryEl.innerHTML = listHtml;
+      } else {
+        summaryEl.innerHTML = '<span class="done-check">&#10003;</span>' + esc(summary);
+      }
+      agentLogSteps.appendChild(summaryEl);
     }
-    agentLogSteps.appendChild(summaryEl);
 
     // Show contextual action cards on successful completion (not during replay)
     if (type === "done" && !isReplaying) {
@@ -760,6 +778,11 @@
     }
 
     scrollToBottom();
+
+    // Detach refs so subsequent chat LLM calls don't leak "Thinking..." into the finished bubble
+    hideThinkingIndicator();
+    agentLogBubble = null;
+    agentLogSteps = null;
   }
 
   /* ── Thinking indicator inside agent log ── */
@@ -792,6 +815,7 @@
   async function chatSend(text) {
     if (!text) return;
 
+    var isPro = chatMode === "pro";
     addChatMessage("user", text);
     goalInput.value = "";
     goalInput.style.height = "";
@@ -800,10 +824,13 @@
     var tab = tabs[0];
     var tabId = (tab && tab.id) ? tab.id : null;
 
-    setStatus("thinking", "Thinking...");
+    if (isPro) setStatus("thinking", "Capturing screen...");
+    else       setStatus("thinking", "Thinking...");
     chatTyping.classList.add("visible");
 
-    var result = await sendMsg({ type: "CHAT_SEND", text: text, tabId: tabId });
+    var result = await sendMsg({ type: "CHAT_SEND", text: text, tabId: tabId, mode: chatMode });
+
+    if (isPro) setStatus("thinking", "Thinking...");
 
     chatTyping.classList.remove("visible");
 
@@ -1639,6 +1666,7 @@
   setupModelDropdown("ollamaCloudModel", "ollamaCloudModelCustom");
   setupModelDropdown("ollamaCloudVisionModel", "ollamaCloudVisionModelCustom");
   setupModelDropdown("ollamaCloudResearchModel", "ollamaCloudResearchModelCustom");
+  setupModelDropdown("ollamaCloudChatModel", "ollamaCloudChatModelCustom");
 
   // Personal Info
   personalInfoBtn.addEventListener("click", togglePersonalInfo);
@@ -1676,12 +1704,81 @@
 
   goalInput.addEventListener("input", function() {
     goalInput.style.height = "auto";
-    goalInput.style.height = Math.min(goalInput.scrollHeight, 88) + "px";
+    goalInput.style.height = Math.min(goalInput.scrollHeight, 200) + "px";
   });
 
   goalInput.addEventListener("focus", stopPlaceholderRotation);
   goalInput.addEventListener("blur", function() {
     if (!isRunning) startPlaceholderRotation();
+  });
+
+  /* ── Chat mode pill (Quick / Pro) ── */
+  function renderChatMode() {
+    if (!chatModePill) return;
+    chatModePill.setAttribute("data-mode", chatMode);
+    if (chatModePillIcon)  chatModePillIcon.textContent  = chatMode === "pro" ? "✨" : "⚡";
+    if (chatModePillLabel) chatModePillLabel.textContent = chatMode === "pro" ? "Pro" : "Quick";
+    if (chatModePopover) {
+      var opts = chatModePopover.querySelectorAll(".chat-mode-option");
+      for (var i = 0; i < opts.length; i++) {
+        opts[i].classList.toggle("active", opts[i].getAttribute("data-value") === chatMode);
+      }
+    }
+  }
+
+  function openChatModePopover() {
+    if (!chatModePopover || !chatModePill) return;
+    chatModePopover.classList.remove("hidden");
+    chatModePill.classList.add("open");
+    chatModePill.setAttribute("aria-expanded", "true");
+  }
+
+  function closeChatModePopover() {
+    if (!chatModePopover || !chatModePill) return;
+    chatModePopover.classList.add("hidden");
+    chatModePill.classList.remove("open");
+    chatModePill.setAttribute("aria-expanded", "false");
+  }
+
+  function setChatMode(mode) {
+    chatMode = mode === "pro" ? "pro" : "quick";
+    try { localStorage.setItem("webwright.chatMode", chatMode); } catch (e) {}
+    renderChatMode();
+  }
+
+  renderChatMode();
+
+  if (chatModePill) {
+    chatModePill.addEventListener("click", function(e) {
+      e.stopPropagation();
+      if (chatModePopover && chatModePopover.classList.contains("hidden")) {
+        openChatModePopover();
+      } else {
+        closeChatModePopover();
+      }
+    });
+  }
+
+  if (chatModePopover) {
+    chatModePopover.addEventListener("click", function(e) {
+      var opt = e.target.closest(".chat-mode-option");
+      if (!opt) return;
+      setChatMode(opt.getAttribute("data-value"));
+      closeChatModePopover();
+    });
+  }
+
+  document.addEventListener("click", function(e) {
+    if (!chatModePopover || chatModePopover.classList.contains("hidden")) return;
+    if (chatModePill && chatModePill.contains(e.target)) return;
+    if (chatModePopover.contains(e.target)) return;
+    closeChatModePopover();
+  });
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && chatModePopover && !chatModePopover.classList.contains("hidden")) {
+      closeChatModePopover();
+    }
   });
 
   // Tab choice popover bindings

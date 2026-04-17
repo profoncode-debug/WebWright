@@ -44,6 +44,7 @@ const agentState = {
   model: "",
   visionModel: "",
   researchModel: "",
+  chatModel: "",
 
 };
 
@@ -272,7 +273,8 @@ const PROVIDER_DEFAULTS = {
     apiKey: "",
     model: "kimi-k2.5:cloud",
     visionModel: "kimi-k2.5:cloud",
-    researchModel: "gemini-3-flash-preview:cloud"
+    researchModel: "gemma4:31b-cloud",
+    chatModel: "gemma4:31b-cloud"
   },
   ollama_local: {
     endpoint: "http://localhost:11434",
@@ -473,6 +475,8 @@ function applyConfig(cfg) {
   agentState.apiFormat = p.apiFormat || "";
   // Research model — falls back to primary model if not set
   agentState.researchModel = p.researchModel || agentState.model;
+  // Chat model — falls back to primary model if not set
+  agentState.chatModel = p.chatModel || agentState.model;
 }
 
 /* ───────────────────────────────────────────
@@ -1127,7 +1131,7 @@ AVAILABLE ACTIONS:
 { "action": "hover", "id": <element_id>, "description": "<why hovering>" }
 { "action": "scroll", "direction": "<up|down>", "amount": <pixels> }
 { "action": "wait", "ms": <milliseconds>, "reason": "<why waiting>" }
-{ "action": "done", "summary": "<bullet-point list of what was accomplished, one line per bullet starting with '- '>", "remaining": "<what the user still needs to do manually, if anything — omit if fully complete>" }
+{ "action": "done", "summary": "<a brief, natural reply to the user about what was accomplished — plain conversational prose, written as if you're answering them in chat. 1–3 short sentences. Do NOT use bullet points.>", "remaining": "<what the user still needs to do manually, if anything — omit if fully complete>" }
 { "action": "error", "reason": "<why you cannot proceed>", "completed": "<what you did accomplish before getting stuck>", "manual_steps": "<what the user should do to finish the task>" }
 { "action": "plan", "steps": [action1, action2, action3], "reasoning": "<why these can be batched>" }
 
@@ -1272,7 +1276,7 @@ ${hasSoM ? `{ "action": "click", "element": <number>, "description": "<what you 
 { "action": "scroll", "direction": "<up|down>", "amount": <pixels> }
 { "action": "navigate", "url": "<full_url>" }
 { "action": "wait", "ms": <milliseconds>, "reason": "<why>" }
-{ "action": "done", "summary": "<bullet-point list of what was accomplished, one line per bullet starting with '- '>", "remaining": "<what the user still needs to do manually, if anything — omit if fully complete>" }
+{ "action": "done", "summary": "<a brief, natural reply to the user about what was accomplished — plain conversational prose, written as if you're answering them in chat. 1–3 short sentences. Do NOT use bullet points.>", "remaining": "<what the user still needs to do manually, if anything — omit if fully complete>" }
 { "action": "error", "reason": "<why you cannot proceed>", "completed": "<what you did accomplish before getting stuck>", "manual_steps": "<what the user should do to finish the task>" }`;
 
   let user = `Goal: "${goal}"
@@ -2665,7 +2669,7 @@ async function initChat(tabId) {
   }
 }
 
-async function handleChatMessage(userMessage) {
+async function handleChatMessage(userMessage, screenshotBase64) {
   if (!chatState.active || !chatState.pageSummary) {
     return { success: false, error: "Chat not initialized. Click Chat first." };
   }
@@ -2673,7 +2677,8 @@ async function handleChatMessage(userMessage) {
   chatState.messages.push({ role: "user", content: userMessage });
 
   try {
-    const result = await callLLM(chatState.messages, agentState.model, "Chat", null, { forceJson: false });
+    const chatModel = agentState.chatModel || agentState.model;
+    const result = await callLLM(chatState.messages, chatModel, screenshotBase64 ? "Chat+Vision" : "Chat", screenshotBase64 || null, { forceJson: false });
     const assistantContent = result._rawContent || "";
 
     chatState.messages.push({ role: "assistant", content: assistantContent });
@@ -3324,6 +3329,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case "CHAT_SEND": {
       const text = msg.text;
       const tabId = msg.tabId;
+      const mode = msg.mode === "pro" ? "pro" : "quick";
       if (!text) { sendResponse({ success: false, error: "Empty message." }); return true; }
 
       (async () => {
@@ -3336,7 +3342,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               return;
             }
           }
-          const result = await handleChatMessage(text);
+
+          let screenshotBase64 = null;
+          if (mode === "pro" && tabId != null) {
+            try {
+              screenshotBase64 = await captureScreenshot(tabId);
+            } catch (err) {
+              console.warn("[Chat] Pro screenshot capture failed:", err.message);
+            }
+          }
+
+          const result = await handleChatMessage(text, screenshotBase64);
           sendResponse(result);
         } catch (err) {
           sendResponse({ success: false, error: err.message });
