@@ -34,7 +34,7 @@ const agentState = {
   lastThinking: "",
   logs: [],
   interStepDelay: 2000,
-  llmTimeout: 15000,
+  llmTimeout: 100000,
   aborted: false,
   wallTimeout: 300000,
 
@@ -271,8 +271,8 @@ const PROVIDER_DEFAULTS = {
   ollama_cloud: {
     endpoint: "https://ollama.com",
     apiKey: "",
-    model: "kimi-k2.5:cloud",
-    visionModel: "kimi-k2.5:cloud",
+    model: "gpt-oss:120b-cloud",
+    visionModel: "gemma4:31b-cloud",
     researchModel: "gemma4:31b-cloud",
     chatModel: "gemma4:31b-cloud"
   },
@@ -321,7 +321,7 @@ const DEFAULT_CONFIG = {
   providers: JSON.parse(JSON.stringify(PROVIDER_DEFAULTS)),
   maxSteps: 20,
   interStepDelay: 2000,
-  llmTimeout: 60000,
+  llmTimeout: 100000,
   wallTimeout: 300000
 };
 
@@ -1752,8 +1752,12 @@ async function callLLM(messages, model, label, screenshotBase64, options) {
       label: "HTTP " + resp.status + " [" + label + "]",
       data: { status: resp.status, body: errText.slice(0, 500), elapsed_ms: ms, model: model, provider: provider }
     });
-    if (resp.status === 403 && (provider === "ollama_local" || provider === "ollama_cloud")) {
-      throw new Error("Ollama rejected the request (403). Set OLLAMA_ORIGINS=* in your environment and restart Ollama to allow extension access.");
+    if (resp.status === 403) {
+      if (provider === "ollama_cloud") {
+        throw new Error("Ollama Cloud rejected the request (403). Check that your API key is set correctly in Settings.");
+      } else if (provider === "ollama_local") {
+        throw new Error("Local Ollama rejected the request (403). Set OLLAMA_ORIGINS=* in your environment and restart Ollama.");
+      }
     }
     throw new Error(provider + " " + resp.status + ": " + errText.slice(0, 200));
   }
@@ -2627,6 +2631,22 @@ async function initChat(tabId) {
   chatState.tabId = tabId;
   chatState.messages = [];
 
+  // Check if the tab URL is a Chrome-restricted page where script injection is blocked
+  let tabUrl = "";
+  try { tabUrl = (await chrome.tabs.get(tabId)).url || ""; } catch {}
+
+  if (isBlockedUrl(tabUrl)) {
+    // Chat works without page context on restricted pages (new tab, chrome://, etc.)
+    chatState.pageSummary = null;
+    const historyQueue = await loadHistoryQueue();
+    const systemPrompt = `You are a helpful AI assistant embedded in a browser extension. The user is on a browser internal page (like a new tab) with no web content to analyse — just answer as a general-purpose assistant.\n\nRULES:\n- Be conversational, direct, and helpful.\n- You may use **bold** and *italic* for emphasis, and bullet points (- item) for short lists.\n- This extension also has an "Agent mode" that can interact with websites. If the user asks you to DO something on the web, suggest they navigate to a page first and use Agent mode.` +
+      (historyQueue && historyQueue.length > 0
+        ? "\n\nRECENT CONVERSATION HISTORY:\n" + historyQueue.map(h => `- [${h.type}] User asked: "${h.userInput}" → ${h.summary}`).join("\n")
+        : "");
+    chatState.messages = [{ role: "system", content: systemPrompt }];
+    return { success: true, pageTitle: "New Tab", pageUrl: tabUrl, preview: "" };
+  }
+
   try {
     const summary = await capturePageSummary(tabId);
     if (!summary) throw new Error("Could not capture page content.");
@@ -2670,7 +2690,7 @@ async function initChat(tabId) {
 }
 
 async function handleChatMessage(userMessage, screenshotBase64) {
-  if (!chatState.active || !chatState.pageSummary) {
+  if (!chatState.active) {
     return { success: false, error: "Chat not initialized. Click Chat first." };
   }
 

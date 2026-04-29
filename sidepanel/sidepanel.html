@@ -1285,7 +1285,16 @@
 
     .field-hint { font-size: 9px; color: var(--text-muted); margin-top: 2px; font-style: italic; }
 
-    .settings-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .settings-actions {
+      display: flex; gap: 6px;
+      position: sticky; bottom: 0;
+      margin: 10px -10px 0;
+      padding: 8px 10px 10px;
+      background: var(--bg-1);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 10px -4px rgba(0,0,0,0.35);
+      z-index: 5;
+    }
     .btn-cfg {
       flex: 1; height: 32px; border: none;
       border-radius: var(--radius-sm);
@@ -1396,7 +1405,7 @@
           <div class="field">
             <label class="field-label">Primary Model</label>
             <select class="field-input" data-cfg="ollama_cloud.model" id="ollamaCloudModel">
-              <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="kimi-k2.6:cloud">kimi-k2.6:cloud</option>
               <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
               <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
               <option value="glm-5:cloud">glm-5:cloud</option>
@@ -1411,7 +1420,7 @@
           <div class="field">
             <label class="field-label">Vision Model</label>
             <select class="field-input" data-cfg="ollama_cloud.visionModel" id="ollamaCloudVisionModel">
-              <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="kimi-k2.6:cloud">kimi-k2.6:cloud</option>
               <option value="qwen3.5:397b-cloud">qwen3.5:397b-cloud</option>
               <option value="ministral-3:14b-cloud">ministral-3:14b-cloud</option>
               <option value="devstral-small-2:24b-cloud">devstral-small-2:24b-cloud</option>
@@ -1429,7 +1438,7 @@
             <select class="field-input" data-cfg="ollama_cloud.researchModel" id="ollamaCloudResearchModel">
               <option value="gemma4:31b-cloud">gemma4:31b-cloud</option>
               <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
-              <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="kimi-k2.6:cloud">kimi-k2.6:cloud</option>
               <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
               <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
               <option value="glm-5:cloud">glm-5:cloud</option>
@@ -1443,7 +1452,7 @@
             <label class="field-label">Chat Model</label>
             <select class="field-input" data-cfg="ollama_cloud.chatModel" id="ollamaCloudChatModel">
               <option value="gemma4:31b-cloud">gemma4:31b-cloud</option>
-              <option value="kimi-k2.5:cloud">kimi-k2.5:cloud</option>
+              <option value="kimi-k2.6:cloud">kimi-k2.6:cloud</option>
               <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
               <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
               <option value="glm-5:cloud">glm-5:cloud</option>
@@ -1525,7 +1534,7 @@
       <div class="field-row">
         <div class="field"><label class="field-label">Max Steps</label><input class="field-input" id="cfgMaxSteps" type="number" min="1" max="100" value="20" /></div>
         <div class="field"><label class="field-label">Delay (ms)</label><input class="field-input" id="cfgDelay" type="number" min="500" max="10000" step="100" value="2000" /></div>
-        <div class="field"><label class="field-label">Timeout (ms)</label><input class="field-input" id="cfgTimeout" type="number" min="5000" max="120000" step="1000" value="60000" /></div>
+        <div class="field"><label class="field-label">Timeout (ms)</label><input class="field-input" id="cfgTimeout" type="number" min="5000" max="120000" step="1000" value="100000" /></div>
         <div class="field"><label class="field-label">Max Time (s)</label><input class="field-input" id="cfgWallTimeout" type="number" min="30" max="600" step="30" value="300" /></div>
       </div>
 

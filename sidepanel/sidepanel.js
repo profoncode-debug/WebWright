@@ -100,7 +100,7 @@
     "LLM timing out? Increase timeout",
     "Vision escalates automatically ",
     "Set a Vision model if not done yet.",
-    "Long tasks? Use Kimi k 2.5 ",
+    "Long tasks? Use Kimi k 2.6 ",
     "Speed up tasks — lower Step Delay ",
     "More steps? Raise Max Steps in Settings",
     "Agent looping? Try a smarter model",
@@ -111,11 +111,10 @@
     "Agent hallucinating? Try better models."
   ];
 
-  /* ── Suggestion Pool (50+) ── */
+  /* ── Suggestion Pool (simple agent tasks) ── */
   var SUGGESTION_POOL = [
-    // Navigation
+    // Open famous sites
     { text: "Open Instagram", desc: "Opens Instagram feed", icon: "nav" },
-    { text: "Open Instagram Reels", desc: "Opens Instagram Reels", icon: "nav" },
     { text: "Open YouTube", desc: "Opens YouTube homepage", icon: "nav" },
     { text: "Open Twitter", desc: "Opens Twitter/X feed", icon: "nav" },
     { text: "Open Reddit", desc: "Opens Reddit front page", icon: "nav" },
@@ -127,52 +126,31 @@
     { text: "Open Spotify", desc: "Opens Spotify web player", icon: "nav" },
     { text: "Open Pinterest", desc: "Opens Pinterest for inspiration", icon: "nav" },
     { text: "Open ChatGPT", desc: "Opens ChatGPT in a new tab", icon: "nav" },
-    { text: "Open Notion", desc: "Opens your Notion workspace", icon: "nav" },
-    { text: "Open Google Docs", desc: "Opens Google Docs homepage", icon: "nav" },
     // Productivity
     { text: "Check my Gmail inbox", desc: "Opens Gmail and shows unread emails", icon: "mail" },
     { text: "Check my Outlook mail", desc: "Opens Outlook inbox", icon: "mail" },
     { text: "Open Google Calendar", desc: "Opens your Google Calendar", icon: "calendar" },
     { text: "Open Google Drive", desc: "Opens your Google Drive files", icon: "file" },
+    { text: "Open Notion", desc: "Opens your Notion workspace", icon: "nav" },
     { text: "Create a new Google Doc", desc: "Opens a blank Google Doc", icon: "file" },
-    { text: "Search Google for latest news", desc: "Searches for today's news", icon: "search" },
     // Shopping
     { text: "Open Amazon", desc: "Opens Amazon homepage", icon: "shop" },
     { text: "Open Flipkart", desc: "Opens Flipkart homepage", icon: "shop" },
     { text: "Open Myntra", desc: "Opens Myntra for shopping", icon: "shop" },
-    { text: "Order food from Swiggy", desc: "Opens Swiggy for food delivery", icon: "shop" },
-    { text: "Open Zomato", desc: "Opens Zomato for food delivery", icon: "shop" },
+    { text: "Order food from Swiggy", desc: "Opens Swiggy ", icon: "shop" },
+    { text: "Open Zomato", desc: "Opens Zomato for ", icon: "shop" },
+    // Quick searches
     { text: "Search Amazon for headphones", desc: "Finds headphones on Amazon", icon: "search" },
-    { text: "Compare prices for laptops", desc: "Searches for laptop deals", icon: "search" },
-    // Information
-    { text: "Check today's weather", desc: "Opens weather site and reports conditions", icon: "weather" },
-    { text: "What's trending on Twitter", desc: "Shows trending topics", icon: "search" },
-    { text: "Check stock market today", desc: "Opens stock market summary", icon: "search" },
-    { text: "Show cricket live scores", desc: "Opens live cricket scores", icon: "search" },
-    { text: "Search for flights to Delhi", desc: "Finds flights on Google Flights", icon: "search" },
-    { text: "Search for flights to Tokyo", desc: "Finds flights to Tokyo", icon: "search" },
-    { text: "Find hotels in Goa", desc: "Searches for hotel deals in Goa", icon: "search" },
-    { text: "What's the latest tech news", desc: "Searches for technology news", icon: "search" },
-    { text: "Convert 100 USD to INR", desc: "Checks currency conversion rate", icon: "search" },
-    { text: "Find recipe for biryani", desc: "Searches for biryani recipe", icon: "search" },
-    // Page actions (chat mode)
-    { text: "Summarize this tab", desc: "Get a quick summary of the current page", icon: "doc", mode: "chat" },
-    { text: "Summarize this article", desc: "Summarize the main article on this page", icon: "doc", mode: "chat" },
-    { text: "What does this page say?", desc: "Quick overview of page content", icon: "doc", mode: "chat" },
-    { text: "Explain this page simply", desc: "Explains the page in simple terms", icon: "doc", mode: "chat" },
-    { text: "List key points from this page", desc: "Extracts main points", icon: "doc", mode: "chat" },
-    // Social
-    { text: "Post a tweet", desc: "Opens Twitter to compose a tweet", icon: "nav" },
-    { text: "Check Instagram DMs", desc: "Opens Instagram direct messages", icon: "nav" },
     { text: "Search YouTube for tutorials", desc: "Searches YouTube for tutorial videos", icon: "search" },
+    { text: "Search for flights to Mumbai", desc: "Finds flights on Google Flights", icon: "search" },
+    { text: "Find hotels in Goa", desc: "Searches for hotel deals in Goa", icon: "search" },
+    { text: "Find recipe for biryani", desc: "Searches for biryani recipe", icon: "search" },
+    { text: "Search Google for latest tech news", desc: "Searches for technology news", icon: "search" },
     // Utilities
-    { text: "Translate this page to English", desc: "Uses Google Translate on this page", icon: "search" },
-    { text: "Find the best restaurant nearby", desc: "Searches for top-rated restaurants", icon: "search" },
-    { text: "Check my internet speed", desc: "Opens speed test website", icon: "search" },
-    { text: "Check train tickets on IRCTC", desc: "Opens IRCTC for train booking", icon: "search" },
-    { text: "Book an Uber ride", desc: "Opens Uber for ride booking", icon: "nav" },
-    { text: "Find coupon codes for this site", desc: "Searches for discount codes", icon: "search" },
-    { text: "Download this page as PDF", desc: "Helps save the page as PDF", icon: "file" },
+    { text: "Check today's weather", desc: "Opens weather site and reports conditions", icon: "weather" },
+    { text: "Convert 100 USD to INR", desc: "Checks currency conversion rate", icon: "search" },
+    { text: "Show cricket live scores", desc: "Opens live cricket scores", icon: "search" },
+    { text: "Check stock market today", desc: "Opens stock market summary", icon: "search" },
   ];
 
   var CHIP_ICONS = {
@@ -1454,7 +1432,7 @@
       providers: providers,
       maxSteps: parseInt(cfgMaxSteps.value, 10) || 20,
       interStepDelay: parseInt(cfgDelay.value, 10) || 2000,
-      llmTimeout: parseInt(cfgTimeout.value, 10) || 15000,
+      llmTimeout: parseInt(cfgTimeout.value, 10) || 100000,
       wallTimeout: (parseInt(cfgWallTimeout.value, 10) || 300) * 1000
     };
     await sendMsg({ type: "SAVE_CONFIG", config: config });
@@ -1506,7 +1484,7 @@
       if (cfg.providers) writeProviderFields(cfg.providers);
       cfgMaxSteps.value = cfg.maxSteps || 20;
       cfgDelay.value    = cfg.interStepDelay || 2000;
-      cfgTimeout.value  = cfg.llmTimeout || 15000;
+      cfgTimeout.value  = cfg.llmTimeout || 100000;
       cfgWallTimeout.value = Math.round((cfg.wallTimeout || 300000) / 1000);
       loadedProviders = cfg.providers || {};
     }
