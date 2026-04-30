@@ -8,7 +8,7 @@ An autonomous AI agent that lives in your browser sidebar — it sees web pages,
 
 **Tell it what you want. Watch it work.**
 
-[Install](#installation) | [Features](#features) | [Providers](#supported-providers) | [How It Works](#how-it-works) | [Contributing](#contributing)
+[Install](#installation) | [Features](#features) | [Providers](#supported-providers) | [How It Works](#how-it-works) | [Privacy](#privacy--liability) | [Contributing](#contributing)
 
 </div>
 
@@ -16,7 +16,7 @@ An autonomous AI agent that lives in your browser sidebar — it sees web pages,
 
 ## What is WebWright?
 
-WebWright is a Chrome extension that turns your browser into an AI-powered assistant. Instead of just answering questions, it **actually does things** — fills forms, navigates sites, clicks buttons, searches the web, books tickets, and more. No Mac Mini , no VPS , no high RAM usage, JUST <1 MB
+WebWright is a Chrome extension (Manifest V3) that turns your browser into an AI-powered assistant. Instead of just answering questions, it **actually does things** — fills forms, navigates sites, clicks buttons, searches the web, books tickets, and more. No Mac Mini, no VPS, no high RAM usage. Just a lightweight extension under 1 MB.
 
 Type a goal like *"Search Amazon for wireless headphones under $50"* and the agent takes over: it navigates to Amazon, types the search query, applies filters, and reports back what it found. All while you watch the real-time action log in the sidebar.
 
@@ -38,7 +38,17 @@ Ask questions about the page you're viewing:
 
 Multi-turn conversation with full page context.
 
-### Vision Escalation — 4-Tier Intelligence
+#### ⚡ Quick vs ✨ Pro
+A toggle next to the input lets you choose how the chat thinks:
+
+| Mode | Icon | What it does | Best for |
+|------|------|--------------|----------|
+| **Quick** | ⚡ | Sends only the page text to the LLM. Fastest, cheapest. | Articles, blog posts, plain text pages. |
+| **Pro** | ✨ | Also attaches a live screenshot of the page so a vision-capable model can *see* the layout, charts, and visual elements. | Complex dashboards, image-heavy pages, anything where layout matters. |
+
+Switch modes any time from the pill above the input — your choice is remembered locally.
+
+### Vision Escalation — 4-Tier Intelligence (Agent Mode)
 When simple DOM reading isn't enough, WebWright automatically escalates:
 
 | Tier | Method | When |
@@ -51,15 +61,16 @@ When simple DOM reading isn't enough, WebWright automatically escalates:
 Each tier adds more visual context. The agent annotates screenshots with color-coded numbered markers (Set-of-Marks) so the LLM can see and understand every interactive element.
 
 ### Research Mode — Deep Web Research
-Enter a topic and WebWright does the rest:
+Open the **Research** drawer (magnifying-glass icon in the header), enter a topic, and WebWright handles the rest:
+
 1. Searches Google and captures the AI Overview via screenshot + vision LLM
 2. Extracts the top 10 organic result URLs directly from the SERP
 3. Visits each source, scrapes text (with vision fallback for low-text pages)
-4. Summarizes every source individually using a dedicated Research Model
-5. Synthesizes a final conclusion from all sources
+4. Summarizes every source individually using a dedicated **Research Model**
+5. Synthesizes a final conclusion across all sources
 6. Opens a polished multi-column HTML report in a new tab
 
-Configure a separate **Research Model** in Ollama Cloud settings (defaults to Gemini Flash). Includes real-time progress tracking in the sidebar, instant abort, and previous report history.
+The drawer shows live per-source progress (active / done / error / skipped), an instant **Abort** button, and a history of previous reports you can re-open or delete. Configure the Research Model separately from your chat/agent model in Ollama Cloud settings.
 
 ### Workflows — Record and Replay
 - **Record** your browser actions (clicks, typing, navigation) across tabs
@@ -68,12 +79,12 @@ Configure a separate **Research Model** in Ollama Cloud settings (defaults to Ge
 
 ### Personal Info Vault
 Store your details locally (never sent to any server) for instant form filling:
-- Name, Age, Sex, Father's/Mother's Name, Address
+- Name, Age, Sex, Father's Name, Mother's Name, Address
 - 5 custom fields for anything else (email, phone, etc.)
 - Agent uses these **only** when the task involves filling a form
 
 ### Smart Suggestions
-52 pre-built task suggestions across categories — navigation, shopping, productivity, search, and more. 3 random chips rotate on each session for quick access.
+A pool of 30+ pre-built task suggestions across categories — navigation, productivity, shopping, search, and utilities. A few random chips rotate on each session for one-tap launches.
 
 ## Supported Providers
 
@@ -105,7 +116,7 @@ Bring your own API key — or run fully local with Ollama.
 
 ## Quick Start
 
-### Run a Task
+### Run a Task (Agent Mode)
 1. Click the WebWright icon to open the sidebar
 2. Type a goal: *"Open YouTube and search for lofi music"*
 3. Press **Ctrl+Enter** (or click the play button)
@@ -113,14 +124,16 @@ Bring your own API key — or run fully local with Ollama.
 
 ### Chat About a Page
 1. Navigate to any article or webpage
-2. Open the sidebar and type: *"Summarize this page"*
-3. Press **Enter** (or click the chat button)
+2. Open the sidebar and pick **⚡ Quick** or **✨ Pro** from the mode pill
+3. Type: *"Summarize this page"*
+4. Press **Enter** (or click the chat button)
 
 ### Research a Topic
 1. Click the **Research** icon (magnifying glass) in the sidebar header
 2. Enter a topic: *"Quantum computing breakthroughs 2025"*
-3. Click **Research** and watch real-time progress as it searches Google and visits sources
+3. Click **Research** and watch real-time per-source progress
 4. A formatted report opens in a new tab with a conclusion and multi-column source summaries
+5. Re-open or delete past reports from the same drawer
 
 ### Fill a Form
 1. Open the **Personal Info** drawer (person icon in header) and save your details
@@ -168,13 +181,14 @@ Bring your own API key — or run fully local with Ollama.
 ```
 agentic-browser-ext/
 ├── manifest.json            # Chrome Extension Manifest V3
+├── privacy-policy.html      # User-facing privacy policy & liability disclaimer
 ├── background/
-│   └── background.js        # Agent loop, LLM calls, prompt engineering, vision escalation
+│   └── background.js        # Agent loop, LLM calls, prompt engineering, vision escalation, research pipeline
 ├── content/
 │   └── content.js           # DOM extraction, element ranking, action execution, SoM overlay
 ├── sidepanel/
-│   ├── sidepanel.html       # UI — chat view, agent log, settings, workflows, personal info
-│   └── sidepanel.js         # UI logic, provider config, markdown rendering
+│   ├── sidepanel.html       # UI — chat view, agent log, settings, workflows, personal info, research drawer
+│   └── sidepanel.js         # UI logic, provider config, chat-mode toggle, markdown rendering
 └── icons/
     ├── icon16.png
     ├── icon48.png
@@ -185,17 +199,15 @@ agentic-browser-ext/
 
 ## What Can It Do?
 
-Here's a sample of the 52+ built-in task suggestions:
+A sample of the built-in task suggestions:
 
 | Category | Examples |
 |----------|---------|
-| **Navigation** | Open YouTube, Open Instagram Reels, Go to Reddit |
-| **Search** | Search Google for latest news, Find flights Delhi to Tokyo |
-| **Shopping** | Search Amazon for headphones, Compare laptop prices |
+| **Navigation** | Open YouTube, Open Instagram, Open Reddit, Open GitHub |
+| **Search** | Search Google for latest news, Find flights to Mumbai, Find hotels in Goa |
+| **Shopping** | Search Amazon for headphones, Open Flipkart, Order food from Swiggy |
 | **Productivity** | Check Gmail inbox, Open Google Calendar, Create a Google Doc |
-| **Social** | Post a tweet, Check Instagram DMs, Subscribe to a channel |
-| **Forms** | Fill out this form, Register an account, Complete checkout |
-| **Info** | Check today's weather, Show cricket live scores, Currency conversion |
+| **Utilities** | Check today's weather, Convert 100 USD to INR, Cricket live scores |
 | **Page Analysis** | Summarize this article, List key points, Explain this page simply |
 | **Research** | Research quantum computing, Deep dive into climate change, Investigate any topic |
 
@@ -211,6 +223,29 @@ Click the gear icon in the sidebar header:
 | LLM Timeout | 15s | Max wait per LLM call |
 | Wall Timeout | 300s | Max total task duration |
 | Research Model | gemini-3-flash-preview:cloud | LLM used for research summaries (Ollama Cloud) |
+| Chat Mode | Quick | Default mode for the chat input pill (Quick / Pro) |
+
+## Permissions
+
+| Permission | Why |
+|------------|-----|
+| `activeTab` / `tabs` | Read & interact with the current page when you give the agent a task |
+| `scripting` | Inject the content script that extracts page elements and executes actions |
+| `storage` | Save settings, personal info, workflows, and reports locally |
+| `sidePanel` | Display the WebWright sidebar interface |
+| `webNavigation` | Detect SPA navigations so the agent knows when a page has changed |
+| `debugger` | Used for low-level vision-mode coordinate clicks when DOM actions fail |
+| `<all_urls>` | Required because the agent can navigate to and interact with any site you direct it to. No data is accessed without your explicit instruction |
+
+## Privacy & Liability
+
+WebWright stores all your data **locally** on your device. It only sends data to the LLM provider **you** choose and configure. There are no first-party servers, analytics, or telemetry.
+
+The full policy is in [privacy-policy.html](privacy-policy.html). It also contains a **Disclaimer of Liability**:
+
+> WebWright is provided "as is". The developer is **not responsible** for any monetary loss, data loss, account suspension, legal consequences, or any other harm — direct or indirect — that may result from the use or misuse of this extension. The agent acts autonomously on your behalf based on your instructions, so **the user is solely responsible for all actions taken by the agent**, including financial transactions, submitted forms, and compliance with the terms of service of any site visited.
+>
+> **By installing, enabling, or using WebWright, you acknowledge and agree to these terms in full.** If you do not agree, please uninstall the extension.
 
 ## Contributing
 
