@@ -107,7 +107,7 @@ Bring your own API key — or run fully local with Ollama.
 
 1. Clone this repo:
    ```bash
-   git clone https://github.com/ArijeetProfOnCode/webwright.git
+   git clone https://github.com/profoncode-debug/WebWright/
    ```
 2. Open Chrome and go to `chrome://extensions/`
 3. Enable **Developer mode** (top-right toggle)
