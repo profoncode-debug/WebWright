@@ -78,13 +78,20 @@
 
     <h2>Permissions Explained</h2>
     <ul>
-      <li><strong>activeTab / tabs</strong> — to read and interact with the current page when you give the agent a task.</li>
-      <li><strong>scripting</strong> — to inject the content script that extracts page elements and executes actions.</li>
-      <li><strong>storage</strong> — to save your settings, personal info, workflows, and reports locally.</li>
-      <li><strong>sidePanel</strong> — to display the WebWright sidebar interface.</li>
-      <li><strong>webNavigation</strong> — to detect single-page app navigations so the agent knows when a page has changed.</li>
-      <li><strong>Host permissions (all URLs)</strong> — required because the agent can navigate to and interact with any website you direct it to. No data is accessed without your explicit instruction.</li>
+      <li><strong>activeTab / tabs</strong> — to read and interact with the current page when you give the agent a task. Used to identify the active tab, capture screenshots of pages you ask the agent or chat to operate on, and inject the content script that extracts page elements.</li>
+      <li><strong>scripting</strong> — to inject the content script that extracts interactive page elements (buttons, links, inputs, dropdowns) and executes the actions chosen by the agent (click, type, scroll, navigate). Only runs in response to a user-initiated task.</li>
+      <li><strong>storage</strong> — to save your settings, API keys, personal info, recorded workflows, and research reports locally via <code>chrome.storage.local</code>. Nothing in storage is transmitted to any first-party server.</li>
+      <li><strong>sidePanel</strong> — to display the WebWright sidebar interface, which is the only UI surface the extension uses.</li>
+      <li><strong>webNavigation</strong> — to detect single-page app navigations (URL changes without a full reload) so the agent knows when a page has changed and can re-extract interactive elements.</li>
+      <li><strong>debugger</strong> — used <em>only</em> as a last-resort fallback in Agent Mode (Tier 4 vision escalation). When DOM-based clicks repeatedly fail to interact with an element, the extension synthesizes a raw coordinate click on the user's active tab via the Chrome DevTools Protocol so the user's task can complete. The debugger is attached on demand, scoped to a single tab, used only for synthetic <code>Input.dispatchMouseEvent</code> commands, and detached as soon as the action finishes. It is <strong>never</strong> used for network inspection, traffic interception, credential harvesting, background monitoring, or any activity outside the user's currently-running agent task.</li>
+      <li><strong>Host permissions (<code>&lt;all_urls&gt;</code>)</strong> — required because the agent can navigate to and interact with any website you direct it to. The user — not the developer — decides which sites the agent visits at runtime by typing a goal. There is no pre-defined target list, so a narrow host pattern would prevent the extension from doing the very thing the user installed it for. No data is read or sent without an explicit user prompt; no background scraping or telemetry occurs.</li>
     </ul>
+
+    <h2>Single Purpose</h2>
+    <p>WebWright has a single purpose: <strong>to act as an autonomous AI agent that performs user-instructed tasks on web pages</strong> (navigating, interacting with elements, filling forms, summarizing content, and conducting user-requested research). All permissions above exist exclusively to support that single purpose.</p>
+
+    <h2>Remote Code Use</h2>
+    <p>WebWright does <strong>not</strong> load or execute any remote code. All extension JavaScript is bundled in the published package. The only network calls made are to the LLM provider <em>you</em> configure (e.g. Ollama, OpenAI, Anthropic, Google, DeepSeek, xAI) for inference, plus normal page loads performed by the user's browser when the agent navigates on the user's behalf.</p>
 
     <h2>Your Controls</h2>
     <ul>
@@ -112,7 +119,7 @@
     <p>If this policy is updated, the "Last updated" date at the top will change. Significant changes will be noted in the extension's release notes.</p>
 
     <h2>Contact</h2>
-    <p>For privacy questions or concerns, open an issue at <a href="https://github.com/profoncode-debug/WebWright/" target="_blank">github.com/ProfOnCode/webwright</a>.</p>
+    <p>For privacy questions or concerns, open an issue at <a href="https://github.com/profoncode-debug/WebWright/" target="_blank">github.com/profoncode-debug/WebWright/</a>.</p>
 
     <div class="footer">WebWright &mdash; Built for action, not just browsing.</div>
   </div>

@@ -4,7 +4,12 @@
 
 ### Built for action, not just browsing.
 
-An autonomous AI agent that lives in your browser sidebar — it sees web pages, reasons about them, and takes real actions to complete tasks for you.
+> ## **This is NOT a chat wrapper.**
+> WebWright is a **real agentic AI** that lives in your browser sidebar.
+> It **perceives** the page (DOM + vision), **reasons** about it with an LLM,
+> and **takes real actions on your behalf** — clicks, types, navigates,
+> fills forms, books, buys, researches. It does not just answer questions
+> *about* the web; it **does things on** the web for you.
 
 **Tell it what you want. Watch it work.**
 
@@ -14,11 +19,36 @@ An autonomous AI agent that lives in your browser sidebar — it sees web pages,
 
 ---
 
+## Works on every Chromium browser
+
+| Browser | Supported |
+|---------|-----------|
+| ![Chrome](https://img.shields.io/badge/Google%20Chrome-✓-success) | Yes |
+| ![Edge](https://img.shields.io/badge/Microsoft%20Edge-✓-success) | Yes |
+| ![Brave](https://img.shields.io/badge/Brave-✓-success) | Yes |
+| ![Opera](https://img.shields.io/badge/Opera-✓-success) | Yes |
+| ![Vivaldi](https://img.shields.io/badge/Vivaldi-✓-success) | Yes |
+| ![Arc](https://img.shields.io/badge/Arc-✓-success) | Yes |
+| ![Chromium](https://img.shields.io/badge/Any%20Chromium-✓-success) | Yes |
+
+WebWright is a Manifest V3 extension. **If your browser is built on Chromium, it works.** That includes Google Chrome, Microsoft Edge, Brave, Opera, Vivaldi, Arc, and any other Chromium-based browser. (Firefox is not supported — it uses a different extension architecture.)
+
+---
+
 ## What is WebWright?
 
-WebWright is a Chrome extension (Manifest V3) that turns your browser into an AI-powered assistant. Instead of just answering questions, it **actually does things** — fills forms, navigates sites, clicks buttons, searches the web, books tickets, and more. No Mac Mini, no VPS, no high RAM usage. Just a lightweight extension under 1 MB.
+WebWright turns your browser into an **autonomous AI agent** — not a chat sidebar that answers questions, but a real agent that *acts*. It fills forms, navigates sites, clicks buttons, searches the web, books tickets, conducts deep research, and more. No Mac Mini, no VPS, no high RAM usage. Just a lightweight extension under 1 MB.
 
-Type a goal like *"Search Amazon for wireless headphones under $50"* and the agent takes over: it navigates to Amazon, types the search query, applies filters, and reports back what it found. All while you watch the real-time action log in the sidebar.
+Type a goal like *"Search Amazon for wireless headphones under $50"* and the agent takes over: it navigates to Amazon, types the search query, applies filters, and reports back what it found — all while you watch the real-time action log in the sidebar.
+
+### Why "agentic" actually means agentic here
+- **Perception loop** — the content script extracts and ranks every interactive element on the page (buttons, links, inputs, dropdowns, custom components, shadow DOM) every step.
+- **Reasoning loop** — the LLM is given page state + goal + action history and must pick *one* concrete next action as JSON.
+- **Action loop** — the action is executed in the real DOM (or via raw coordinate clicks when DOM fails), the page state is re-read, and the cycle repeats.
+- **Vision escalation** — when DOM is not enough, the agent autonomously switches to screenshot-based reasoning with Set-of-Marks element overlays.
+- **Anti-loop detection** — the agent monitors itself for repeated actions, A-B-A oscillation, and silent failures, and changes strategy on its own.
+
+That is an agent loop. Not an autocomplete prompt.
 
 ## Features
 
@@ -56,7 +86,7 @@ When simple DOM reading isn't enough, WebWright automatically escalates:
 | 1 | **DOM Analysis** | Default — fast, token-efficient |
 | 2 | **Vision + 80 Elements** | DOM action fails, element not found, or stuck in loop |
 | 3 | **Vision + 160 Elements** | Vision 80 couldn't resolve the issue |
-| 4 | **Raw Coordinates** | Last resort — clicks by X,Y position on screenshot |
+| 4 | **Raw Coordinates** | Last resort — clicks by X,Y position on screenshot via the Chrome DevTools Protocol |
 
 Each tier adds more visual context. The agent annotates screenshots with color-coded numbered markers (Set-of-Marks) so the LLM can see and understand every interactive element.
 
@@ -66,11 +96,11 @@ Open the **Research** drawer (magnifying-glass icon in the header), enter a topi
 1. Searches Google and captures the AI Overview via screenshot + vision LLM
 2. Extracts the top 10 organic result URLs directly from the SERP
 3. Visits each source, scrapes text (with vision fallback for low-text pages)
-4. Summarizes every source individually using a dedicated **Research Model**
+4. Summarizes every source individually using a dedicated **Research Model** (45s LLM timeout, 60s hard cap per source)
 5. Synthesizes a final conclusion across all sources
 6. Opens a polished multi-column HTML report in a new tab
 
-The drawer shows live per-source progress (active / done / error / skipped), an instant **Abort** button, and a history of previous reports you can re-open or delete. Configure the Research Model separately from your chat/agent model in Ollama Cloud settings.
+The drawer shows live per-source progress (active / done / error / skipped), an instant **Abort** button, and a history of previous reports you can re-open or delete. Configure the Research Model separately from your chat/agent model in Ollama Cloud settings. On other providers (including Ollama Local), research falls back to your primary model.
 
 ### Workflows — Record and Replay
 - **Record** your browser actions (clicks, typing, navigation) across tabs
@@ -105,14 +135,22 @@ Bring your own API key — or run fully local with Ollama.
 
 ## Installation
 
+WebWright works on **Chrome, Microsoft Edge, Brave, Opera, Vivaldi, Arc, and any other Chromium-based browser**. The steps below use Chrome's URL — replace it with your browser's equivalent (`edge://extensions/`, `brave://extensions/`, `opera://extensions/`, etc.).
+
 1. Clone this repo:
    ```bash
    git clone https://github.com/profoncode-debug/WebWright/
    ```
-2. Open Chrome and go to `chrome://extensions/`
+2. Open your browser's extensions page:
+   - Chrome → `chrome://extensions/`
+   - Edge → `edge://extensions/`
+   - Brave → `brave://extensions/`
+   - Opera / Vivaldi → their respective `://extensions/` URL
 3. Enable **Developer mode** (top-right toggle)
 4. Click **Load unpacked** and select the `agentic-browser-ext` folder
 5. Pin the extension to your toolbar
+
+> Coming soon: one-click install from the Chrome Web Store and Microsoft Edge Add-ons.
 
 ## Quick Start
 
@@ -180,8 +218,8 @@ Bring your own API key — or run fully local with Ollama.
 
 ```
 agentic-browser-ext/
-├── manifest.json            # Chrome Extension Manifest V3
-├── privacy-policy.html      # User-facing privacy policy & liability disclaimer
+├── manifest.json            # Manifest V3, version 1.0.0
+├── privacy-policy.html      # Privacy policy, permission justifications, liability disclaimer
 ├── background/
 │   └── background.js        # Agent loop, LLM calls, prompt engineering, vision escalation, research pipeline
 ├── content/
@@ -195,7 +233,7 @@ agentic-browser-ext/
     └── icon128.png
 ```
 
-**Zero dependencies. No build step. Pure vanilla JS.**
+**Zero dependencies. No build step. No remote code. Pure vanilla JS.**
 
 ## What Can It Do?
 
@@ -222,10 +260,12 @@ Click the gear icon in the sidebar header:
 | Step Delay | 2000ms | Pause between actions |
 | LLM Timeout | 15s | Max wait per LLM call |
 | Wall Timeout | 300s | Max total task duration |
-| Research Model | gemini-3-flash-preview:cloud | LLM used for research summaries (Ollama Cloud) |
+| Research Model | gemini-3-flash-preview:cloud | LLM used for research summaries (Ollama Cloud only — falls back to primary model on other providers) |
 | Chat Mode | Quick | Default mode for the chat input pill (Quick / Pro) |
 
 ## Permissions
+
+WebWright requests only what it needs to run as an agent. Full per-permission justifications (the same wording used in the Chrome Web Store submission) are in [privacy-policy.html](privacy-policy.html).
 
 | Permission | Why |
 |------------|-----|
@@ -234,8 +274,10 @@ Click the gear icon in the sidebar header:
 | `storage` | Save settings, personal info, workflows, and reports locally |
 | `sidePanel` | Display the WebWright sidebar interface |
 | `webNavigation` | Detect SPA navigations so the agent knows when a page has changed |
-| `debugger` | Used for low-level vision-mode coordinate clicks when DOM actions fail |
-| `<all_urls>` | Required because the agent can navigate to and interact with any site you direct it to. No data is accessed without your explicit instruction |
+| `debugger` | Last-resort Tier-4 fallback only — synthesizes raw coordinate clicks when DOM clicks fail. Attached on demand, detached after the action. Never used for network inspection or background activity. |
+| `<all_urls>` | Required because **the user**, not the developer, decides which sites the agent visits at runtime. No data is read or sent without an explicit user prompt. |
+
+**No remote code is loaded.** All extension JavaScript is bundled in the published package.
 
 ## Privacy & Liability
 
