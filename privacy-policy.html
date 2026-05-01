@@ -27,7 +27,7 @@
 <body>
   <div class="wrap">
     <h1>WebWright Privacy Policy</h1>
-    <div class="updated">Last updated: April 16, 2026</div>
+    <div class="updated">Last updated: May 2, 2026</div>
 
     <h2>Overview</h2>
     <p>WebWright is a browser extension that uses AI to help you interact with web pages. Your privacy matters — this policy explains exactly what data the extension handles and how.</p>
@@ -75,6 +75,7 @@
       <li>No data sent to WebWright developers or any first-party server</li>
       <li>No advertising or third-party data sharing</li>
     </ul>
+    <p><strong>WebWright does not sell, rent, trade, or share your personal information with any third party for any purpose.</strong> The only outbound network calls are the LLM API calls you initiate, sent to the provider <em>you</em> configured.</p>
 
     <h2>Permissions Explained</h2>
     <ul>
@@ -92,6 +93,25 @@
 
     <h2>Remote Code Use</h2>
     <p>WebWright does <strong>not</strong> load or execute any remote code. All extension JavaScript is bundled in the published package. The only network calls made are to the LLM provider <em>you</em> configure (e.g. Ollama, OpenAI, Anthropic, Google, DeepSeek, xAI) for inference, plus normal page loads performed by the user's browser when the agent navigates on the user's behalf.</p>
+
+    <h2>Limited Use of User Data</h2>
+    <p>WebWright's use of information received from any user data, including any data accessed via the user's browser session or via any provider API, will adhere to the <a href="https://developer.chrome.com/docs/webstore/program-policies/limited-use" target="_blank">Chrome Web Store User Data Policy — Limited Use requirements</a>. Specifically:</p>
+    <ul>
+      <li>User data is used <strong>only</strong> to provide and improve the user-facing features of WebWright (agent task execution, chat over page content, research mode, form-fill assistance, workflow record/replay).</li>
+      <li>User data is <strong>not</strong> transferred to third parties except as necessary to provide or improve user-facing features (i.e. only to the LLM provider <em>you</em> explicitly configure), to comply with applicable law, or as part of a merger, acquisition, or sale of assets with the user's explicit consent.</li>
+      <li>User data is <strong>not</strong> used or transferred for serving advertising, including retargeting, personalized, or interest-based advertising.</li>
+      <li>Humans (including the developer) do <strong>not</strong> read user data unless we have the user's affirmative agreement for specific data, the data is necessary for security purposes (e.g. investigating abuse), or the data is required to be disclosed by law.</li>
+    </ul>
+
+    <h2>Security</h2>
+    <p>All settings, API keys, personal information, recorded workflows, and research reports are stored in <code>chrome.storage.local</code>, which is sandboxed per-extension by the browser and encrypted at rest on supported platforms. WebWright never transmits this data to any first-party server. Network traffic from the extension goes only to the LLM provider endpoint you configured, over HTTPS.</p>
+    <p><strong>API key safety is your responsibility.</strong> The API keys you paste into Settings may be tied to billing accounts at OpenAI, Anthropic, Google, xAI, DeepSeek, or other providers. Treat these keys as you would a password:</p>
+    <ul>
+      <li>Do not share screenshots of the Settings panel that show your keys.</li>
+      <li>Do not export, sync, or back up extension storage to untrusted locations.</li>
+      <li>If you suspect a key has been exposed, rotate it immediately on the provider's dashboard.</li>
+      <li>Anyone with access to your operating system user account or browser profile can read your keys. Use OS-level account security (lock screen, full-disk encryption) accordingly.</li>
+    </ul>
 
     <h2>Your Controls</h2>
     <ul>
@@ -115,11 +135,41 @@
     </ul>
     <p>You are expected to review the agent's actions and use the extension responsibly. <strong>By installing, enabling, or using WebWright, you acknowledge and agree to these terms and conditions in full.</strong> If you do not agree, please uninstall the extension.</p>
 
+    <h2>Children's Privacy</h2>
+    <p>WebWright is not directed to or intended for use by children under the age of 13 (or the equivalent minimum age in the user's jurisdiction). The developer does not knowingly collect any personal information from children. If you believe a child has used this extension to enter personal information, please uninstall it; because all data is stored locally on the user's device, removing the extension or clearing extension storage permanently deletes that data.</p>
+
+    <h2>Your Privacy Rights (GDPR / CCPA / Other)</h2>
+    <p>WebWright does not collect, transmit, or retain any personal data on developer-controlled servers. As a result, the data-subject rights granted by laws such as the EU General Data Protection Regulation (GDPR), the California Consumer Privacy Act (CCPA), and similar regulations are inherently satisfied:</p>
+    <ul>
+      <li><strong>Right to access / portability</strong> — all of your data lives on your device and can be exported by you at any time via your browser's developer tools or by re-reading the values you entered.</li>
+      <li><strong>Right to deletion / erasure</strong> — uninstalling the extension or clearing its storage permanently deletes 100% of your data.</li>
+      <li><strong>Right to opt out of sale / sharing</strong> — there is nothing to opt out of; the developer never sells, rents, trades, or shares your personal information.</li>
+      <li><strong>Right to non-discrimination</strong> — there is no developer-side account or tier system; everyone uses the same locally-running extension.</li>
+    </ul>
+    <p>Data sent to your chosen LLM provider is governed by <em>that provider's</em> privacy policy and your contractual relationship with them. Contact them directly to exercise rights with respect to data they have received.</p>
+
+    <h2>Authentic Distribution</h2>
+    <p>The only authentic sources for WebWright are:</p>
+    <ul>
+      <li>The Chrome Web Store listing (once published)</li>
+      <li>The Microsoft Edge Add-ons listing (once published)</li>
+      <li>The official GitHub repository at <a href="https://github.com/profoncode-debug/WebWright/" target="_blank">github.com/profoncode-debug/WebWright</a></li>
+    </ul>
+    <p>If you obtained this extension from any other source — a third-party download site, a forwarded ZIP file, an unofficial mirror — we cannot vouch for its integrity. Modified copies may contain code that violates this policy. Please re-install from one of the authentic sources above.</p>
+
+    <h2>Governing Law</h2>
+    <p>This Privacy Policy and the Disclaimer of Liability are governed by and construed in accordance with the laws of <strong>India</strong>, without regard to its conflict-of-law principles. Any disputes arising out of or in connection with the use of WebWright shall be subject to the exclusive jurisdiction of the competent courts located in India. Where mandatory local consumer-protection laws apply, those laws shall continue to apply to the extent required.</p>
+
     <h2>Changes to This Policy</h2>
     <p>If this policy is updated, the "Last updated" date at the top will change. Significant changes will be noted in the extension's release notes.</p>
 
     <h2>Contact</h2>
-    <p>For privacy questions or concerns, open an issue at <a href="https://github.com/profoncode-debug/WebWright/" target="_blank">github.com/profoncode-debug/WebWright/</a>.</p>
+    <p>For privacy questions, data-subject requests, security reports, or any other concerns, you can reach the developer at:</p>
+    <ul>
+      <li><strong>Email:</strong> <a href="mailto:profoncode@gmail.com">profoncode@gmail.com</a></li>
+      <li><strong>GitHub issues:</strong> <a href="https://github.com/profoncode-debug/WebWright/issues" target="_blank">github.com/profoncode-debug/WebWright/issues</a></li>
+    </ul>
+    <p>Email is the recommended channel for privacy or security matters; please do not include passwords, API keys, or other secrets in the initial message.</p>
 
     <div class="footer">WebWright &mdash; Built for action, not just browsing.</div>
   </div>
