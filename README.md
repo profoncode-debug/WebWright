@@ -118,18 +118,20 @@ A pool of 30+ pre-built task suggestions across categories — navigation, produ
 
 ## Supported Providers
 
-WebWright works with **8 LLM providers** out of the box:
+WebWright works with **8 LLM providers** out of the box. The defaults below are what you get on a fresh install — **every model field is freely editable in Settings**, so you can swap to any model the provider exposes (newer Claude/Gemini/GPT releases, alternate Ollama models, fine-tuned variants, etc.).
 
-| Provider | Default Model | Vision Model | Free Tier |
-|----------|--------------|--------------|-----------|
-| **Ollama Cloud** | gpt-oss:120b | qwen3.5:397b | Yes |
-| **Ollama Local** | qwen2.5-coder:7b | llava:13b | Yes (self-hosted) |
-| **OpenAI** | gpt-4o | gpt-4o | No |
-| **Claude** | claude-sonnet-4 | claude-sonnet-4 | No |
-| **Gemini** | gemini-2.0-flash | gemini-2.0-flash | Yes |
-| **DeepSeek** | deepseek-chat | — | Yes |
-| **Grok** | grok-3-mini | — | No |
+| Provider | Default Agent Model | Default Vision Model | Free Tier |
+|----------|--------------------|----------------------|-----------|
+| **Ollama Cloud** | `gpt-oss:120b-cloud` | `gemma4:31b-cloud` | Yes |
+| **Ollama Local** | `qwen2.5-coder:7b` | `llava:13b` | Yes (self-hosted) |
+| **OpenAI** | `gpt-4o` | `gpt-4o` | No |
+| **Claude** | `claude-sonnet-4-20250514` | `claude-sonnet-4-20250514` | No |
+| **Gemini** | `gemini-2.0-flash` | `gemini-2.0-flash` | Yes |
+| **DeepSeek** | `deepseek-chat` | — | Yes |
+| **Grok** | `grok-3-mini` | — | No |
 | **Custom** | User-defined | User-defined | Depends |
+
+> **All models are user-adjustable.** Open the gear icon → pick a provider tab → change the Agent Model, Vision Model, Chat Model, or (Ollama Cloud only) Research Model fields. Ollama Cloud's dropdowns show curated cloud-hosted models, but every field also accepts a free-form model name so you can paste in any model your provider supports — including ones released after this build. Custom Provider lets you point at any OpenAI- or Ollama-compatible endpoint with your own model name.
 
 Bring your own API key — or run fully local with Ollama.
 
@@ -178,6 +180,38 @@ WebWright works on **Chrome, Microsoft Edge, Brave, Opera, Vivaldi, Arc, and any
 2. Navigate to any form page
 3. Type: *"Fill out this form with my info"*
 4. The agent reads your saved data and fills every field
+
+## Accuracy: Prompts and Models Matter
+
+> **WebWright is an agent, not a magic box. Its accuracy is a function of two things you control: the way you prompt it, and the model you point it at.**
+
+### Prompting matters
+The agent gets exactly one chance per step to interpret your goal. Vague goals produce vague behavior. Concrete goals with specifics — names, numbers, constraints, success criteria — produce reliable behavior.
+
+| ❌ Weak prompt | ✅ Strong prompt |
+|----------------|------------------|
+| *"Buy headphones"* | *"Search Amazon India for Sony WH-CH520 wireless headphones, sort by price low-to-high, and open the cheapest in-stock listing."* |
+| *"Book a flight"* | *"Open Google Flights, find the cheapest non-stop flight from Delhi to Tokyo on July 15, return July 22, for 1 adult."* |
+| *"Summarize this"* | *"Summarize this article in 5 bullet points, focusing on the financial figures and any mention of regulatory action."* |
+
+Tips for strong prompts:
+- **Name the site** when relevant (*"on Flipkart"*, *"on Reddit"*) — this saves the agent a navigation step.
+- **State a stop condition** (*"and report the top 3 prices"*, *"until you find one under ₹2000"*) — without one the agent will keep going until Max Steps.
+- **Spell out filters and constraints** up front — under $X, in stock, before this date, in this city.
+- **Avoid pronouns** like *"do that again"* — restate the actual goal.
+
+### Model matters
+The same prompt on different models will not produce the same result. Larger, more recent, more reasoning-capable models follow long agent loops more reliably and are far better at vision escalation.
+
+| Model class | Suitability for agent loops |
+|-------------|------------------------------|
+| Frontier reasoning (GPT-4o, Claude Sonnet 4, Gemini 2.0 Flash, gpt-oss:120b-cloud) | Best — handles long action histories, recovers from errors, strong vision |
+| Mid-tier (DeepSeek-Chat, Grok-3-mini, gemma4:31b) | Good for everyday navigation; may stall on complex multi-step flows |
+| Small local models (qwen2.5-coder:7b, llava:13b) | Works for simple tasks; expect retries and occasional dead-ends on complex sites |
+
+**Vision-capable model required for Tier 2-4 escalation.** If you point the agent at a text-only model and it hits a page where DOM clicks fail, it cannot recover via screenshots. Pair text models with a separate vision model (the **Vision Model** field in Settings).
+
+If a task fails: try a stronger model **and** a more specific prompt before assuming it's an agent bug. Most "the agent is dumb" outcomes turn out to be one of the two.
 
 ## How It Works
 
