@@ -15,6 +15,21 @@
  */
 
 /* ───────────────────────────────────────────
+ * Service Worker Resilience
+ * ─────────────────────────────────────────── */
+// Swallow late orphan rejections (e.g. an in-flight LLM fetch that finishes
+// after a Promise.race already resolved via timeout) so they don't tear down
+// the MV3 service worker mid-research.
+self.addEventListener("unhandledrejection", (event) => {
+  try {
+    const reason = event && event.reason;
+    const msg = reason && (reason.message || String(reason));
+    console.warn("[WebWright] Swallowed unhandled rejection:", msg);
+  } catch (_) {}
+  if (event && typeof event.preventDefault === "function") event.preventDefault();
+});
+
+/* ───────────────────────────────────────────
  * Side Panel hehe
  * ─────────────────────────────────────────── */
 
@@ -1712,6 +1727,18 @@ async function callLLM(messages, model, label, screenshotBase64, options) {
 
   const controller = new AbortController();
   const timerId = setTimeout(() => controller.abort(), timeout);
+  // Chain external abort signal (e.g. per-source research timeout) into our controller
+  // so an outer cancel actually aborts the in-flight fetch.
+  const externalSignal = options.signal;
+  let externalAbortHandler = null;
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalAbortHandler = () => controller.abort();
+      externalSignal.addEventListener("abort", externalAbortHandler, { once: true });
+    }
+  }
   const t0 = performance.now();
   let resp;
 
@@ -3755,7 +3782,7 @@ async function runResearchPipeline(query) {
           { role: "system", content: "You summarize Google search results pages. Focus on the AI Overview/summary at the top if present, plus the key information visible." },
           { role: "user", content: `Summarize the overview and key information from this Google search results page about "${query}". Be concise (3-5 sentences).` }
         ];
-        const visionResult = await raceAbort(callLLM(visionPrompt, agentState.researchModel, "ResearchGoogleVision", screenshot, { forceJson: false, timeout: 45000 }));
+        const visionResult = await raceAbort(callLLM(visionPrompt, agentState.researchModel, "ResearchGoogleVision", screenshot, { forceJson: false, timeout: 45000, signal: researchState.abortController.signal }));
         googleSummaryText = visionResult._rawContent || visionResult.content || "";
       }
     } catch (ex) {
@@ -3847,98 +3874,114 @@ async function runResearchPipeline(query) {
     researchState.sources[sourceIdx].statusText = "Opening page...";
     broadcastResearchProgress();
 
+    // Per-source AbortController — when the 60s timer fires (or user aborts), this
+    // also cancels any in-flight fetch inside callLLM so the worker promise actually
+    // completes (rejects with AbortError) instead of being left orphaned.
+    const sourceAbort = new AbortController();
+    let sourceTimerId = null;
     try {
-      await Promise.race([
-        (async () => {
-          researchState.visitedUrls.add(src.url);
+      const workerPromise = (async () => {
+        researchState.visitedUrls.add(src.url);
 
-          // All awaits race against both the 60s hard timeout AND the abort signal
-          await raceAbort(chrome.tabs.update(researchState.tabId, { url: src.url }));
-          await raceAbort(waitForTabLoad(researchState.tabId, 15000));
-          await researchSleep(1500);
+        // All awaits race against both the 60s hard timeout AND the abort signal
+        await raceAbort(chrome.tabs.update(researchState.tabId, { url: src.url }));
+        await raceAbort(waitForTabLoad(researchState.tabId, 15000));
+        await researchSleep(1500);
 
-          // Scrape text
-          researchState.sources[sourceIdx].statusText = "Scraping text...";
+        // Scrape text
+        researchState.sources[sourceIdx].statusText = "Scraping text...";
+        broadcastResearchProgress();
+
+        let extractedText = "";
+        let extractionMethod = "text";
+
+        try {
+          await raceAbort(ensureContentScript(researchState.tabId));
+          const pageSummary = await raceAbort(capturePageSummary(researchState.tabId));
+          extractedText = typeof pageSummary === "string" ? pageSummary : (pageSummary.text || pageSummary.content || JSON.stringify(pageSummary));
+        } catch (ex) {
+          if (researchState.aborted) throw ex;
+          extractedText = "";
+        }
+
+        extractedText = extractedText.slice(0, 2500);
+        if (researchState.aborted) throw new Error("aborted");
+
+        // If text is sparse (<100 chars), try screenshot + vision
+        if (extractedText.trim().length < 100) {
+          researchState.sources[sourceIdx].statusText = "Low text, capturing screenshot...";
           broadcastResearchProgress();
-
-          let extractedText = "";
-          let extractionMethod = "text";
-
           try {
-            await raceAbort(ensureContentScript(researchState.tabId));
-            const pageSummary = await raceAbort(capturePageSummary(researchState.tabId));
-            extractedText = typeof pageSummary === "string" ? pageSummary : (pageSummary.text || pageSummary.content || JSON.stringify(pageSummary));
+            const screenshot = await raceAbort(captureScreenshot(researchState.tabId));
+            if (screenshot && (agentState.visionModel || agentState.model)) {
+              extractionMethod = "vision";
+              researchState.sources[sourceIdx].statusText = "Sent to vision LLM...";
+              broadcastResearchProgress();
+              const visionPrompt = [
+                { role: "system", content: "You extract and summarize the main content visible on this web page screenshot." },
+                { role: "user", content: `Describe the main content of this page relevant to the research query: "${query}". Focus on factual information, key points, and notable details.` }
+              ];
+              const visionResult = await raceAbort(callLLM(visionPrompt, agentState.researchModel, "ResearchVision", screenshot, { forceJson: false, timeout: 45000, signal: sourceAbort.signal }));
+              extractedText = visionResult._rawContent || visionResult.content || extractedText;
+            }
           } catch (ex) {
             if (researchState.aborted) throw ex;
-            extractedText = "";
+            /* vision failed, continue with whatever text we have */
           }
+        }
 
-          extractedText = extractedText.slice(0, 2500);
-          if (researchState.aborted) throw new Error("aborted");
+        if (researchState.aborted) throw new Error("aborted");
 
-          // If text is sparse (<100 chars), try screenshot + vision
-          if (extractedText.trim().length < 100) {
-            researchState.sources[sourceIdx].statusText = "Low text, capturing screenshot...";
-            broadcastResearchProgress();
-            try {
-              const screenshot = await raceAbort(captureScreenshot(researchState.tabId));
-              if (screenshot && (agentState.visionModel || agentState.model)) {
-                extractionMethod = "vision";
-                researchState.sources[sourceIdx].statusText = "Sent to vision LLM...";
-                broadcastResearchProgress();
-                const visionPrompt = [
-                  { role: "system", content: "You extract and summarize the main content visible on this web page screenshot." },
-                  { role: "user", content: `Describe the main content of this page relevant to the research query: "${query}". Focus on factual information, key points, and notable details.` }
-                ];
-                const visionResult = await raceAbort(callLLM(visionPrompt, agentState.researchModel, "ResearchVision", screenshot, { forceJson: false, timeout: 45000 }));
-                extractedText = visionResult._rawContent || visionResult.content || extractedText;
-              }
-            } catch (ex) {
-              if (researchState.aborted) throw ex;
-              /* vision failed, continue with whatever text we have */
-            }
-          }
-
-          if (researchState.aborted) throw new Error("aborted");
-
-          // Skip if still no meaningful content
-          if (extractedText.trim().length < 30) {
-            researchState.sources[sourceIdx].status = "error";
-            researchState.sources[sourceIdx].statusText = "No content";
-            broadcastResearchProgress();
-            return;
-          }
-
-          // Summarize this source
-          const charCount = extractedText.trim().length;
-          researchState.sources[sourceIdx].statusText = "Scraped " + charCount + " chars, sent to LLM...";
+        // Skip if still no meaningful content
+        if (extractedText.trim().length < 30) {
+          researchState.sources[sourceIdx].status = "error";
+          researchState.sources[sourceIdx].statusText = "No content";
           broadcastResearchProgress();
+          return;
+        }
 
-          const summarizePrompt = [
-            { role: "system", content: "You are a research assistant. Summarize the following web page content in detail, focusing on information relevant to the research query. Include key facts, dates, names, statistics, and notable details. Be factual and objective." },
-            { role: "user", content: `Research query: "${query}"\nSource: ${src.title || src.url}\n\nPage content:\n${extractedText}\n\nProvide a detailed summary of 15-25 lines covering all the important information from this source relevant to the research query.` }
-          ];
+        // Summarize this source
+        const charCount = extractedText.trim().length;
+        researchState.sources[sourceIdx].statusText = "Scraped " + charCount + " chars, sent to LLM...";
+        broadcastResearchProgress();
 
-          researchState.sources[sourceIdx].statusText = "Waiting for summary...";
-          broadcastResearchProgress();
+        const summarizePrompt = [
+          { role: "system", content: "You are a research assistant. Summarize the following web page content in detail, focusing on information relevant to the research query. Include key facts, dates, names, statistics, and notable details. Be factual and objective." },
+          { role: "user", content: `Research query: "${query}"\nSource: ${src.title || src.url}\n\nPage content:\n${extractedText}\n\nProvide a detailed summary of 15-25 lines covering all the important information from this source relevant to the research query.` }
+        ];
 
-          const summaryResult = await raceAbort(callLLM(summarizePrompt, agentState.researchModel, "ResearchSummary", null, { forceJson: false, timeout: 45000 }));
-          const summaryText = summaryResult._rawContent || summaryResult.content || "";
+        researchState.sources[sourceIdx].statusText = "Waiting for summary...";
+        broadcastResearchProgress();
 
-          researchState.results.push({
-            url: src.url,
-            title: src.title || "Result #" + (i + 1),
-            sourceName: src.title || "Result #" + (i + 1),
-            summary: summaryText,
-            extractionMethod: extractionMethod,
-            timestamp: new Date().toISOString()
-          });
+        const summaryResult = await raceAbort(callLLM(summarizePrompt, agentState.researchModel, "ResearchSummary", null, { forceJson: false, timeout: 45000, signal: sourceAbort.signal }));
+        const summaryText = summaryResult._rawContent || summaryResult.content || "";
 
-          researchState.sources[sourceIdx].status = "done";
-          researchState.sources[sourceIdx].statusText = "Done";
-        })(),
-        // Hard 60s timeout per source
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout (60s)")), 60000)),
+        researchState.results.push({
+          url: src.url,
+          title: src.title || "Result #" + (i + 1),
+          sourceName: src.title || "Result #" + (i + 1),
+          summary: summaryText,
+          extractionMethod: extractionMethod,
+          timestamp: new Date().toISOString()
+        });
+
+        researchState.sources[sourceIdx].status = "done";
+        researchState.sources[sourceIdx].statusText = "Done";
+      })();
+      // Swallow any orphan rejection that arrives after the race below has already
+      // settled (e.g. callLLM rejecting late after the 60s timer fired).
+      workerPromise.catch(() => {});
+
+      const timerPromise = new Promise((_, reject) => {
+        sourceTimerId = setTimeout(() => {
+          sourceAbort.abort();
+          reject(new Error("Timeout (60s)"));
+        }, 60000);
+      });
+
+      await Promise.race([
+        workerPromise,
+        timerPromise,
         // Abort signal — rejects instantly when user clicks abort
         researchAbortSignal()
       ]);
@@ -3946,10 +3989,18 @@ async function runResearchPipeline(query) {
       if (researchState.aborted) {
         researchState.sources[sourceIdx].status = "error";
         researchState.sources[sourceIdx].statusText = "Aborted";
+        if (sourceTimerId) clearTimeout(sourceTimerId);
+        sourceAbort.abort();
         break;
       }
       researchState.sources[sourceIdx].status = "error";
       researchState.sources[sourceIdx].statusText = err.message.slice(0, 40);
+    } finally {
+      if (sourceTimerId) clearTimeout(sourceTimerId);
+      // Make sure any in-flight LLM fetch for this source is cancelled before
+      // moving on to the next URL — prevents leftover network work and
+      // late orphan rejections.
+      if (!sourceAbort.signal.aborted) sourceAbort.abort();
     }
 
     broadcastResearchProgress();
@@ -3986,9 +4037,13 @@ async function finalizeResearch() {
         { role: "user", content: 'Research query: "' + researchState.query + '"\n\nSource summaries:\n' + allSummaries + "\nWrite a comprehensive conclusion synthesizing all the above sources. 15-25 lines." }
       ];
 
-      // Race conclusion LLM call against abort signal
+      // Race conclusion LLM call against abort signal — thread the signal into
+      // callLLM so a user-abort actually cancels the in-flight fetch instead of
+      // leaving an orphan rejection that could crash the SW.
+      const conclusionPromise = callLLM(conclusionPrompt, agentState.researchModel, "ResearchConclusion", null, { forceJson: false, timeout: 45000, signal: researchState.abortController.signal });
+      conclusionPromise.catch(() => {}); // swallow any late rejection after race settles
       const conclusionResult = await Promise.race([
-        callLLM(conclusionPrompt, agentState.researchModel, "ResearchConclusion", null, { forceJson: false, timeout: 45000 }),
+        conclusionPromise,
         researchAbortSignal()
       ]);
       report.conclusion = conclusionResult._rawContent || conclusionResult.content || "";
