@@ -227,6 +227,55 @@
       .feature-row.reverse .feature-image { order: 2; }
     }
 
+    /* ── Comparison table ── */
+    .compare-table-wrap {
+      margin-top: 36px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 50px -25px rgba(0,0,0,0.18), 0 8px 16px -8px rgba(0,0,0,0.08);
+      background: var(--card);
+    }
+    .compare-table { width: 100%; border-collapse: collapse; }
+    .compare-table th, .compare-table td {
+      padding: 16px 22px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.96em;
+      vertical-align: middle;
+    }
+    .compare-table thead th { font-weight: 700; background: var(--bg-2); }
+    .compare-table thead th.col-ww {
+      color: var(--accent);
+      position: relative;
+    }
+    .compare-table thead th.col-ww::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+      background: var(--accent);
+    }
+    .compare-table tbody tr:last-child td { border-bottom: none; }
+    .compare-table td.cell-feature { width: 46%; color: var(--text-2); font-weight: 500; }
+    .compare-table td.cell-typical { color: var(--muted); }
+    .compare-table td.cell-ww { color: var(--accent); font-weight: 600; }
+    .compare-table .mark {
+      display: inline-block;
+      width: 22px; height: 22px;
+      line-height: 22px; text-align: center;
+      border-radius: 50%;
+      font-weight: 700; font-size: 0.85em;
+      margin-right: 8px;
+      vertical-align: -2px;
+    }
+    .compare-table .mark-yes { background: var(--accent); color: #fff; }
+    .compare-table .mark-no { background: rgba(217,119,119,0.18); color: #d97777; }
+    .compare-table tr.row-emph td { font-weight: 700; }
+    .compare-table tr.row-emph td.cell-feature { color: var(--text); }
+    .compare-table tr.row-emph td.cell-ww { background: var(--accent-bg); }
+    @media (max-width: 720px) {
+      .compare-table th, .compare-table td { padding: 12px 14px; font-size: 0.85em; }
+      .compare-table .mark { width: 18px; height: 18px; line-height: 18px; font-size: 0.75em; }
+    }
+
     /* ── Vision tiers grid ── */
     .tiers {
       display: grid;
@@ -366,7 +415,7 @@
   <!-- ───────────────────── Hero ───────────────────── -->
   <header id="top" class="hero">
     <div class="wrap hero-content">
-      <img src="screenshots/05-logo.png" alt="WebWright" class="hero-logo" onerror="this.src='icons/icon128.png'">
+      <img src="icons/icon128.png" alt="WebWright" class="hero-logo">
       <h1>Built for <span class="gradient">action</span>,<br>not just browsing.</h1>
       <p class="hero-tagline">An autonomous AI agent that lives in your browser sidebar — sees web pages, reasons about them, and takes real actions to complete tasks for you.</p>
       <p class="hero-sub">Tell it what you want. Watch it work.</p>
@@ -395,6 +444,69 @@
       <p class="manifesto-sub">
         WebWright is different. It perceives the page, reasons about it with an LLM, and takes real actions — clicks, types, navigates, fills forms, conducts research. It is not a chat wrapper. It is a real agentic AI.
       </p>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Comparison Table ───────────────────── -->
+  <section id="compare">
+    <div class="wrap">
+      <span class="section-eyebrow">Why WebWright</span>
+      <h2 class="section-title">Not just another LLM wrapper.</h2>
+      <p class="section-lead">Most "AI sidebars" are ChatGPT inside a panel. They read pages, answer questions, and stop. WebWright crosses the line into action — and stays open-source, server-free, and yours.</p>
+
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="col-typical">Typical AI Sidebar</th>
+              <th class="col-ww">WebWright</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cell-feature">Reads page content</td>
+              <td class="cell-typical"><span class="mark mark-yes">✓</span>Yes</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Chats about the page</td>
+              <td class="cell-typical"><span class="mark mark-yes">✓</span>Yes</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes</td>
+            </tr>
+            <tr class="row-emph">
+              <td class="cell-feature">Takes real actions on your behalf</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>No</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes — clicks, types, navigates, fills</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Open source — read every line of code</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Rarely</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>MIT-licensed on GitHub</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Free, with a fully on-device option</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Usually paid</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Free; Ollama Local = $0</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Your data stays on your device</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Routed via dev server</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>No server exists</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Zero telemetry, analytics, tracking</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Typical</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>None — verifiable in source</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Provider freedom (bring your own key)</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Locked to one LLM</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>8 providers, any model</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
