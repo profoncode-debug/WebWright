@@ -340,6 +340,6 @@ MIT
 
 <div align="center">
 
-**WebWright** — Stop browsing. Start commanding.
+**WebWright ** — Stop browsing. Start commanding.
 
 </div>

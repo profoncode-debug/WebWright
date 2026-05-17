@@ -353,17 +353,106 @@
     .pillar-desc { font-size: 0.92em; color: var(--text-2); line-height: 1.6; }
     @media (max-width: 720px) { .privacy-pillars { grid-template-columns: 1fr; } .privacy-card { padding: 28px 22px; } }
 
-    /* ── FAQ ── */
-    .faq-list { margin-top: 32px; }
-    .faq-item {
+    /* ── User Manual ── */
+    .manual-wrap { margin-top: 32px; }
+    .manual-toc {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 22px 24px;
-      margin-bottom: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
     }
-    .faq-q { font-weight: 700; font-size: 1.02em; margin-bottom: 8px; }
-    .faq-a { color: var(--text-2); font-size: 0.95em; }
+    .manual-toc h3 {
+      font-size: 0.78em; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 12px;
+    }
+    .manual-toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 28px; }
+    .manual-toc li { margin-bottom: 4px; font-size: 0.92em; color: var(--text-2); break-inside: avoid; }
+    .manual-toc a { color: var(--text-2); }
+    .manual-toc a:hover { color: var(--accent); }
+    @media (max-width: 640px) { .manual-toc ol { columns: 1; } }
+
+    .manual-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 14px;
+      scroll-margin-top: 80px;
+    }
+    .manual-section h3 {
+      font-size: 1.22em; font-weight: 800;
+      margin-bottom: 10px; letter-spacing: -0.01em;
+      color: var(--text); display: flex; align-items: center; gap: 12px;
+    }
+    .manual-section h3 .num {
+      display: inline-block; width: 28px; height: 28px;
+      background: var(--accent); color: #fff;
+      border-radius: 8px; text-align: center; line-height: 28px;
+      font-weight: 800; font-size: 0.78em; flex-shrink: 0;
+    }
+    .manual-section h4 {
+      font-size: 0.98em; font-weight: 700;
+      margin-top: 18px; margin-bottom: 6px;
+      color: var(--text-2);
+    }
+    .manual-section p, .manual-section li {
+      font-size: 0.94em; color: var(--text-2); line-height: 1.7;
+    }
+    .manual-section p { margin-bottom: 10px; }
+    .manual-section ul, .manual-section ol {
+      margin: 6px 0 12px 22px;
+    }
+    .manual-section ul li, .manual-section ol li { margin-bottom: 5px; }
+    .manual-section code {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: 'SF Mono', Consolas, Monaco, monospace;
+      font-size: 0.85em; color: var(--accent);
+    }
+    .manual-section kbd {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-family: 'SF Mono', Consolas, Monaco, monospace;
+      font-size: 0.82em;
+      color: var(--text);
+      box-shadow: 0 1px 0 var(--border);
+    }
+    .manual-section .example {
+      background: var(--bg-2);
+      border-left: 3px solid var(--accent);
+      padding: 10px 14px;
+      margin: 10px 0;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      font-size: 0.93em;
+    }
+    .manual-section .callout-tip,
+    .manual-section .callout-warn {
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 0.92em;
+    }
+    .manual-section .callout-tip {
+      background: var(--accent-bg);
+      border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+    .manual-section .callout-tip strong { color: var(--accent); }
+    .manual-section .callout-warn {
+      background: rgba(217,119,119,0.08);
+      border: 1px solid rgba(217,119,119,0.25);
+    }
+    .manual-section .callout-warn strong { color: #c95a5a; }
+    @media (max-width: 640px) {
+      .manual-section { padding: 22px 20px; }
+    }
 
     /* ── Final CTA ── */
     .final-cta {
@@ -406,8 +495,9 @@
       <div class="topbar-links">
         <a href="#features">Features</a>
         <a href="#providers">Providers</a>
+        <a href="#manual">User Manual</a>
         <a href="#privacy">Privacy</a>
-        <a href="https://github.com/profoncode-debug/WebWright" target="_blank" class="topbar-cta">View on GitHub</a>
+        <a href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank" class="topbar-cta">Add to Chrome</a>
       </div>
     </div>
   </div>
@@ -420,11 +510,20 @@
       <p class="hero-tagline">An autonomous AI agent that lives in your browser sidebar — sees web pages, reasons about them, and takes real actions to complete tasks for you.</p>
       <p class="hero-sub">Tell it what you want. Watch it work.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="https://github.com/profoncode-debug/WebWright" target="_blank">
+        <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank">
+          <svg viewBox="0 0 48 48" width="20" height="20" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px">
+            <circle cx="24" cy="24" r="11" fill="#fff"/>
+            <path fill="#EA4335" d="M3.3 14.3 13.1 31.4A12 12 0 0 1 12 24a12 12 0 0 1 12-12h20.4A23.94 23.94 0 0 0 24 0a23.94 23.94 0 0 0-20.7 12z"/>
+            <path fill="#34A853" d="M3.3 14.3A24 24 0 0 0 0 24a24 24 0 0 0 24 24 24 24 0 0 0 8.9-1.7L20.6 27.4a12 12 0 0 1-7.5-3.3z"/>
+            <path fill="#FBBC04" d="M44.4 12H24a12 12 0 0 1 10.9 16.9L19.6 47.7A24 24 0 0 0 48 24a24 24 0 0 0-3.6-12z"/>
+            <circle cx="24" cy="24" r="7.5" fill="#1A73E8"/>
+          </svg>
+          Add to Chrome — it's free
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/profoncode-debug/WebWright" target="_blank">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.66.5 12.02c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55 0-.27-.01-1.18-.02-2.14-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.34.95.1-.74.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.71 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11.04 11.04 0 015.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.24 2.75.12 3.04.74.81 1.18 1.84 1.18 3.1 0 4.44-2.69 5.42-5.26 5.7.41.36.78 1.05.78 2.12 0 1.53-.01 2.77-.01 3.14 0 .31.21.66.79.55 4.57-1.53 7.86-5.84 7.86-10.93C23.5 5.66 18.35.5 12 .5z"/></svg>
           View on GitHub
         </a>
-        <a class="btn btn-ghost" href="#features">See what it does</a>
       </div>
       <div class="hero-badges">
         <span class="hero-badge">Chrome · Edge · Brave · Opera · Arc</span>
@@ -680,32 +779,299 @@
     </div>
   </section>
 
-  <!-- ───────────────────── FAQ ───────────────────── -->
-  <section>
+  <!-- ───────────────────── User Manual ───────────────────── -->
+  <section id="manual">
     <div class="wrap">
-      <span class="section-eyebrow">FAQ</span>
-      <h2 class="section-title">Quick answers.</h2>
-      <div class="faq-list">
-        <div class="faq-item">
-          <div class="faq-q">Does it work on Chrome, Edge, Brave, and other Chromium browsers?</div>
-          <div class="faq-a">Yes. WebWright is a Manifest V3 extension — Chrome, Microsoft Edge, Brave, Opera, Vivaldi, Arc, and any other Chromium-based browser. Firefox is not supported because it uses a different extension architecture.</div>
+      <span class="section-eyebrow">User Manual</span>
+      <h2 class="section-title">Everything you need to know.</h2>
+      <p class="section-lead">A complete guide to getting WebWright running and getting good results out of it. Skim the table of contents, jump to what you need.</p>
+
+      <div class="manual-wrap">
+
+        <!-- Table of contents -->
+        <div class="manual-toc">
+          <h3>Contents</h3>
+          <ol>
+            <li><a href="#m-install">Install &amp; first run</a></li>
+            <li><a href="#m-providers">Choosing a provider &amp; model</a></li>
+            <li><a href="#m-agent">Using Agent Mode</a></li>
+            <li><a href="#m-chat">Using Chat Mode (Quick &amp; Pro)</a></li>
+            <li><a href="#m-research">Using Research Mode</a></li>
+            <li><a href="#m-workflows">Recording &amp; replaying Workflows</a></li>
+            <li><a href="#m-vault">The Personal Info Vault</a></li>
+            <li><a href="#m-vision">Vision Escalation explained</a></li>
+            <li><a href="#m-settings">Settings reference</a></li>
+            <li><a href="#m-prompting">Tips for best results</a></li>
+            <li><a href="#m-troubleshoot">Troubleshooting</a></li>
+            <li><a href="#m-shortcuts">Keyboard shortcuts</a></li>
+          </ol>
         </div>
-        <div class="faq-item">
-          <div class="faq-q">Is it free?</div>
-          <div class="faq-a">The extension itself is free and open-source (MIT). LLM costs depend on your provider. Ollama Cloud offers a generous free tier, Ollama Local is free forever (run your own model), and Gemini / DeepSeek both have free tiers. You can use WebWright for real work without paying anyone if you choose your providers right.</div>
+
+        <!-- 1. Install -->
+        <div class="manual-section" id="m-install">
+          <h3><span class="num">1</span>Install &amp; first run</h3>
+          <p>WebWright runs on every Chromium-based browser — Chrome, Microsoft Edge, Brave, Opera, Vivaldi, and Arc.</p>
+          <h4>Install from the Chrome Web Store</h4>
+          <ol>
+            <li>Open the <a href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank">WebWright listing on the Chrome Web Store</a>.</li>
+            <li>Click <strong>Add to Chrome</strong> → <strong>Add extension</strong>.</li>
+            <li>Pin the WebWright icon to the toolbar (click the puzzle icon → pin).</li>
+            <li>Click the WebWright icon to open the side panel.</li>
+          </ol>
+          <h4>Install from source (Edge / Brave / Opera or for developers)</h4>
+          <ol>
+            <li>Clone the repo: <code>git clone https://github.com/profoncode-debug/WebWright</code></li>
+            <li>Open your browser's extensions page (<code>chrome://extensions/</code>, <code>edge://extensions/</code>, etc.).</li>
+            <li>Toggle <strong>Developer mode</strong>.</li>
+            <li>Click <strong>Load unpacked</strong> and select the cloned folder.</li>
+          </ol>
+          <div class="callout-tip"><strong>First-time setup:</strong> On first launch the side panel asks you to add an Ollama Cloud API key (free at <a href="https://ollama.com" target="_blank">ollama.com</a>) — or switch to any of the other 7 providers in Settings. Without a key you'll see a "Add API Key" banner instead of the suggestion chips.</div>
         </div>
-        <div class="faq-item">
-          <div class="faq-q">Can the developer see my data or API keys?</div>
-          <div class="faq-a">No. There is no developer-controlled server. Your data, settings, and API keys live in your browser's local storage. Network traffic goes directly from your browser to the LLM provider you configured — never through us.</div>
+
+        <!-- 2. Providers -->
+        <div class="manual-section" id="m-providers">
+          <h3><span class="num">2</span>Choosing a provider &amp; model</h3>
+          <p>Open <strong>Settings</strong> (gear icon, top-right of the sidebar). WebWright supports 8 LLM providers, each on its own tab:</p>
+          <ul>
+            <li><strong>Ollama Cloud</strong> — free tier available. Get a key at <a href="https://ollama.com" target="_blank">ollama.com</a>.</li>
+            <li><strong>Ollama Local</strong> — runs models on your own machine. Free forever. Zero data leaves your device.</li>
+            <li><strong>OpenAI</strong> — GPT-4o and newer. Bring your own API key.</li>
+            <li><strong>Anthropic / Claude</strong> — Claude Sonnet 4 and newer.</li>
+            <li><strong>Google Gemini</strong> — Gemini 2.0 Flash, free tier available.</li>
+            <li><strong>DeepSeek</strong> — DeepSeek-Chat, free tier.</li>
+            <li><strong>xAI / Grok</strong></li>
+            <li><strong>Custom endpoint</strong> — any OpenAI-compatible or Ollama-compatible URL.</li>
+          </ul>
+          <h4>Model slots</h4>
+          <p>You can configure four separate models per provider so the right model handles each job:</p>
+          <ul>
+            <li><strong>Agent Model</strong> — picks actions in Agent Mode. Use a strong reasoning model.</li>
+            <li><strong>Vision Model</strong> — interprets annotated screenshots during vision escalation. Must be vision-capable.</li>
+            <li><strong>Chat Model</strong> — handles page Q&amp;A in Chat Mode.</li>
+            <li><strong>Research Model</strong> (Ollama Cloud only) — summarizes sources in Research Mode.</li>
+          </ul>
+          <div class="callout-tip"><strong>Best free combo:</strong> Ollama Cloud's free tier with <code>gpt-oss:120b-cloud</code> for agent + <code>gemma4:31b-cloud</code> for vision/research. Or Gemini 2.0 Flash for everything if you have a free Google AI Studio key.</div>
         </div>
-        <div class="faq-item">
-          <div class="faq-q">How accurate is the agent?</div>
-          <div class="faq-a">Accuracy depends on two things you control: how specifically you prompt it, and which model you point it at. Frontier models (GPT-4o, Claude Sonnet, Gemini 2.0, large Ollama Cloud models) handle long agent loops far more reliably than small local models. Specific goals (with sites, constraints, and stop conditions) work much better than vague ones.</div>
+
+        <!-- 3. Agent Mode -->
+        <div class="manual-section" id="m-agent">
+          <h3><span class="num">3</span>Using Agent Mode</h3>
+          <p>Agent Mode is for tasks where the agent must <em>do</em> things — navigate, click, type, fill forms, complete multi-step flows.</p>
+          <h4>How to start a task</h4>
+          <ol>
+            <li>Open the side panel.</li>
+            <li>Type your goal in the input field at the bottom in plain English.</li>
+            <li>Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> or click the <strong>Agent</strong> (lightning) button.</li>
+            <li>The agent opens a new tab (or works on the current one), then runs step by step. You see every action in the live log above the input.</li>
+          </ol>
+          <h4>Example goals</h4>
+          <div class="example">"Open YouTube and search for lofi study music. Open the first live stream."</div>
+          <div class="example">"Search Amazon India for Sony WH-CH520 headphones, sort by price low-to-high, open the cheapest in-stock listing."</div>
+          <div class="example">"Open Google Flights and find the cheapest non-stop flight from Delhi to Tokyo on July 15, return July 22, 1 adult."</div>
+          <h4>Pausing &amp; stopping</h4>
+          <ul>
+            <li>Click <strong>Stop</strong> at any time to halt the agent immediately.</li>
+            <li>The agent automatically stops after <code>Max Steps</code> actions (default 20) or <code>Wall Timeout</code> seconds (default 300).</li>
+          </ul>
+          <div class="callout-warn"><strong>Important:</strong> The agent does what you ask. Don't give it goals you wouldn't take responsibility for completing — financial transactions, irreversible posts, deletions. The recommended pattern is "researcher + form-filler" — let it find and prepare, then you review and submit.</div>
         </div>
-        <div class="faq-item">
-          <div class="faq-q">Will it spend money or post things without my permission?</div>
-          <div class="faq-a">It does what you ask it to do. If you tell the agent to "buy headphones," it will navigate towards purchase. The recommended pattern is to use it as a researcher and form-filler — let it find and prepare, then you review and submit the final action. Never give the agent goals you wouldn't take responsibility for completing.</div>
+
+        <!-- 4. Chat Mode -->
+        <div class="manual-section" id="m-chat">
+          <h3><span class="num">4</span>Using Chat Mode (Quick &amp; Pro)</h3>
+          <p>Chat Mode answers questions about the page you're currently viewing. Multi-turn conversation, full page context.</p>
+          <h4>How to start a chat</h4>
+          <ol>
+            <li>Navigate to the page you want to ask about.</li>
+            <li>Type your question in the side panel input.</li>
+            <li>Press <kbd>Enter</kbd> or click the <strong>Chat</strong> (speech bubble) button.</li>
+          </ol>
+          <h4>Quick vs Pro</h4>
+          <p>Use the mode pill above the input to choose:</p>
+          <ul>
+            <li><strong>⚡ Quick</strong> — sends only the page <em>text</em>. Fastest, cheapest. Best for articles, blog posts, plain text pages.</li>
+            <li><strong>✨ Pro</strong> — also attaches a live <em>screenshot</em>. The model literally sees the layout, charts, dashboards, visuals. Best for complex pages where layout matters.</li>
+          </ul>
+          <p>Your choice is remembered across sessions. Switch any time.</p>
+          <h4>Example questions</h4>
+          <div class="example">"Summarize this article in 5 bullet points, focusing on the financial figures."</div>
+          <div class="example">"What stands out about the trend in the second chart on this dashboard?" <em>(needs Pro mode)</em></div>
+          <div class="example">"Explain this paragraph in simple terms."</div>
         </div>
+
+        <!-- 5. Research Mode -->
+        <div class="manual-section" id="m-research">
+          <h3><span class="num">5</span>Using Research Mode</h3>
+          <p>Research Mode autonomously visits up to 10 sources on the web and synthesizes a final report. Ideal for "research X for me" requests.</p>
+          <h4>How to start a research run</h4>
+          <ol>
+            <li>Click the <strong>Research</strong> (magnifying glass) icon in the side panel header.</li>
+            <li>Type a topic in the search box.</li>
+            <li>Click <strong>Research</strong>.</li>
+          </ol>
+          <h4>What happens next</h4>
+          <ol>
+            <li>WebWright opens a working tab and searches Google.</li>
+            <li>It captures Google's AI Overview using a vision LLM.</li>
+            <li>It extracts the top 10 organic result URLs.</li>
+            <li>It visits each source, scrapes text (vision fallback for low-text pages), and summarizes it.</li>
+            <li>It synthesizes a final cross-source conclusion.</li>
+            <li>A polished multi-column HTML report opens in a new tab.</li>
+          </ol>
+          <p>The drawer shows live per-source status: <strong>active</strong> · <strong>done</strong> · <strong>error</strong> · <strong>skipped</strong>.</p>
+          <h4>Controls</h4>
+          <ul>
+            <li>Click <strong>Abort</strong> at any time to stop the run instantly.</li>
+            <li>Past reports are listed in the drawer — click to re-open in a new tab, or delete to remove.</li>
+            <li>Per-source hard cap is 60 seconds; LLM call timeout is 45 seconds.</li>
+          </ul>
+          <div class="callout-tip"><strong>Set a Research Model</strong> for best results. Ollama Cloud lets you configure a separate Research Model in Settings (defaults to <code>gemma4:31b-cloud</code>). Other providers fall back to your primary model.</div>
+        </div>
+
+        <!-- 6. Workflows -->
+        <div class="manual-section" id="m-workflows">
+          <h3><span class="num">6</span>Recording &amp; replaying Workflows</h3>
+          <p>Workflows record a sequence of browser actions (clicks, typing, navigation) once, then replay them with a single click. Best for repetitive tasks where the actions are identical every time.</p>
+          <h4>To record a workflow</h4>
+          <ol>
+            <li>Open the side panel and click the <strong>Workflows</strong> button.</li>
+            <li>Click <strong>Start Recording</strong>.</li>
+            <li>Perform the task — clicks, typing, and navigation are captured across tabs.</li>
+            <li>Click <strong>Stop</strong>, give the workflow a name, save.</li>
+          </ol>
+          <h4>To replay a workflow</h4>
+          <ol>
+            <li>Open the Workflows panel.</li>
+            <li>Click <strong>Play</strong> on any saved workflow.</li>
+            <li>Use <strong>Pause</strong> / <strong>Resume</strong> mid-playback if needed.</li>
+          </ol>
+          <h4>Best use cases</h4>
+          <ul>
+            <li>Daily startup routine — open Gmail, Slack, Notion, Calendar in one click</li>
+            <li>Job board sweeps — open LinkedIn Jobs, Indeed, HN Who's Hiring with your filters</li>
+            <li>Standup setup — open Jira, meeting link, Slack channel</li>
+            <li>Daily portfolio checks across multiple sites</li>
+          </ul>
+          <div class="callout-warn"><strong>Workflows replay exactly what you recorded.</strong> Don't use them for tasks where decisions are needed (use Agent Mode instead) or for sites whose structure changes often.</div>
+        </div>
+
+        <!-- 7. Personal Info Vault -->
+        <div class="manual-section" id="m-vault">
+          <h3><span class="num">7</span>The Personal Info Vault</h3>
+          <p>Save your details once. The agent uses them to fill forms on demand — only when you explicitly ask for a form-related task.</p>
+          <h4>To set up</h4>
+          <ol>
+            <li>Click the <strong>Personal Info</strong> (person) icon in the side panel header.</li>
+            <li>Fill in any of: Name, Age, Sex, Father's Name, Mother's Name, Address, plus up to 5 custom fields (label + value).</li>
+            <li>Click <strong>Save</strong>. Data is stored locally in <code>chrome.storage.local</code>, never sent anywhere unless the agent uses it for a form fill.</li>
+          </ol>
+          <h4>When the vault is sent to the LLM</h4>
+          <p>Only when your goal contains form-related keywords like: <code>fill</code>, <code>form</code>, <code>complete</code>, <code>enter</code>, <code>register</code>, <code>signup</code>, <code>apply</code>, <code>application</code>, <code>checkout</code>, <code>booking</code>, <code>my name</code>, <code>my address</code>, <code>my info</code>, etc.</p>
+          <p>If the keyword check doesn't match, the vault is <strong>never</strong> added to the LLM prompt — for example, "summarize this article" or "research Hanta virus" will never include your personal info.</p>
+          <h4>Modes that never see your vault</h4>
+          <ul>
+            <li>Chat Mode (Quick or Pro)</li>
+            <li>Research Mode</li>
+            <li>Workflow replay</li>
+          </ul>
+          <p>Only Agent Mode + keyword match = vault sent.</p>
+        </div>
+
+        <!-- 8. Vision Escalation -->
+        <div class="manual-section" id="m-vision">
+          <h3><span class="num">8</span>Vision Escalation explained</h3>
+          <p>When DOM-based actions fail, WebWright automatically climbs a 4-tier ladder. You don't trigger this manually — the agent escalates on its own when it detects it's stuck.</p>
+          <ol>
+            <li><strong>Tier 1 — DOM Analysis.</strong> Default. The agent reads the page's interactive elements and picks one. Fast and token-efficient.</li>
+            <li><strong>Tier 2 — Vision + 80 marks.</strong> Triggered when a DOM click fails, an element isn't found, or the agent gets stuck in a loop. A screenshot is taken with up to 80 numbered markers overlaid on interactive elements, then sent to a vision-capable LLM.</li>
+            <li><strong>Tier 3 — Vision + 160 marks.</strong> If Tier 2 still can't resolve the action, marker density is doubled for harder pages with many small elements.</li>
+            <li><strong>Tier 4 — Raw Coordinates.</strong> Last resort. The LLM picks an X,Y point on the screenshot and WebWright dispatches a synthetic click via the Chrome DevTools Protocol.</li>
+          </ol>
+          <p>The agent also has <strong>anti-loop detection</strong>: if it repeats the same action three times, oscillates between two elements, or detects that a step claimed success but the page state didn't change, it changes strategy or escalates.</p>
+          <div class="callout-tip"><strong>To enable vision escalation</strong> you must configure a vision-capable model in Settings → your provider tab → Vision Model. Without one, the agent stays at Tier 1.</div>
+        </div>
+
+        <!-- 9. Settings reference -->
+        <div class="manual-section" id="m-settings">
+          <h3><span class="num">9</span>Settings reference</h3>
+          <p>Open the gear icon in the side panel header.</p>
+          <ul>
+            <li><strong>Provider</strong> — which LLM service to use. Default: Ollama Cloud.</li>
+            <li><strong>Endpoint, API Key, Models</strong> — set per provider.</li>
+            <li><strong>Max Steps</strong> — auto-stop the agent after N actions. Default: 20. Raise this for complex tasks; lower it to keep the agent on a short leash.</li>
+            <li><strong>Step Delay</strong> — pause between actions, in milliseconds. Default: 2000. Lower it for speed; raise it on slow sites.</li>
+            <li><strong>LLM Timeout</strong> — max wait per LLM call, in ms. Default: 100000 (100 s). Raise for slow models.</li>
+            <li><strong>Wall Timeout</strong> — max total task duration, in ms. Default: 300000 (5 min).</li>
+            <li><strong>Chat Mode default</strong> — pill defaults to Pro. Change to Quick if you want text-only by default.</li>
+          </ul>
+        </div>
+
+        <!-- 10. Tips -->
+        <div class="manual-section" id="m-prompting">
+          <h3><span class="num">10</span>Tips for best results</h3>
+          <p>The accuracy of any AI agent is a function of two things you control: how specifically you prompt it, and which model you point it at.</p>
+          <h4>Prompting</h4>
+          <ul>
+            <li><strong>Name the site</strong> when relevant. "On Flipkart…" beats "find me a phone."</li>
+            <li><strong>State a stop condition.</strong> "…and open the cheapest in-stock listing" beats "buy headphones" (which runs forever).</li>
+            <li><strong>Spell out filters and constraints up front</strong> — under $X, in stock, before this date.</li>
+            <li><strong>Avoid pronouns.</strong> Restate the actual goal each time instead of "do that again."</li>
+          </ul>
+          <h4>Model choice</h4>
+          <ul>
+            <li><strong>Frontier reasoning models</strong> (GPT-4o, Claude Sonnet 4, Gemini 2.0 Flash, gpt-oss:120b-cloud) handle long agent loops most reliably.</li>
+            <li><strong>Mid-tier models</strong> (DeepSeek-Chat, Grok-3-mini, gemma4:31b) are good for everyday navigation but may stall on complex multi-step flows.</li>
+            <li><strong>Small local models</strong> (qwen2.5-coder:7b, llava:13b) work for simple tasks but expect retries on complex sites.</li>
+            <li><strong>Always pair text-only providers with a vision model.</strong> Without one, vision escalation can't recover from DOM failures.</li>
+          </ul>
+          <div class="callout-tip"><strong>When a task fails:</strong> try a stronger model AND a more specific prompt before assuming it's a bug. Most "the agent is dumb" outcomes trace back to one of those two.</div>
+        </div>
+
+        <!-- 11. Troubleshooting -->
+        <div class="manual-section" id="m-troubleshoot">
+          <h3><span class="num">11</span>Troubleshooting</h3>
+
+          <h4>"Ollama Cloud rejected the request (403)"</h4>
+          <p>Your API key is missing, invalid, or has been rate-limited. Fix:</p>
+          <ol>
+            <li>Go to <a href="https://ollama.com" target="_blank">ollama.com</a> and sign up (free).</li>
+            <li>Generate a personal API key.</li>
+            <li>Paste it into <strong>Settings → Ollama Cloud → API Key</strong>.</li>
+          </ol>
+
+          <h4>"Local Ollama rejected the request (403)"</h4>
+          <p>Ollama is blocking the extension's origin. Set the environment variable <code>OLLAMA_ORIGINS=*</code> and restart Ollama.</p>
+
+          <h4>The agent is stuck in a loop</h4>
+          <p>The agent's anti-loop detection usually catches this. If it doesn't:</p>
+          <ul>
+            <li>Click <strong>Stop</strong> to halt manually.</li>
+            <li>Rephrase the goal to be more specific (sites, stop condition, constraints).</li>
+            <li>Switch to a stronger model.</li>
+            <li>Make sure a Vision Model is configured so vision escalation can fire.</li>
+          </ul>
+
+          <h4>Agent ignores my personal info on a form</h4>
+          <p>The vault is only sent when your goal includes form-related keywords. Try rephrasing: "<em>fill</em> this <em>form</em> with my saved info" instead of "do this for me."</p>
+
+          <h4>Research Mode keeps timing out on sources</h4>
+          <p>Some sites are slow or block bots. The 60-second per-source hard cap will skip them and move on. If many sources fail, switch to a faster Research Model or try a more specific topic that surfaces less spammy sources.</p>
+
+          <h4>Side panel won't open</h4>
+          <p>Click the puzzle icon in your browser toolbar → pin WebWright. Then click its icon directly.</p>
+        </div>
+
+        <!-- 12. Shortcuts -->
+        <div class="manual-section" id="m-shortcuts">
+          <h3><span class="num">12</span>Keyboard shortcuts</h3>
+          <ul>
+            <li><kbd>Enter</kbd> in the input → send a Chat message</li>
+            <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the input → run an Agent task</li>
+            <li><kbd>Shift</kbd> + <kbd>Enter</kbd> in the input → new line (multi-line prompt)</li>
+            <li><kbd>Esc</kbd> while the agent is running → stop the agent</li>
+          </ul>
+        </div>
+
       </div>
     </div>
   </section>
@@ -715,9 +1081,15 @@
     <div class="wrap">
       <h2>Stop browsing.<br><span style="background: var(--hero-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Start commanding.</span></h2>
       <p>Open-source, under 1 MB, runs on every Chromium browser. Bring your own API key, or run fully local with Ollama.</p>
-      <a class="btn btn-primary" href="https://github.com/profoncode-debug/WebWright" target="_blank">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.66.5 12.02c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55 0-.27-.01-1.18-.02-2.14-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.34.95.1-.74.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.71 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11.04 11.04 0 015.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.24 2.75.12 3.04.74.81 1.18 1.84 1.18 3.1 0 4.44-2.69 5.42-5.26 5.7.41.36.78 1.05.78 2.12 0 1.53-.01 2.77-.01 3.14 0 .31.21.66.79.55 4.57-1.53 7.86-5.84 7.86-10.93C23.5 5.66 18.35.5 12 .5z"/></svg>
-        View on GitHub
+      <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank">
+        <svg viewBox="0 0 48 48" width="20" height="20" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px">
+          <circle cx="24" cy="24" r="11" fill="#fff"/>
+          <path fill="#EA4335" d="M3.3 14.3 13.1 31.4A12 12 0 0 1 12 24a12 12 0 0 1 12-12h20.4A23.94 23.94 0 0 0 24 0a23.94 23.94 0 0 0-20.7 12z"/>
+          <path fill="#34A853" d="M3.3 14.3A24 24 0 0 0 0 24a24 24 0 0 0 24 24 24 24 0 0 0 8.9-1.7L20.6 27.4a12 12 0 0 1-7.5-3.3z"/>
+          <path fill="#FBBC04" d="M44.4 12H24a12 12 0 0 1 10.9 16.9L19.6 47.7A24 24 0 0 0 48 24a24 24 0 0 0-3.6-12z"/>
+          <circle cx="24" cy="24" r="7.5" fill="#1A73E8"/>
+        </svg>
+        Add to Chrome — it's free
       </a>
     </div>
   </section>
