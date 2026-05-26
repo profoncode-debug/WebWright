@@ -11,7 +11,7 @@
 > fills forms, books, buys, researches. It does not just answer questions
 > *about* the web; it **does things on** the web for you.
 
-**Tell it what you want. Watch it work.**
+**Tell it what you want. Watch it work live.**
 
 [Install](#installation) | [Features](#features) | [Providers](#supported-providers) | [How It Works](#how-it-works) | [Privacy](#privacy--liability) | [Contributing](#contributing)
 
