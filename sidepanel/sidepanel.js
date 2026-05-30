@@ -237,43 +237,58 @@
   }
 
   /* ═══════════════════════════════════════════
-   * Markdown Parser (lightweight)
+   * Markdown + Math rendering (marked.js + KaTeX, bundled in ../lib/)
+   *
+   * renderMarkdown(text)     → HTML string from full-spec markdown (tables,
+   *                            nested lists, strikethrough, code blocks, etc.)
+   * renderMathInBubble(el)   → typeset any LaTeX delimited by $…$, $$…$$,
+   *                            \(…\) or \[…\] inside the bubble after innerHTML
+   *                            has been set.
+   *
+   * If marked or KaTeX failed to load (e.g. file missing), we fall back to a
+   * minimal escape-and-paragraph wrap so the chat stays readable.
    * ═══════════════════════════════════════════ */
+
+  // Configure marked once: GFM (tables, strikethrough, autolinks), preserve line breaks.
+  (function configureMarked() {
+    if (typeof marked === "undefined" || !marked.setOptions) return;
+    try {
+      marked.setOptions({
+        gfm: true,
+        breaks: true,
+        headerIds: false,
+        mangle: false
+      });
+    } catch (_) {}
+  })();
 
   function renderMarkdown(text) {
     if (!text) return "";
-    var s = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    s = s.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code) { return '<pre><code>' + code.trim() + '</code></pre>'; });
-    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-    s = s.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
-    s = s.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
-    s = s.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
-    s = s.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
-    s = s.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
-    s = s.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
-    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    s = s.replace(/^&gt;\s+(.+)$/gm, '<blockquote>$1</blockquote>');
-    s = s.replace(/^---$/gm, '<hr>');
-    s = s.replace(/(?:^|\n)((?:[\-\*]\s+.+\n?)+)/g, function(_, block) {
-      var items = block.trim().split(/\n/).map(function(line) {
-        return '<li>' + line.replace(/^[\-\*]\s+/, '') + '</li>';
-      }).join('');
-      return '<ul>' + items + '</ul>';
-    });
-    s = s.replace(/(?:^|\n)((?:\d+\.\s+.+\n?)+)/g, function(_, block) {
-      var items = block.trim().split(/\n/).map(function(line) {
-        return '<li>' + line.replace(/^\d+\.\s+/, '') + '</li>';
-      }).join('');
-      return '<ol>' + items + '</ol>';
-    });
-    s = s.replace(/\n\n+/g, '</p><p>');
-    if (!s.match(/^<(h[1-6]|ul|ol|pre|blockquote|hr)/)) s = '<p>' + s + '</p>';
-    s = s.replace(/<p><\/(h[1-6]|ul|ol|pre|blockquote|hr)>/g, '</$1>');
-    s = s.replace(/<(h[1-6]|ul|ol|pre|blockquote|hr)([^>]*)><\/p>/g, '<$1$2>');
-    s = s.replace(/<p>\s*<\/p>/g, '');
-    s = s.replace(/([^>])\n([^<])/g, '$1<br>$2');
-    return s;
+    if (typeof marked !== "undefined" && marked.parse) {
+      try { return marked.parse(text); } catch (_) { /* fall through */ }
+    }
+    // Fallback: escape + paragraph wrap
+    var esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return "<p>" + esc.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br>") + "</p>";
+  }
+
+  function renderMathInBubble(el) {
+    if (!el || typeof renderMathInElement === "undefined") return;
+    try {
+      renderMathInElement(el, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "\\[", right: "\\]", display: true },
+          { left: "$",  right: "$",  display: false },
+          { left: "\\(", right: "\\)", display: false }
+        ],
+        throwOnError: false,
+        errorColor: "#cc6666",
+        // Skip math inside <code>, <pre>, <script>, <noscript> so code samples
+        // and shell prompts that contain stray dollars don't get hijacked.
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      });
+    } catch (_) { /* ignore: leave raw LaTeX visible rather than crash */ }
   }
 
   /* ═══════════════════════════════════════════
@@ -307,6 +322,7 @@
 
     if (type === "assistant") {
       bubble.innerHTML = renderMarkdown(content);
+      renderMathInBubble(bubble);
     } else {
       bubble.textContent = content;
     }
@@ -1725,7 +1741,6 @@
   function renderChatMode() {
     if (!chatModePill) return;
     chatModePill.setAttribute("data-mode", chatMode);
-    if (chatModePillIcon)  chatModePillIcon.textContent  = chatMode === "pro" ? "✨" : "⚡";
     if (chatModePillLabel) chatModePillLabel.textContent = chatMode === "pro" ? "Pro" : "Quick";
     if (chatModePopover) {
       var opts = chatModePopover.querySelectorAll(".chat-mode-option");

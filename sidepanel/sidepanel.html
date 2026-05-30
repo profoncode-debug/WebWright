@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- KaTeX styles (math typesetting) — fonts loaded from ../lib/fonts/ via relative paths inside the CSS -->
+  <link rel="stylesheet" href="../lib/katex.min.css">
   <style>
     /* ═══════════════════════════════════════════
        Tokens
@@ -506,6 +508,49 @@
       padding-left: 10px; margin: 6px 0; color: var(--text-secondary);
     }
     .chat-bubble hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+    /* ── Tables (marked.js GFM) ── */
+    .chat-bubble table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+      font-size: 12px;
+      display: block;
+      overflow-x: auto;
+    }
+    .chat-bubble th, .chat-bubble td {
+      border: 1px solid var(--border);
+      padding: 5px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .chat-bubble th {
+      background: rgba(124,106,239,0.08);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .chat-bubble tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+    /* ── Strikethrough ── */
+    .chat-bubble del, .chat-bubble s { opacity: 0.65; }
+
+    /* ── Task lists (- [x] / - [ ]) ── */
+    .chat-bubble li input[type="checkbox"] {
+      margin-right: 6px; vertical-align: middle;
+      accent-color: var(--accent);
+    }
+
+    /* ── KaTeX math typesetting tweaks ──
+       Display math (block) gets some breathing room; inline stays inline.
+       Horizontal scroll on overflow so a wide matrix doesn't blow out the bubble. */
+    .chat-bubble .katex-display {
+      margin: 10px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 2px 0;
+    }
+    .chat-bubble .katex { font-size: 1em; }
+    .chat-bubble .katex-html { white-space: normal; }
 
     /* ── Shared Keyframes ── */
     @keyframes step-in {
@@ -1448,14 +1493,10 @@
           <div class="field">
             <label class="field-label">Primary Model</label>
             <select class="field-input" data-cfg="ollama_cloud.model" id="ollamaCloudModel">
-              <option value="kimi-k2.6:cloud">kimi-k2.6:cloud</option>
+              <option value="qwen3-coder-next:cloud">kimi-k2.6:cloud</option>
               <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
-              <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
-              <option value="glm-5:cloud">glm-5:cloud</option>
+              <option value="glm-4.6:cloud">minimax-m2.7:cloud</option>
               <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
-              <option value="deepseek-v3.2:cloud">deepseek-v3.2:cloud</option>
-              <option value="deepseek-v4-flash:cloud">deepseek-v4-flash:cloud</option>
-              <option value="deepseek-v4-pro:cloud">deepseek-v4-pro:cloud</option>
               <option value="gemma4:31b-cloud">gemma4:31b-cloud</option>
               <option value="qwen3.6:35b-a3b-bf16">qwen3.6:35b-a3b-bf16</option>
               <option value="__custom__">Custom</option>
@@ -1717,13 +1758,11 @@
       <textarea class="goal-input" id="goalInput" placeholder="Ask anything or tell me what to do..." rows="1" spellcheck="false"></textarea>
       <div class="input-actions" id="inputActions">
         <button class="chat-mode-pill" id="chatModePill" data-mode="quick" type="button" aria-haspopup="menu" aria-expanded="false" title="Chat mode">
-          <span class="pill-icon" id="chatModePillIcon">⚡</span>
           <span class="pill-label" id="chatModePillLabel">Quick</span>
           <svg class="pill-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="chat-mode-popover hidden" id="chatModePopover" role="menu">
           <div class="chat-mode-option" data-value="quick" role="menuitemradio">
-            <div class="opt-icon">⚡</div>
             <div class="opt-text">
               <div class="opt-title">Quick</div>
               <div class="opt-desc">Text only, fastest responses.</div>
@@ -1731,7 +1770,6 @@
             <svg class="opt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div class="chat-mode-option" data-value="pro" role="menuitemradio">
-            <div class="opt-icon">✨</div>
             <div class="opt-text">
               <div class="opt-title">Pro</div>
               <div class="opt-desc">Attach a screenshot for better understanding.</div>
@@ -1773,6 +1811,10 @@
     </div>
   </div>
 
+  <!-- Markdown + math libraries (bundled locally — no remote code) -->
+  <script src="../lib/marked.min.js"></script>
+  <script src="../lib/katex.min.js"></script>
+  <script src="../lib/auto-render.min.js"></script>
   <script src="sidepanel.js"></script>
 </body>
 </html>
