@@ -2862,20 +2862,39 @@ function gracefulStop(goal, stopReason) {
  * stays empty and the agent loop runs as before (without the anchor).
  * ═══════════════════════════════════════════ */
 
-async function generateTaskPlan(goal) {
-  const sys = `You are a planning assistant for an autonomous browser agent. Given a user's goal, produce a SHORT high-level plan that breaks the goal into 3-7 concrete steps the agent should execute IN ORDER. Each step should be one sentence — concrete enough to act on, abstract enough that the agent has flexibility in execution.
+async function generateTaskPlan(goal, chatContext) {
+  const sys = `You are a planning assistant for an autonomous browser agent. Given a user's goal — and the recent chat conversation that led up to it — produce a SHORT high-level plan that breaks the goal into 3-7 concrete steps the agent should execute IN ORDER. Each step should be one sentence — concrete enough to act on, abstract enough that the agent has flexibility in execution.
 
 Output a STRICT JSON object: { "plan": ["step 1", "step 2", "step 3", ...] }
 
 Rules:
 - 3-7 steps total. Not more, not fewer.
 - Each step is one sentence under 120 characters.
+- USE THE CHAT CONTEXT to resolve references in the goal (e.g. "book it", "open that one", "the second result", "the cheaper one") to the concrete thing being referred to. If chat shows the user was looking at "Ottimo at Sahara Star", the plan should name Ottimo explicitly, not say "the restaurant".
+- USE THE CHAT CONTEXT to pick the best site to visit when the user didn't name one. If chat shows Indian e-commerce, prefer Flipkart/Amazon.in over Amazon.com.
 - Be concrete about which sites to visit when relevant (e.g. "Open Amazon.in and search for X").
 - Be concrete about what data to gather and what to do with it.
 - Final step should always describe what to deliver back to the user.
 - No code fences. No commentary. JSON only.`;
 
-  const user = `Goal: "${goal}"\n\nProduce the plan now as JSON.`;
+  // Build the user message — fold in recent chat context if any.
+  let user;
+  if (chatContext && chatContext.length > 0) {
+    // Compact transcript: last ~8 turns max to keep planning prompt small
+    const transcript = chatContext.slice(-8).map(function(m) {
+      const who = m.role === "user" ? "User" : "Assistant";
+      const text = (m.content || "").slice(0, 240);
+      return who + ": " + text;
+    }).join("\n");
+    user = `RECENT CHAT (use to resolve any references like "it", "that", "the same thing"):
+${transcript}
+
+Goal the user just gave the agent: "${goal}"
+
+Produce the plan now as JSON.`;
+  } else {
+    user = `Goal: "${goal}"\n\nProduce the plan now as JSON.`;
+  }
 
   try {
     const result = await callLLM(
@@ -2962,9 +2981,11 @@ async function runAgentLoop(goal, tabId) {
   // Generate a high-level plan once before the main loop. Non-fatal: if the call
   // fails or the model returns nothing usable, agentState.plan stays empty and
   // the agent runs without the persistent anchor (same as the old behavior).
+  // Pass the chat context so the planner can resolve references ("book it",
+  // "the second one") and pick sites informed by what the user was just chatting about.
   if (!agentState.aborted) {
     broadcastStatus({ status: "planning", message: "Planning approach…" });
-    agentState.plan = await generateTaskPlan(goal);
+    agentState.plan = await generateTaskPlan(goal, agentState.chatContext);
   }
 
   try {
