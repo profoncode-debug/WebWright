@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebWright — Microphone Permission</title>
+  <style>
+    :root { --accent:#7c6aef; --bg:#0c0c14; --card:#151522; --text:#e8e9f0; --muted:#9ca3af; --border:#262638; --green:#34d399; --red:#f87171; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:"Inter","Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:32px; max-width:460px; width:100%; box-shadow:0 20px 60px -20px rgba(0,0,0,.5); }
+    h1 { font-size:1.4em; font-weight:800; margin-bottom:8px; }
+    p { color:var(--muted); font-size:.95em; line-height:1.6; margin-bottom:16px; }
+    .status { display:flex; align-items:center; gap:10px; padding:14px 16px; border-radius:10px; font-weight:600; font-size:.95em; margin:18px 0; border:1px solid var(--border); }
+    .status .dot { width:10px; height:10px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+    .status.granted { color:var(--green); } .status.granted .dot { background:var(--green); }
+    .status.denied  { color:var(--red); }   .status.denied .dot { background:var(--red); }
+    .status.prompt  { color:var(--accent); } .status.prompt .dot { background:var(--accent); }
+    button { width:100%; padding:13px 20px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-weight:700; font-size:1em; cursor:pointer; transition:.15s; }
+    button:hover { background:#9d8cff; }
+    .hint { font-size:.82em; color:var(--muted); margin-top:18px; line-height:1.6; }
+    code { background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-size:.85em; color:var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎙️ Enable Voice Mode</h1>
+    <p>WebWright's hands-free Voice Mode needs permission to use your microphone. Click the button below and choose <strong>Allow</strong> when your browser asks.</p>
+
+    <div class="status prompt" id="status">
+      <span class="dot"></span><span id="statusText">Microphone permission: not yet requested</span>
+    </div>
+
+    <button id="grantBtn">Allow microphone access</button>
+
+    <p class="hint" id="hint">
+      Once allowed, return to the WebWright side panel and turn Voice Mode on again.<br><br>
+      <strong>Note:</strong> Voice transcription uses Chrome's built-in speech recognition, which sends audio to Google's servers. Text-to-speech and everything else stay on your device.
+    </p>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const statusText = document.getElementById("statusText");
+    const grantBtn = document.getElementById("grantBtn");
+    const hint = document.getElementById("hint");
+
+    function setStatus(kind, text) {
+      statusEl.className = "status " + kind;
+      statusText.textContent = text;
+    }
+
+    async function refreshState() {
+      try {
+        if (navigator.permissions) {
+          const p = await navigator.permissions.query({ name: "microphone" });
+          if (p.state === "granted") {
+            setStatus("granted", "Microphone permission: granted ✓");
+            grantBtn.textContent = "Granted — you can close this tab";
+            hint.innerHTML = "All set. Return to the WebWright side panel and turn Voice Mode on.<br><br><strong>Note:</strong> Voice transcription uses Chrome's built-in speech recognition (audio sent to Google). Everything else stays on your device.";
+          } else if (p.state === "denied") {
+            setStatus("denied", "Microphone permission: denied ✗");
+            hint.innerHTML = "Permission was blocked. Click the camera/mic icon in the address bar (or open <code>chrome://settings/content/microphone</code>) and allow this extension, then reload this page.";
+          } else {
+            setStatus("prompt", "Microphone permission: click the button to request");
+          }
+          p.onchange = refreshState;
+        }
+      } catch (e) { /* permissions API not available — button still works */ }
+    }
+
+    grantBtn.addEventListener("click", async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+        setStatus("granted", "Microphone permission: granted ✓");
+        grantBtn.textContent = "Granted — you can close this tab";
+        hint.innerHTML = "All set. Return to the WebWright side panel and turn Voice Mode on.";
+      } catch (e) {
+        setStatus("denied", "Microphone access was blocked (" + (e.name || "error") + ")");
+        hint.innerHTML = "Click the camera/mic icon in the address bar (or open <code>chrome://settings/content/microphone</code>), allow this extension, then reload this page.";
+      }
+    });
+
+    refreshState();
+  </script>
+</body>
+</html>

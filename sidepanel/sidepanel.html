@@ -183,11 +183,11 @@
     /* ═══════════════════════════════════════════
        Status Strip
        ═══════════════════════════════════════════ */
+    /* Hidden: the agent's live status (thinking/working/acting) is already
+       shown in the stream below, so this top strip is redundant. Kept in the
+       DOM (elements still referenced by JS) but not displayed. */
     .status-strip {
-      flex-shrink: 0; height: 32px; padding: 0 12px;
-      display: flex; align-items: center; gap: 8px;
-      background: var(--bg-root);
-      border-bottom: 1px solid var(--border);
+      display: none;
     }
 
     .status-dot {
@@ -778,12 +778,107 @@
     }
     .chat-mode-btn:hover { background: var(--accent-light); }
 
+    .send-btn {
+      background: var(--accent);
+      color: #fff;
+    }
+    .send-btn:hover { background: var(--accent-light); }
+    .send-btn svg { transform: translateX(-1px); }
+
     .agent-mode-btn {
       background: rgba(124,106,239,0.12);
       color: var(--accent-light);
       border: 1px solid rgba(124,106,239,0.18);
     }
     .agent-mode-btn:hover { background: rgba(124,106,239,0.22); }
+
+    /* ═══════════════════════════════════════════
+       Voice Mode
+       ═══════════════════════════════════════════ */
+    .voice-mode-btn {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .voice-mode-btn:hover { background: rgba(255,255,255,0.10); color: var(--text-secondary); }
+    .voice-mode-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,106,239,0.25);
+      animation: voice-btn-pulse 2s ease-in-out infinite;
+    }
+    @keyframes voice-btn-pulse {
+      0%,100% { box-shadow: 0 0 0 3px rgba(124,106,239,0.25); }
+      50%     { box-shadow: 0 0 0 5px rgba(124,106,239,0.12); }
+    }
+
+    /* In-flow voice bar — sits above the input, never covers the log */
+    .voice-bar {
+      flex-shrink: 0;
+      padding: 9px 12px 8px;
+      background: linear-gradient(180deg, rgba(124,106,239,0.10), var(--bg-1, #0e0e16) 92%);
+      border-top: 1px solid rgba(124,106,239,0.35);
+      animation: voice-bar-in 200ms cubic-bezier(.16,1,.3,1) both;
+    }
+    .voice-bar.hidden { display: none; }
+    @keyframes voice-bar-in {
+      0% { opacity: 0; transform: translateY(6px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .voice-bar-row { display: flex; align-items: center; gap: 10px; }
+    .voice-state-label {
+      flex: 1; min-width: 0;
+      font-size: 12px; font-weight: 700;
+      color: var(--accent-light, #9d8ff5);
+      letter-spacing: 0.2px;
+    }
+    .voice-close-btn {
+      width: 24px; height: 24px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border); cursor: pointer;
+      color: var(--text-muted); border-radius: 7px;
+      transition: all 150ms;
+    }
+    .voice-close-btn:hover { background: rgba(248,113,113,0.14); color: #f87171; border-color: rgba(248,113,113,0.3); }
+
+    /* Inline equalizer (left of the label) */
+    .voice-eq {
+      display: flex; align-items: center; gap: 3px;
+      height: 18px; width: 26px; flex-shrink: 0;
+    }
+    .voice-eq span {
+      width: 3px; height: 6px; border-radius: 2px;
+      background: var(--accent);
+      animation: voice-eq-bar 1s ease-in-out infinite;
+    }
+    .voice-eq span:nth-child(1) { animation-delay: 0s; }
+    .voice-eq span:nth-child(2) { animation-delay: 0.15s; }
+    .voice-eq span:nth-child(3) { animation-delay: 0.3s; }
+    .voice-eq span:nth-child(4) { animation-delay: 0.45s; }
+    .voice-eq span:nth-child(5) { animation-delay: 0.6s; }
+    @keyframes voice-eq-bar { 0%,100%{transform:scaleY(0.45)} 50%{transform:scaleY(2.4)} }
+
+    .voice-transcript {
+      font-size: 12px; line-height: 1.4;
+      color: var(--text-secondary);
+      margin: 6px 0 0; padding-left: 36px;
+      word-break: break-word;
+      font-style: italic;
+    }
+    .voice-transcript:empty { display: none; }
+
+    /* States: listening (accent) · thinking (amber) · working (blue) · speaking (green). */
+    .voice-bar[data-state="thinking"] .voice-eq span { background: var(--amber); animation-duration: 0.55s; }
+    .voice-bar[data-state="thinking"] .voice-state-label { color: var(--amber); }
+    .voice-bar[data-state="speaking"] .voice-eq span { background: var(--green); }
+    .voice-bar[data-state="speaking"] .voice-state-label { color: var(--green); }
+    /* Working = agent is running, mic is OFF: a steady, calmer pulse so it
+       clearly reads as "busy, not listening". */
+    .voice-bar[data-state="working"] .voice-eq span { background: var(--accent-light); animation: voice-eq-work 1.1s ease-in-out infinite; }
+    .voice-bar[data-state="working"] .voice-state-label { color: var(--accent-light); }
+    @keyframes voice-eq-work { 0%,100%{transform:scaleY(0.6);opacity:0.5} 50%{transform:scaleY(1.3);opacity:1} }
+    .voice-bar[data-state="idle"] .voice-eq span { animation: none; transform: scaleY(0.5); opacity: 0.5; }
 
     /* Tab Choice Popover */
     .tab-choice-overlay {
@@ -860,49 +955,6 @@
       fill: none; stroke: currentColor;
       stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
     }
-    .agent-log-plan {
-      padding: 8px 12px 10px;
-      border-top: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(124,106,239,0.04), transparent);
-      animation: step-in 0.4s cubic-bezier(0.16,1,0.3,1) both;
-    }
-    .agent-log-plan.hidden { display: none; }
-    .agent-log-plan-title {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 10px; font-weight: 600;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-    }
-    .agent-log-plan-title svg {
-      width: 11px; height: 11px;
-      fill: none; stroke: currentColor;
-      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-    }
-    .agent-log-plan ol {
-      list-style: none; padding: 0; margin: 0;
-      counter-reset: planstep;
-    }
-    .agent-log-plan li {
-      counter-increment: planstep;
-      position: relative;
-      padding: 3px 0 3px 22px;
-      font-size: 11.5px;
-      color: var(--text-secondary);
-      line-height: 1.45;
-    }
-    .agent-log-plan li::before {
-      content: counter(planstep);
-      position: absolute; left: 0; top: 3px;
-      width: 16px; height: 16px;
-      background: var(--accent-bg);
-      color: var(--accent);
-      border-radius: 50%;
-      font-size: 9px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center;
-    }
-
     .agent-log-steps {
       padding: 0 12px 10px;
     }
@@ -1622,6 +1674,21 @@
         <div class="field-hint">Works with any OpenAI-compatible API (LiteLLM, vLLM, Together, Groq, Fireworks, etc.)</div>
       </div>
 
+      <div class="provider-section-label" style="margin-top:10px">Speech-to-Text (Voice Mode)</div>
+      <div class="field">
+        <label class="field-label">Transcription Engine</label>
+        <select class="field-input" id="cfgSttEngine">
+          <option value="chrome">Browser (Chrome) — default, free</option>
+          <option value="groq">Groq Whisper API — works in Brave</option>
+        </select>
+        <div class="field-hint">Chrome's built-in speech is used by default. Choose Groq if you're on Brave or want higher-accuracy Whisper transcription.</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Groq API Key</label>
+        <input class="field-input" id="cfgGroqKey" type="password" placeholder="gsk_…" spellcheck="false" autocomplete="off" />
+        <div class="field-hint">Free key from console.groq.com. Stored locally on your device only. Audio clips are sent to Groq for transcription when Groq is selected (or auto-used in Brave).</div>
+      </div>
+
       <div class="provider-section-label" style="margin-top:10px">General</div>
       <div class="field-row">
         <div class="field"><label class="field-label">Max Steps</label><input class="field-input" id="cfgMaxSteps" type="number" min="1" max="100" value="20" /></div>
@@ -1752,6 +1819,20 @@
   <!-- Activity Bar -->
   <div class="activity-bar" id="activityBar"></div>
 
+  <!-- Voice Mode bar (in-flow, sits above the input — never covers the log) -->
+  <div class="voice-bar hidden" id="voiceOverlay" data-state="idle">
+    <div class="voice-bar-row">
+      <div class="voice-eq" id="voiceEq" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <span class="voice-state-label" id="voiceStateLabel">Listening…</span>
+      <button class="voice-close-btn" id="voiceCloseBtn" title="Turn off voice mode" type="button">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="voice-transcript" id="voiceTranscript"></div>
+  </div>
+
   <!-- Control Bar -->
   <div class="control-bar">
     <div class="input-container">
@@ -1778,11 +1859,11 @@
           </div>
         </div>
         <div class="action-spacer"></div>
-        <button class="mode-btn chat-mode-btn" id="chatBtn" title="Chat">
-          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <button class="mode-btn voice-mode-btn" id="voiceBtn" title="Voice mode (hands-free)" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
         </button>
-        <button class="mode-btn agent-mode-btn" id="agentBtn" title="Agent (Ctrl+Enter)">
-          <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <button class="mode-btn send-btn" id="sendBtn" title="Send (Enter) — Ctrl+Enter forces Agent" type="button">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
       <div class="input-actions hidden" id="stopActions">

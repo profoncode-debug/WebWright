@@ -6,9 +6,9 @@
 
 > ## **This is NOT a chat wrapper.**
 > WebWright is a **real agentic AI** that lives in your browser sidebar.
-> It **plans** the task, **perceives** the page (DOM + vision), **reasons**
-> about it with an LLM, and **takes real actions on your behalf** — clicks,
-> types, navigates, fills forms, books, buys, researches.
+> It **perceives** the page (DOM + vision), **reasons** about it with an LLM,
+> and **takes real actions on your behalf** — clicks, types, navigates, fills
+> forms, books, buys, researches. You can even talk to it **hands-free**.
 
 **Tell it what you want. Watch it work.**
 
@@ -35,32 +35,33 @@
 | Any Chromium-based browser | ✅ Manifest V3 compatible |
 | Firefox | ❌ Different extension architecture |
 
+> **Voice Mode note:** voice transcription uses the browser's built-in speech recognition by default, which **Brave disables for privacy**. On Brave (or for higher accuracy anywhere), switch the transcription engine to **Groq Whisper** in Settings → Speech-to-Text. Everything else works identically on all Chromium browsers.
+
 ---
 
 ## What is WebWright?
 
-WebWright turns your browser into an **autonomous AI agent** — not a chat sidebar that answers questions, but a real agent that *acts*. You type a goal in plain English; the agent generates a plan, opens tabs, navigates sites, clicks buttons, types into forms, escalates to vision when the DOM gets weird, and reports back with what happened.
+WebWright turns your browser into an **autonomous AI agent** — not a chat sidebar that answers questions, but a real agent that *acts*. You type (or say) a goal in plain English; the agent reads the page, navigates, clicks buttons, types into forms, escalates to vision when the DOM gets weird, and reports back with what happened.
 
 ```
 You:        "Search Amazon India for Sony WH-CH520 headphones,
              sort by price low-to-high, open the cheapest in-stock listing."
 
-Agent loop: 1. Plan generated (5 steps anchored across the run)
-            2. Tab opened on amazon.in
-            3. Search box found via DOM rank → query typed → Enter
-            4. Sort dropdown clicked → "Price: Low to High" selected
-            5. First in-stock card identified → opened
-            6. Done — reports back with price and URL
+Agent loop: 1. Navigated to amazon.in
+            2. Search box found via DOM rank → query typed → Enter
+            3. Sort dropdown clicked → "Price: Low to High" selected
+            4. First in-stock card identified → opened
+            5. Done — reports back with price and URL
 ```
 
 ### Why "agentic" actually means agentic here
 
 WebWright runs a real **perceive → reason → act → re-perceive** loop, not a single prompt:
 
-- **Plan loop** — at task start a dedicated LLM call decomposes the goal (and the preceding chat conversation) into a 3–7 step JSON plan that is anchored into every subsequent prompt as a persistent context window.
 - **Perception loop** — the content script enumerates every interactive element on the page (`<button>`, `<a>`, `<input>`, custom roles, shadow-DOM nodes, iframes), ranks them by goal-relevance, and caps at 300. Refreshed every step.
-- **Reasoning loop** — the background service worker builds a prompt out of `{ goal, plan, page state, action history, last thinking, optional personal info }` and asks the model for **one** action as JSON.
+- **Reasoning loop** — the background service worker builds a prompt out of `{ goal, page state, action history, last thinking, optional personal info }` and asks the model for **one** action as JSON.
 - **Action loop** — the action is dispatched via the **Chrome DevTools Protocol** (CDP) so framework event handlers (React/Vue/Angular/Svelte) fire as if a human did it. Synthetic DOM events alone don't reliably trigger framework handlers — same reason Puppeteer and Playwright use CDP.
+- **Action batching** — when the next 2–3 steps are obvious and low-risk (e.g. navigate → type → submit), the model may return them as one `plan` action in a **single response**, executed in sequence. This *reduces* round-trips; it is not a separate planning call.
 - **Vision escalation** — when DOM-only fails (canvases, opaque custom elements, missing selectors), the agent autonomously climbs a 4-tier ladder: DOM → 80-mark vision → 160-mark vision → raw coordinate clicks.
 - **Anti-loop detection** — the agent monitors its own action history for repetition, A-B-A oscillation, scroll stagnation, and silent failures (action returned "success" but the page didn't change), and changes strategy automatically.
 
@@ -70,30 +71,46 @@ That is an agent loop. Not an autocomplete prompt.
 
 ## Features
 
-### 🧠 Plan Mode (NEW) — Persistent task anchor
-The instant you submit an Agent task, WebWright fires a dedicated planning LLM call that breaks the goal into 3–7 high-level steps. The plan is **rendered live in the sidebar** and **injected into every subsequent agent prompt** as a stable context anchor, so the LLM never loses sight of the big picture as the action history accumulates over many steps. The planner also reads your recent **chat conversation** so references like *"book it"* or *"the cheaper one"* resolve to the concrete thing being referred to.
+### 🎙️ Voice Mode (NEW) — Hands-free browsing companion
+Toggle the mic and **talk to your browser**. WebWright transcribes your speech, auto-decides whether you're chatting or asking for an action, runs it, and **speaks back** in a warm, natural voice. It's a genuine conversational loop with four clear states shown in the bar:
 
-```
-PLAN
- 1. Open Amazon India and search for "Sony WH-CH520 headphones"
- 2. Sort the results by price, lowest first
- 3. Identify the cheapest listing that is in stock
- 4. Open that product page
- 5. Report the price, ratings, and listing URL back to the user
-```
+| State | Meaning | Mic |
+|-------|---------|-----|
+| **Listening…** | Waiting for / capturing your speech | live |
+| **Thinking…** | Classifying intent + generating a reply | ignored |
+| **Working…** | An agent task you asked for is running | ignored |
+| **Speaking…** | Reading the reply aloud | ignored |
+
+- **Speech-to-text engines:** **Browser (Chrome)** by default — free, on-device prompt, audio handled by the browser's speech service. Or **Groq Whisper** (`whisper-large-v3-turbo`) for higher accuracy and for browsers like **Brave** that disable the built-in engine. Pick the engine and paste a free Groq key in Settings → Speech-to-Text.
+- **Text-to-speech:** fully **on-device** (`speechSynthesis`). Replies are cleaned for the ear — no URLs, markdown, or emojis read aloud.
+- **Personality:** a warm, upbeat, lightly-playful companion that keeps replies short (5–7 spoken sentences) and emotional, not robotic.
+- **Memory:** keeps the last ~20 voice turns in memory **including the agent actions it performed for you**, so you can ask *"what did you just do?"* and it remembers. Cleared when you turn voice off.
+- **Auto-routing:** ask it to *do* something ("open YouTube and play lofi") and it runs the agent automatically — no buttons. While the agent works, the mic is off and the bar shows **Working…**, then it resumes listening when done.
 
 ### Agent Mode — Autonomous task execution
 Give a goal, the agent runs the loop until done. It will:
-- Navigate to websites and interact with page elements
+- Navigate the current tab and interact with page elements
 - Fill out forms using your saved **Personal Info Vault** (keyword-gated)
 - Handle complex multi-step flows (login, search, checkout, booking)
 - Auto-escalate from DOM analysis to visual understanding when stuck
-- Batch low-risk sequential actions into mini-plans for faster execution
+- Batch low-risk sequential actions into a single response for faster execution
 
 ![Agent Mode — WebWright autonomously opening YouTube, searching, and reporting results](screenshots/webwright_poster%20(1).png)
 
+### One smart input — no mode buttons
+There's a single input and a single **Send** button. WebWright classifies each message and routes it for you:
+
+| You press | What happens |
+|-----------|--------------|
+| **Enter** | Auto-routes: a question → Chat, an instruction → Agent (LLM intent classifier) |
+| **Ctrl+Enter** | Forces **Agent mode** regardless of phrasing |
+
+Agent tasks always run on the **current tab** — WebWright never hijacks a new one.
+
 ### Chat Mode — Talk to any web page
-Multi-turn Q&A grounded in the page you're viewing. Now with **full markdown + LaTeX rendering** (tables, math, code blocks, GFM extensions). Replies that include `$E = mc^2$` or `$$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$` typeset properly via bundled KaTeX.
+Multi-turn Q&A grounded in the page you're viewing, with **full markdown + LaTeX rendering** (tables, math, code blocks, GFM extensions). Replies that include `$E = mc^2$` or `$$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$` typeset properly via bundled KaTeX.
+
+The page context **re-grounds automatically** when you navigate the tab or switch to a different tab — your conversation is kept, only the page content is refreshed.
 
 Two modes per message via the pill above the input:
 
@@ -134,7 +151,7 @@ Drawer shows live per-source progress (active / done / error / skipped), an inst
 Record an arbitrary browser action sequence across tabs, save with a name, replay with one click. Two-tier fallback during replay: **exact-selector match** first; if the element moved, **fuzzy fingerprint match** against ranked candidates. No LLM call needed for clean replays.
 
 ### Personal Info Vault
-Locally-stored personal details for form-filling. **The vault is only included in the LLM prompt when the goal contains one of ~20 form-related keywords** (`fill`, `form`, `register`, `signup`, `apply`, `checkout`, `booking`, `my name`, `my address`, etc.). Chat Mode, Research Mode, and workflow replay never see your vault, regardless of what's in the message.
+Locally-stored personal details for form-filling. **The vault is only included in the LLM prompt when the goal contains one of ~20 form-related keywords** (`fill`, `form`, `register`, `signup`, `apply`, `checkout`, `booking`, `my name`, `my address`, etc.). Chat Mode, Voice Mode, Research Mode, and workflow replay never see your vault, regardless of what's in the message.
 
 ### Smart Suggestions
 A pool of 30+ pre-built task suggestions. A few random chips rotate on each session for one-tap launches.
@@ -161,7 +178,6 @@ A pool of 30+ pre-built task suggestions. A few random chips rotate on each sess
 │  ┌─────────────────┐                                             │
 │  │  Build prompt   │  buildDOMPrompt(goal, state, history,       │
 │  │                 │    chatContext, lastThinking, vault?)       │
-│  │                 │  + PLAN block (constant across steps)       │
 │  │                 │  + RECENT ACTIONS (last 10 full + older     │
 │  │                 │    summarized as one-liners)                │
 │  └────────┬────────┘                                             │
@@ -205,17 +221,19 @@ A pool of 30+ pre-built task suggestions. A few random chips rotate on each sess
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │  SIDE PANEL (sidepanel/sidepanel.html + sidepanel.js)          │
-│  • Chat view, agent log, plan card, research drawer            │
+│  • Chat view, agent log, research drawer, voice bar           │
 │  • Provider/model settings, workflow controls, vault           │
+│  • VoiceController: STT (Web Speech / Groq Whisper) + TTS      │
 │  • Renders marked.js (markdown) + KaTeX (math) for chat        │
 │  ↕ chrome.runtime.sendMessage                                  │
 ├────────────────────────────────────────────────────────────────┤
 │  BACKGROUND SERVICE WORKER (background/background.js)          │
-│  • runAgentLoop, generateTaskPlan, handleChatMessage           │
+│  • runAgentLoop, handleChatMessage, voice chat handler         │
 │  • callLLM (8 providers, abort-controller, timeout)            │
 │  • CDP attach/detach, Input.* dispatch, Network.* idle wait    │
 │  • Research pipeline (Google → 10 sources → synthesis)         │
-│  • Vision tier orchestration (Set-of-Marks overlay)            │
+│  • Vision tier orchestration (Set-of-Marks overlay)           │
+│  • Intent classifier (chat vs agent) for the unified input    │
 │  ↕ chrome.tabs.sendMessage  +  chrome.scripting.executeScript  │
 ├────────────────────────────────────────────────────────────────┤
 │  CONTENT SCRIPT (content/content.js)                           │
@@ -241,13 +259,17 @@ The `debugger` permission is **always attached for the duration of an Agent task
 
 No `Storage.*`, no DOM introspection, no JS evaluation in the page context, no background activity. The debugger detaches the moment the task ends.
 
-### Plan generation
+### Unified input routing
 
-`generateTaskPlan(goal, chatContext)` makes one LLM call with `forceJson: true` and a strict system prompt that asks for a 3–7 step JSON array. The chat context (last 8 turns of conversation + history queue summaries) is included so the planner can resolve pronouns and pick the right site from prior conversation. Plan failures are non-fatal — `agentState.plan` stays empty and the agent runs without the anchor.
+Every typed message and every spoken phrase goes through `CLASSIFY_MESSAGE` — a lightweight LLM intent classifier (with a fast keyword pre-check) that decides **chat vs agent**. The UI echoes your message instantly, then routes: questions become grounded chat replies, instructions launch the agent on the current tab. **Ctrl+Enter** skips the classifier and forces agent mode.
 
 ### Action history window
 
-`RECENT_HISTORY_COUNT = 10`. The last 10 history entries are rendered in full detail (action, target, result, page URL, stateAfter diff). Older entries are compressed to one-line summaries via `summarizeHistoryEntry`. The persistent **PLAN** block compensates for older steps fading from full detail.
+`RECENT_HISTORY_COUNT = 10`. The last 10 history entries are rendered in full detail (action, target, result, page URL, stateAfter diff). Older entries are compressed to one-line summaries via `summarizeHistoryEntry`, keeping the prompt bounded as a task runs long.
+
+### Voice pipeline
+
+The `VoiceController` (in `sidepanel.js`) runs the speech loop entirely client-side. **STT** is either the browser's `webkitSpeechRecognition` (continuous, with a silence-timeout that finalizes an utterance) or a **Groq Whisper** path that records the mic with `MediaRecorder`, slices utterances with a small Web-Audio volume VAD, and POSTs the clip to Groq's transcription endpoint. Both feed the same router. **TTS** uses on-device `speechSynthesis` with a watchdog (Chrome's `onend` is unreliable) so the Speaking→Listening transition never gets stuck. Voice chat uses a **separate** persona + in-memory history on the background side, so it never affects typed chat.
 
 ### Vision (Set-of-Marks)
 
@@ -275,6 +297,8 @@ The sidebar uses **marked.js** (markdown → HTML, GFM extensions enabled: table
 | **Custom** | User-defined | User-defined | Depends | OpenAI- or Ollama-compatible |
 
 > **Model slots per provider:** Agent Model · Vision Model · Chat Model · (Ollama Cloud only) Research Model. Pick a frontier reasoning model for the agent, a vision-capable model for the visual escalation tiers, a cheap/fast model for chat. The "Custom" dropdown entry on Ollama Cloud lets you paste any free-form model name — including ones released after this build.
+>
+> **Voice transcription** (optional) uses **Groq Whisper** and is configured separately under Settings → Speech-to-Text — it is independent of the chat/agent LLM provider above.
 
 ---
 
@@ -304,14 +328,19 @@ git clone https://github.com/profoncode-debug/WebWright/
 ### Run an Agent task
 1. Click the WebWright icon → side panel opens
 2. Type: *"Open YouTube and search for lofi study music"*
-3. Press **Ctrl+Enter** (or click the play button)
-4. Watch the plan generate, then the agent execute it step-by-step in the live log
+3. Press **Enter** (auto-routes to Agent) or **Ctrl+Enter** to force it
+4. Watch the agent execute it step-by-step in the live log
 
 ### Chat about a page
 1. Navigate to any article / dashboard
 2. Pick **Quick** or **Pro** from the mode pill
 3. Type a question, press **Enter**
-4. Math equations, tables, and code render properly
+4. Math equations, tables, and code render properly — and it re-grounds if you switch pages
+
+### Talk to it hands-free (Voice Mode)
+1. Click the **mic** button in the side panel
+2. (On Brave, or for best accuracy) set Settings → Speech-to-Text to **Groq Whisper** and paste a free Groq key
+3. Just talk — ask a question and it answers aloud, or say *"open Gmail and start a new email"* and it runs the task, then resumes listening
 
 ### Research a topic
 1. Click the magnifying-glass icon → Research drawer opens
@@ -351,17 +380,19 @@ If a task fails: try a stronger model **and** a more specific prompt before assu
 
 ```
 agentic-browser-ext/
-├── manifest.json            # Manifest V3, version 1.0.0
+├── manifest.json            # Manifest V3
 ├── privacy-policy.html      # Privacy policy + permission justifications
 ├── index.html               # GitHub Pages landing site
+├── mic-permission.html      # Microphone permission helper for Voice Mode
 ├── background/
-│   └── background.js        # Agent loop, plan gen, LLM call, CDP dispatch,
-│                            # vision escalation, research pipeline (~4900 LoC)
+│   └── background.js        # Agent loop, LLM call, CDP dispatch, intent
+│                            # classifier, vision escalation, research,
+│                            # voice chat handler (~4,800 LoC)
 ├── content/
 │   └── content.js           # DOM extraction, ranking, SoM overlay, replay
 ├── sidepanel/
-│   ├── sidepanel.html       # Chat, agent log, plan card, drawers
-│   └── sidepanel.js         # UI logic, markdown + math, settings UI
+│   ├── sidepanel.html       # Chat, agent log, drawers, voice bar
+│   └── sidepanel.js         # UI logic, markdown + math, settings, VoiceController
 ├── lib/                     # Bundled libraries — no remote code loaded
 │   ├── marked.min.js        # Markdown parser (GFM)
 │   ├── katex.min.js         # LaTeX math typesetting
@@ -383,13 +414,15 @@ agentic-browser-ext/
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| Provider | Ollama Cloud | Which LLM to use |
+| Provider | Ollama Cloud | Which LLM to use for chat / agent |
 | Max Steps | 20 | Auto-stop after N actions |
 | Step Delay | 2000 ms | Pause between actions |
 | LLM Timeout | 100 s | Max wait per LLM call (overridable per call type) |
 | Wall Timeout | 300 s | Max total task duration |
 | Research Model | `gemma4:31b-cloud` (Ollama Cloud only) | Falls back to primary model on other providers |
 | Chat Mode | Pro | Default chat-input mode (Pro attaches screenshot; switch to Quick from pill) |
+| Speech-to-Text Engine | Browser (Chrome) | Voice transcription engine — Browser or **Groq Whisper** (auto-used on Brave) |
+| Groq API Key | — | Stored locally; required only when the Groq Whisper engine is selected |
 
 ---
 
@@ -407,6 +440,8 @@ WebWright requests only what it needs to run as a browser agent. Full per-permis
 | `debugger` | Powers the CDP input dispatcher. Attached when an Agent task starts, detached when it ends. Only `Input.*` and `Network.*` CDP domains used (the latter purely for request-count idle detection — bodies never inspected). Never used for DOM introspection, JS evaluation, cookie/localStorage access, or background activity |
 | `<all_urls>` | The user — not the developer — decides which site the agent operates on at runtime. A narrow host pattern would prevent the agent from doing what the user installed it for |
 
+**Microphone** (Voice Mode only) is requested at runtime via the standard browser prompt the first time you enable voice — it is not a manifest permission and is never accessed otherwise.
+
 **No remote code is loaded.** All extension JavaScript is bundled in the published package, including `lib/marked.min.js` and `lib/katex.min.js`.
 
 ---
@@ -414,6 +449,8 @@ WebWright requests only what it needs to run as a browser agent. Full per-permis
 ## Privacy & Liability
 
 WebWright stores all your data **locally** on your device. It only sends data to the LLM provider **you** choose and configure. There are no first-party servers, analytics, or telemetry.
+
+**Voice Mode disclosure:** text-to-speech is fully on-device. Speech-to-text sends your microphone audio to a transcription service — **Google's** speech backend when using the default Browser engine, or **Groq** when you select the Groq Whisper engine (the default on Brave). No audio is stored by WebWright; it is sent only to produce a transcript and then discarded.
 
 The full policy is in [`privacy-policy.html`](privacy-policy.html). It also contains a **Disclaimer of Liability**:
 
@@ -426,8 +463,8 @@ The full policy is in [`privacy-policy.html`](privacy-policy.html). It also cont
 ## Contributing
 
 PRs welcome — especially:
-- New provider integrations in `callLLM` (background.js:~1575)
-- New element-ranking heuristics in `rankElements` (background.js:~1061)
+- New provider integrations in `callLLM` (background.js)
+- New element-ranking heuristics in `rankElements` (background.js)
 - Vision-tier improvements (Set-of-Marks rendering in content.js)
 - Tests — there are currently none; structured agent-loop tests would be a great first PR
 

@@ -67,6 +67,16 @@
     </ul>
     <p>Each provider has its own privacy policy governing how they handle data you send. WebWright does not control or have access to data once it reaches the provider's API.</p>
 
+    <h2>Voice Mode</h2>
+    <p>WebWright includes an optional, hands-free <strong>Voice Mode</strong> that is <strong>off by default</strong> and only active while you toggle it on. When enabled:</p>
+    <ul>
+      <li><strong>Speech-to-text (listening)</strong> uses your browser's built-in <code>SpeechRecognition</code> API. In Chrome and other Chromium browsers, this API <strong>streams your microphone audio to Google's speech-recognition servers</strong> for transcription, governed by <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>. This is the only part of WebWright that sends data off your device to a party other than the LLM provider you configured. WebWright does not store, log, or transmit your audio anywhere itself.</li>
+      <li><strong>Text-to-speech (the agent speaking back)</strong> uses the browser's <code>SpeechSynthesis</code> API, which runs <strong>fully on-device</strong> — no audio leaves your machine.</li>
+      <li>The transcribed text is then handled exactly like text you type: classified as a chat question or an agent command and sent only to the LLM provider you configured.</li>
+      <li>Microphone access is requested at runtime via a standard browser permission prompt. You can revoke it at any time in your browser's site settings. Turning Voice Mode off stops all microphone listening immediately.</li>
+    </ul>
+    <p>If you do not want any audio sent to Google's speech service, simply leave Voice Mode off and use WebWright by typing as usual.</p>
+
     <h2>Data We Do NOT Collect</h2>
     <ul>
       <li>No analytics or telemetry</li>

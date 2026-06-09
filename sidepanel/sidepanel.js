@@ -10,8 +10,7 @@
 
   /* ── DOM ── */
   var goalInput      = document.getElementById("goalInput");
-  var chatBtn        = document.getElementById("chatBtn");
-  var agentBtn       = document.getElementById("agentBtn");
+  var sendBtn        = document.getElementById("sendBtn");
   var inputActions   = document.getElementById("inputActions");
   var stopActions    = document.getElementById("stopActions");
   var stopBtn        = document.getElementById("stopBtn");
@@ -29,7 +28,12 @@
   var cfgDelay       = document.getElementById("cfgDelay");
   var cfgTimeout     = document.getElementById("cfgTimeout");
   var cfgWallTimeout = document.getElementById("cfgWallTimeout");
+  var cfgSttEngine   = document.getElementById("cfgSttEngine");
+  var cfgGroqKey     = document.getElementById("cfgGroqKey");
   var saveBtn        = document.getElementById("saveBtn");
+
+  // Speech-to-text settings, shared with VoiceController. Updated on load/save.
+  var sttConfig = { engine: "chrome", groqKey: "" };
   var closeCfgBtn    = document.getElementById("closeCfgBtn");
   var activityBar    = document.getElementById("activityBar");
   var chatTyping     = document.getElementById("chatTyping");
@@ -74,6 +78,12 @@
   var chatModePillIcon = document.getElementById("chatModePillIcon");
   var chatModePillLabel = document.getElementById("chatModePillLabel");
 
+  var voiceBtn         = document.getElementById("voiceBtn");
+  var voiceOverlay     = document.getElementById("voiceOverlay");
+  var voiceStateLabel  = document.getElementById("voiceStateLabel");
+  var voiceTranscript  = document.getElementById("voiceTranscript");
+  var voiceCloseBtn    = document.getElementById("voiceCloseBtn");
+
   var chatMode = (function() {
     try {
       var stored = localStorage.getItem("webwright.chatMode");
@@ -91,7 +101,6 @@
   var agentStepCount = 0;
   var agentLogBubble = null; // The current agent log message bubble (for appending steps)
   var agentLogSteps  = null; // The steps container inside the agent log bubble
-  var agentLogPlan   = null; // The plan container (revealed when Plan Generated arrives)
   var pendingAgentText = ""; // Text waiting for tab choice
 
   var PROVIDERS = ["ollama_cloud", "ollama_local", "chatgpt", "claude", "gemini", "deepseek", "grok", "custom"];
@@ -375,13 +384,6 @@
         '<svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' +
         'Agent Working' +
       '</div>' +
-      '<div class="agent-log-plan hidden" id="agentPlanContainer">' +
-        '<div class="agent-log-plan-title">' +
-          '<svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>' +
-          'Plan' +
-        '</div>' +
-        '<ol></ol>' +
-      '</div>' +
       '<div class="agent-log-steps" id="agentStepsContainer"></div>';
 
     msg.appendChild(bubble);
@@ -389,7 +391,6 @@
 
     agentLogBubble = msg;
     agentLogSteps = bubble.querySelector(".agent-log-steps");
-    agentLogPlan = bubble.querySelector(".agent-log-plan");
     agentStepCount = 0;
     lastShownLabel = "";
     pendingThinking = null;
@@ -519,26 +520,6 @@
     var data = log.data || {};
     var label = log.label || "";
 
-    // Plan rendering: when the background broadcasts "Plan Generated", populate
-    // the plan section above the step list and reveal it. Stays visible for
-    // the entire run so the user can see the agent's intended approach.
-    if (kind === "system" && label && label.indexOf("Plan Generated") >= 0) {
-      if (agentLogPlan && Array.isArray(data.plan) && data.plan.length > 0) {
-        var ol = agentLogPlan.querySelector("ol");
-        if (ol) {
-          ol.innerHTML = "";
-          data.plan.forEach(function(step) {
-            var li = document.createElement("li");
-            li.textContent = step;
-            ol.appendChild(li);
-          });
-        }
-        agentLogPlan.classList.remove("hidden");
-        scrollToBottom();
-      }
-      return;
-    }
-
     // Buffer LLM data for attachment to next visible step
     if (kind === "thinking") {
       pendingThinking = data.thinkingText || null;
@@ -566,6 +547,7 @@
     if (kind === "system" && label && label.indexOf("Achieved") >= 0) {
       var summary = data.summary || "Task complete!";
       finishAgentLog("done", summary);
+      VoiceController.narrateDone(summary); // speak the conclusion (voice mode only)
       return;
     }
 
@@ -573,6 +555,7 @@
     if (kind === "system" && label && label.indexOf("Progress") >= 0) {
       var progSummary = data.summary || data.reason || "Partial progress made.";
       finishAgentLog("progress", progSummary);
+      VoiceController.narrateDone(progSummary);
       return;
     }
 
@@ -585,6 +568,9 @@
     // Deduplicate
     if (text === lastShownLabel) return;
     lastShownLabel = text;
+
+    // Voice narration of live steps (throttled / drop-stale inside VoiceController)
+    VoiceController.narrate(text);
 
     var step = document.createElement("div");
     step.className = "agent-step-item";
@@ -806,7 +792,6 @@
     hideThinkingIndicator();
     agentLogBubble = null;
     agentLogSteps = null;
-    agentLogPlan = null;
   }
 
   /* ── Thinking indicator inside agent log ── */
@@ -836,13 +821,15 @@
    * Chat Send
    * ═══════════════════════════════════════════ */
 
-  async function chatSend(text) {
+  async function chatSend(text, alreadyEchoed) {
     if (!text) return;
 
     var isPro = chatMode === "pro";
-    addChatMessage("user", text);
-    goalInput.value = "";
-    goalInput.style.height = "";
+    if (!alreadyEchoed) {
+      addChatMessage("user", text);
+      goalInput.value = "";
+      goalInput.style.height = "";
+    }
 
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs[0];
@@ -861,7 +848,7 @@
     if (!result || !result.success) {
       addChatMessage("system-info", "Error: " + ((result && result.error) || "Failed to process."));
       setStatus("error", "Chat error");
-      return;
+      return null;
     }
 
     currentMode = "chat";
@@ -873,10 +860,14 @@
     addChatMessage("assistant", result.content);
     setStatus("idle", "Chat ready");
 
-    // Auto-trigger agent mode if LLM redirects the user there
-    if (result.content && result.content.includes("Try using Agent mode")) {
-      setTimeout(function() { showTabChoice(text); }, 400);
+    // Auto-hand off to the agent (current tab) when the chat model signals it.
+    // Matches the exact phrase the chat system prompt is told to emit.
+    if (result.content && /switching to agent mode/i.test(result.content)) {
+      setTimeout(function() { agentSend(text, true); }, 400);
     }
+
+    // Return the assistant reply so Voice Mode can speak it (typed chats ignore this).
+    return result.content || null;
   }
 
   /* ═══════════════════════════════════════════
@@ -893,12 +884,14 @@
     pendingAgentText = "";
   }
 
-  async function agentSend(text, useCurrentTab) {
+  async function agentSend(text, useCurrentTab, alreadyEchoed) {
     if (!text || isRunning) return;
 
-    addChatMessage("user", text);
-    goalInput.value = "";
-    goalInput.style.height = "";
+    if (!alreadyEchoed) {
+      addChatMessage("user", text);
+      goalInput.value = "";
+      goalInput.style.height = "";
+    }
 
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs[0];
@@ -928,6 +921,707 @@
   }
 
   /* ═══════════════════════════════════════════
+   * Smart routing — one input, auto-decides Chat vs Agent and which tab.
+   * Used by the single Send button, the Enter key, and Voice Mode.
+   *   opts.forceAgent : skip intent classification, always run as agent
+   *                     (Ctrl+Enter). Tab is still decided by the classifier.
+   * Returns { intent, reply } so Voice Mode can speak the chat reply.
+   * ═══════════════════════════════════════════ */
+  async function routeMessage(text, opts) {
+    opts = opts || {};
+    if (!text || isRunning) return null;
+
+    // Echo the user's message immediately so the UI feels responsive while the
+    // classifier (which may make an LLM call) runs.
+    addChatMessage("user", text);
+    goalInput.value = "";
+    goalInput.style.height = "";
+    setStatus("thinking", "Thinking...");
+
+    // Grab current tab so the classifier can decide current-vs-new tab.
+    var tabUrl = "", tabTitle = "";
+    try {
+      var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]) { tabUrl = tabs[0].url || ""; tabTitle = tabs[0].title || ""; }
+    } catch (e) {}
+
+    var res = null;
+    try {
+      res = await sendMsg({ type: "CLASSIFY_MESSAGE", text: text, tabUrl: tabUrl, tabTitle: tabTitle });
+    } catch (e) {}
+
+    var intent = opts.forceAgent ? "agent" : ((res && res.intent) || "chat");
+
+    if (intent === "agent") {
+      // Always run on the current tab — never open a new one.
+      agentSend(text, true, true);
+      return { intent: "agent" };
+    }
+    var reply = await chatSend(text, true);
+    return { intent: "chat", reply: reply };
+  }
+
+  /* ═══════════════════════════════════════════
+   * Voice Mode — hands-free input (Web Speech STT) + output (TTS)
+   *
+   * STT: webkitSpeechRecognition (continuous). NOTE: Chrome streams mic audio
+   *      to Google's servers — disclosed in the overlay + privacy policy.
+   * TTS: speechSynthesis (fully on-device).
+   *
+   * Flow: listen → pause ~1.2s → classify (chat vs agent) → route to
+   *       chatSend/agentSend → speak the reply / agent done-summary.
+   * Echo guard: recognition results are dropped while TTS is speaking.
+   * ═══════════════════════════════════════════ */
+  var VoiceController = (function() {
+    var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var SILENCE_MS = 1200;
+
+    var enabled = false;
+    var usingGroq = false;        // true → Groq Whisper STT path (Brave / user choice)
+    var recognition = null;
+    var state = "idle";           // idle | listening | speaking  (2 visible states)
+    var silenceTimer = null;
+    var finalTranscript = "";
+    var lastInterim = "";          // latest interim text (continuous mode often never finalizes)
+    var lastInputWasVoice = false; // gates agent narration TTS
+    var restartGuard = false;      // prevents onend restart while we intentionally stop
+    var pendingNarration = null;   // drop-stale narration slot
+    var lastVoiceGoal = "";        // the goal of the current voice-initiated agent task
+    var agentWorking = false;      // true while a voice-dispatched agent task runs (mic OFF)
+    // Diagnostics / loop-breaker for failed recognition cycles
+    var cycleStart = 0;
+    var gotResultThisCycle = false;
+    var emptyEndStreak = 0;
+    var lastError = "";
+
+    function supported() { return !!SpeechRec && !!window.speechSynthesis; }
+    // Groq path needs only mic recording + TTS for replies (no Web Speech STT).
+    function groqSupported() {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
+                window.MediaRecorder && window.speechSynthesis);
+    }
+
+    /* ── Groq Whisper STT (alternative to Chrome's Web Speech) ──
+     * Records the mic continuously and slices utterances with a small volume
+     * VAD: when speech is followed by ~SILENCE_MS of quiet, the clip is sent to
+     * Groq's transcription endpoint and the text is routed exactly like the
+     * Chrome path (dispatchTranscript → thinking → speak → listen). The mic is
+     * ignored while Thinking/Speaking — the VAD only acts in the listening state. */
+    var GROQ_STT_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
+    var GROQ_STT_MODEL = "whisper-large-v3-turbo";
+    var VAD_THRESHOLD = 0.018;    // RMS of normalized PCM that counts as speech
+    var groq = {
+      stream: null, ctx: null, analyser: null, source: null, buf: null,
+      recorder: null, recMime: "audio/webm", chunks: [], recArmTime: 0,
+      tickTimer: null, hasSpeech: false, silenceStart: 0, pendingTranscribe: false
+    };
+
+    function pickRecMime() {
+      try {
+        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) return "audio/webm;codecs=opus";
+        if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
+        if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) return "audio/ogg;codecs=opus";
+      } catch (e) {}
+      return "";
+    }
+
+    function groqOnStop() {
+      var blob = new Blob(groq.chunks, { type: groq.recMime || "audio/webm" });
+      groq.chunks = [];
+      var wanted = groq.pendingTranscribe;
+      groq.pendingTranscribe = false;
+      if (wanted && blob.size > 1500) {
+        groqTranscribe(blob);   // → dispatchTranscript on success (thinking → speak → listen)
+      } else if (enabled && usingGroq && groq.stream && state === "listening") {
+        groqArm();              // idle re-arm: keep listening with a fresh recorder
+      }
+    }
+
+    function groqArm() {
+      if (!groq.stream) return;
+      groq.chunks = [];
+      try {
+        var mime = pickRecMime();
+        groq.recorder = mime ? new MediaRecorder(groq.stream, { mimeType: mime })
+                             : new MediaRecorder(groq.stream);
+      } catch (e) {
+        try { groq.recorder = new MediaRecorder(groq.stream); } catch (e2) { return; }
+      }
+      groq.recMime = (groq.recorder && groq.recorder.mimeType) || "audio/webm";
+      groq.recArmTime = Date.now();
+      groq.recorder.ondataavailable = function (e) { if (e.data && e.data.size) groq.chunks.push(e.data); };
+      groq.recorder.onstop = groqOnStop;
+      try { groq.recorder.start(); } catch (e) {}
+    }
+
+    function groqCut(doTranscribe) {
+      groq.pendingTranscribe = !!doTranscribe;
+      if (groq.recorder && groq.recorder.state === "recording") {
+        try { groq.recorder.stop(); } catch (e) { groq.pendingTranscribe = false; }
+      }
+    }
+
+    function groqVADTick() {
+      groq.tickTimer = null;
+      if (!enabled || !usingGroq || !groq.analyser) return;
+      try {
+        groq.analyser.getByteTimeDomainData(groq.buf);
+        var sum = 0;
+        for (var i = 0; i < groq.buf.length; i++) { var v = (groq.buf[i] - 128) / 128; sum += v * v; }
+        var rms = Math.sqrt(sum / groq.buf.length);
+        var now = Date.now();
+
+        // Only react while truly listening — mic is ignored during Thinking/Speaking.
+        if (state === "listening") {
+          if (rms > VAD_THRESHOLD) {
+            groq.hasSpeech = true;
+            groq.silenceStart = 0;
+          } else if (groq.hasSpeech) {
+            if (!groq.silenceStart) groq.silenceStart = now;
+            else if (now - groq.silenceStart >= SILENCE_MS) {
+              groq.hasSpeech = false; groq.silenceStart = 0;
+              groqCut(true);   // utterance complete → transcribe
+            }
+          } else if (groq.recorder && groq.recorder.state === "recording" && (now - groq.recArmTime) > 12000) {
+            groqCut(false);    // long idle silence → drop & re-arm to bound memory
+          }
+        }
+      } catch (e) {}
+      groq.tickTimer = setTimeout(groqVADTick, 100);
+    }
+
+    async function groqStart() {
+      try {
+        groq.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        addChatMessage("system-info", "Voice mode couldn't access the microphone (\"" + (e && e.name || "error") + "\"). Grant mic permission for this extension, then turn voice mode on again.");
+        micPermissionHelp();
+        disable();
+        return;
+      }
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        groq.ctx = new AC();
+        groq.source = groq.ctx.createMediaStreamSource(groq.stream);
+        groq.analyser = groq.ctx.createAnalyser();
+        groq.analyser.fftSize = 512;
+        groq.source.connect(groq.analyser);
+        groq.buf = new Uint8Array(groq.analyser.fftSize);
+      } catch (e) {
+        addChatMessage("system-info", "Voice mode couldn't start audio analysis. Try reloading the extension.");
+        disable();
+        return;
+      }
+      groq.hasSpeech = false; groq.silenceStart = 0;
+      groqArm();
+      groqVADTick();
+    }
+
+    function groqResume() {
+      if (!groq.stream) { groqStart(); return; }
+      groq.hasSpeech = false; groq.silenceStart = 0;
+      groqArm();
+      if (!groq.tickTimer) groqVADTick();
+    }
+
+    // Pause Groq listening without releasing the mic — used while the agent
+    // works. groqResume() re-arms quickly without re-prompting for permission.
+    function groqPause() {
+      if (groq.tickTimer) { clearTimeout(groq.tickTimer); groq.tickTimer = null; }
+      try {
+        if (groq.recorder && groq.recorder.state === "recording") {
+          groq.pendingTranscribe = false;
+          groq.recorder.stop();
+        }
+      } catch (e) {}
+      groq.hasSpeech = false; groq.silenceStart = 0;
+    }
+
+    function groqStop() {
+      if (groq.tickTimer) { clearTimeout(groq.tickTimer); groq.tickTimer = null; }
+      try { if (groq.recorder && groq.recorder.state !== "inactive") { groq.pendingTranscribe = false; groq.recorder.stop(); } } catch (e) {}
+      try { if (groq.stream) groq.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+      try { if (groq.ctx) groq.ctx.close(); } catch (e) {}
+      groq.stream = null; groq.ctx = null; groq.analyser = null; groq.source = null;
+      groq.buf = null; groq.recorder = null; groq.chunks = [];
+      groq.hasSpeech = false; groq.silenceStart = 0; groq.pendingTranscribe = false;
+    }
+
+    async function groqTranscribe(blob) {
+      setState("thinking");   // mic ignored from here until we finish speaking
+      setTranscript("");
+      var key = sttConfig.groqKey;
+      if (!key) {
+        addChatMessage("system-info", "Voice mode: add your Groq API key in Settings → Speech-to-Text to use Groq transcription.");
+        disable();
+        return;
+      }
+      try {
+        var fd = new FormData();
+        fd.append("file", blob, "audio.webm");
+        fd.append("model", GROQ_STT_MODEL);
+        fd.append("response_format", "text");
+        fd.append("temperature", "0");
+        var resp = await fetch(GROQ_STT_URL, {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + key },
+          body: fd
+        });
+        if (!resp.ok) {
+          var errTxt = "";
+          try { errTxt = await resp.text(); } catch (e) {}
+          console.warn("[Voice] Groq STT error", resp.status, errTxt);
+          if (resp.status === 401 || resp.status === 403) {
+            addChatMessage("system-info", "Voice mode: the Groq API key was rejected (" + resp.status + "). Check it in Settings → Speech-to-Text.");
+            disable();
+            return;
+          }
+          speak("Sorry, I couldn't catch that, try again?");
+          return;
+        }
+        var text = ((await resp.text()) || "").trim();
+        if (!text) { resumeListening(); return; }   // no words → keep listening
+        dispatchTranscript(text);
+      } catch (e) {
+        console.warn("[Voice] Groq STT failed", e);
+        speak("I had trouble hearing you, mind repeating that?");
+      }
+    }
+
+    // Three states: Listening (mic live) | Thinking (busy) | Speaking (TTS).
+    // The mic is IGNORED while Thinking or Speaking; it only listens otherwise.
+    function setState(s) {
+      state = s;
+      if (!voiceOverlay) return;
+      voiceOverlay.setAttribute("data-state", s);
+      if (voiceStateLabel) {
+        voiceStateLabel.textContent =
+          s === "speaking" ? "Speaking…" :
+          s === "thinking" ? "Thinking…" :
+          s === "working"  ? "Working…" : "Listening…";
+      }
+    }
+
+    function showOverlay(show) {
+      if (!voiceOverlay) return;
+      voiceOverlay.classList.toggle("hidden", !show);
+    }
+
+    function setTranscript(t) {
+      if (voiceTranscript) voiceTranscript.textContent = t || "";
+    }
+
+    function buildRecognition() {
+      var rec = new SpeechRec();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = navigator.language || "en-US";
+
+      rec.onstart = function() {
+        cycleStart = Date.now();
+        gotResultThisCycle = false;
+        console.log("[Voice] recognition started");
+      };
+      rec.onaudiostart  = function(){ console.log("[Voice] audio capture started (mic OK)"); };
+      rec.onspeechstart = function(){ console.log("[Voice] speech detected"); };
+
+      rec.onresult = function(event) {
+        gotResultThisCycle = true;
+        emptyEndStreak = 0;
+        // Ignore the mic entirely while Thinking or Speaking — only listen when
+        // we're actually in the listening state.
+        if (state === "speaking" || state === "thinking") {
+          // Don't let a stale silence timer fire mid-think/speak.
+          if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+          return;
+        }
+        if (state !== "listening") setState("listening");
+
+        var interim = "";
+        for (var i = event.resultIndex; i < event.results.length; i++) {
+          var res = event.results[i];
+          if (res.isFinal) finalTranscript += res[0].transcript + " ";
+          else interim += res[0].transcript;
+        }
+        lastInterim = interim; // remember it — in continuous mode a "final" may never arrive
+        setTranscript((finalTranscript + interim).trim());
+
+        // Restart the silence countdown on every result.
+        if (silenceTimer) clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(onSilence, SILENCE_MS);
+      };
+
+      rec.onerror = function(event) {
+        lastError = event.error || "unknown";
+        console.warn("[Voice] recognition error:", lastError, event.message || "");
+        if (lastError === "not-allowed" || lastError === "service-not-allowed") {
+          addChatMessage("system-info", "Voice mode couldn't access the microphone (\"" + lastError + "\"). Grant mic permission for this extension, then turn voice mode on again. See the note below if no prompt appears.");
+          micPermissionHelp();
+          disable();
+          return;
+        }
+        // "no-speech" / "network" / "aborted" — handled by the onend loop-breaker.
+      };
+
+      rec.onend = function() {
+        if (!enabled || restartGuard || state === "speaking") return;
+
+        var elapsed = Date.now() - cycleStart;
+        // A healthy cycle that captured speech, or a long idle listen, is normal — restart quietly.
+        if (gotResultThisCycle || elapsed > 1500) {
+          emptyEndStreak = 0;
+          try { rec.start(); } catch (e) {}
+          return;
+        }
+
+        // Cycle ended almost immediately with no audio/result — recognition is
+        // failing (usually mic permission or a network block). Break the loop
+        // instead of restarting forever.
+        emptyEndStreak++;
+        console.warn("[Voice] empty recognition cycle #" + emptyEndStreak + " (lastError=" + lastError + ", elapsed=" + elapsed + "ms)");
+        if (emptyEndStreak >= 3) {
+          if (lastError === "network") {
+            addChatMessage("system-info",
+              "Voice mode can't reach the speech-recognition service. This happens in privacy-focused browsers like Brave that disable Google's speech backend — use Chrome, Edge, Opera, or Vivaldi for Voice Mode. (If you're on one of those, check your internet connection.)");
+            disable();
+            return;
+          }
+          addChatMessage("system-info",
+            "Voice mode can't capture audio (it keeps stopping instantly) — usually a microphone-permission issue. Click below to grant access via a quick permission page, then re-enable voice mode.");
+          micPermissionHelp();
+          disable();
+          return;
+        }
+        try { rec.start(); } catch (e) {}
+      };
+
+      return rec;
+    }
+
+    // Offer a reliable way to grant mic permission: open the extension's
+    // permission helper page in a normal tab, where the prompt always appears.
+    function micPermissionHelp() {
+      try {
+        var url = chrome.runtime.getURL("mic-permission.html");
+        addChatMessage("system-info", "Open the microphone permission page: " + url + " (or click the link if shown), allow access, then turn voice mode back on.");
+        chrome.tabs.create({ url: url });
+      } catch (e) {}
+    }
+
+    function onSilence() {
+      // Include the latest interim — continuous-mode Chrome frequently never
+      // emits a "final" result, so relying on finalTranscript alone hangs.
+      var text = (finalTranscript + " " + lastInterim).trim();
+      finalTranscript = "";
+      lastInterim = "";
+      setTranscript("");
+      if (!text) return;            // genuine silence / noise — keep listening
+      dispatchTranscript(text);
+    }
+
+    async function dispatchTranscript(text) {
+      // Enter "thinking" — mic is ignored until we finish speaking the reply.
+      setState("thinking");
+      setTranscript("");
+      lastInputWasVoice = true;
+
+      var tabId = null, tabUrl = "", tabTitle = "";
+      try {
+        var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0]) { tabId = tabs[0].id || null; tabUrl = tabs[0].url || ""; tabTitle = tabs[0].title || ""; }
+      } catch (e) {}
+
+      // Classify chat vs agent (auto-routes action requests to the agent).
+      var intent = "agent";
+      try {
+        var res = await sendMsg({ type: "CLASSIFY_MESSAGE", text: text, tabUrl: tabUrl, tabTitle: tabTitle });
+        if (res && res.intent) intent = res.intent;
+      } catch (e) { /* default agent */ }
+
+      if (intent === "chat") {
+        // Show the exchange on screen, then use the dedicated flirty voice path.
+        addChatMessage("user", text);
+        var vr = await sendMsg({ type: "VOICE_CHAT", text: text, tabId: tabId });
+        var reply = (vr && vr.success && vr.content) ? vr.content : "";
+        if (reply) addChatMessage("assistant", reply);
+        lastInputWasVoice = false; // chat turn done — don't narrate later agent tasks
+        speak(reply || "Hmm, I didn't quite catch that, say it again?");
+      } else {
+        if (isRunning) {
+          lastInputWasVoice = false;
+          speak("I'm already on something for you, hang tight.");
+          return;
+        }
+        lastVoiceGoal = text;       // remembered so narrateDone can log the action
+        agentWorking = true;        // mic stays OFF until the task finishes
+        addChatMessage("user", text);
+        speak("On it!");            // after this, resumeListening → "Working…" (no mic)
+        // Always run on the current tab. lastInputWasVoice stays true so the
+        // agent-log hooks narrate progress; narrateDone() resets it when done.
+        agentSend(text, true, true); // alreadyEchoed=true (we echoed above)
+      }
+    }
+
+    /* ── Text-to-speech ── */
+    // Make an LLM reply sound natural spoken aloud: no markdown, code, emojis,
+    // or raw URLs (which sound terrible read out).
+    function plainTextForSpeech(md) {
+      if (!md) return "";
+      var s = String(md)
+        .replace(/```[\s\S]*?```/g, " ")                  // fenced code → drop
+        .replace(/`([^`]+)`/g, "$1")                       // inline code
+        .replace(/\$\$[\s\S]*?\$\$/g, " ")                 // display math → drop
+        .replace(/\$[^$\n]+\$/g, " ")                      // inline math → drop
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")             // images → drop
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")           // [text](url) → text
+        // Raw URLs → just the site name, drop the rest.
+        .replace(/\bhttps?:\/\/(?:www\.)?([^\/\s)]+)[^\s)]*/gi, function (_, host) {
+          return (host || "").split(".")[0] || "a link";
+        })
+        .replace(/\bwww\.([^\/\s)]+)[^\s)]*/gi, function (_, host) {
+          return (host || "").split(".")[0] || "a link";
+        })
+        .replace(/^#{1,6}\s+/gm, "")                        // headers
+        .replace(/^\s*[-*+]\s+/gm, "")                      // bullet markers
+        .replace(/^\s*\d+\.\s+/gm, "")                      // numbered markers
+        .replace(/[*_~>#|`]/g, " ")                         // leftover md punctuation
+        // Strip emoji & pictographs.
+        .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}️‍]/gu, "")
+        .replace(/\s{2,}/g, " ")
+        .replace(/\s+([,.!?;:])/g, "$1")                   // tidy space before punctuation
+        .trim();
+      return s;
+    }
+
+    // Stop capturing audio without tearing voice mode down (mic OFF).
+    function stopMic() {
+      if (usingGroq) { groqPause(); return; }
+      restartGuard = true;                 // block onend auto-restart
+      try { recognition && recognition.stop(); } catch (e) {}
+    }
+
+    // Resume listening after a spoken reply. Always safe to call.
+    // While a voice-dispatched agent task runs, the mic stays OFF and the bar
+    // shows "Working…" instead — we only listen once the agent is done.
+    function resumeListening() {
+      if (!enabled) { setState("idle"); return; }
+      if (agentWorking) { stopMic(); setState("working"); return; }
+      setTimeout(function () {
+        if (!enabled || agentWorking) { if (agentWorking) { stopMic(); setState("working"); } return; }
+        restartGuard = false;
+        setState("listening");
+        if (usingGroq) { groqResume(); return; }
+        try { recognition && recognition.start(); } catch (e) { /* already running */ }
+      }, 250);
+    }
+
+    function speak(text) {
+      var clean = plainTextForSpeech(text);
+      if (!clean || !window.speechSynthesis) { resumeListening(); return; }
+
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+      setState("speaking");
+
+      var utter = new SpeechSynthesisUtterance(clean.slice(0, 700));
+      utter.lang = navigator.language || "en-US";
+      utter.rate = 1.0;
+      utter.pitch = 1.05; // a touch warmer
+      var voice = pickVoice();
+      if (voice) utter.voice = voice;
+
+      // Single-shot completion — whichever fires first resumes listening exactly
+      // once. The WATCHDOG + poll are essential: Chrome's SpeechSynthesis often
+      // never fires onend after a few utterances, which would kill listening.
+      var finished = false, watchdog = null, resumePoll = null;
+      function finish() {
+        if (finished) return;
+        finished = true;
+        if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+        if (resumePoll) { clearInterval(resumePoll); resumePoll = null; }
+        resumeListening();
+      }
+      utter.onend = finish;
+      utter.onerror = finish;
+
+      var estMs = Math.min(Math.ceil(clean.length / 14) * 1000 + 1200, 22000);
+      watchdog = setTimeout(finish, estMs);
+
+      resumePoll = setInterval(function () {
+        try {
+          if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+            window.speechSynthesis.resume(); // Chrome silent-pause bug
+          }
+          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+            finish(); // finished but onend may not have fired
+          }
+        } catch (e) {}
+      }, 500);
+
+      try { window.speechSynthesis.speak(utter); } catch (e) { finish(); }
+    }
+
+    var cachedVoice = null;
+    function pickVoice() {
+      if (cachedVoice) return cachedVoice;
+      var voices = window.speechSynthesis.getVoices() || [];
+      if (!voices.length) return null;
+      var lang = (navigator.language || "en-US").toLowerCase();
+      cachedVoice =
+        voices.find(function(v){ return v.lang && v.lang.toLowerCase() === lang && /female|google|natural/i.test(v.name); }) ||
+        voices.find(function(v){ return v.lang && v.lang.toLowerCase().startsWith(lang.slice(0,2)); }) ||
+        voices[0];
+      return cachedVoice;
+    }
+
+    /* ── Agent narration (called from agent-log hooks) ── */
+    function narrate(text) {
+      if (!enabled || !lastInputWasVoice) return;
+      if (!text) return;
+      // Drop-stale: if we're mid-speech, queue only the latest snippet.
+      if (state === "speaking") { pendingNarration = text; return; }
+      speak(text);
+    }
+    function narrateDone(summary) {
+      if (!enabled || !lastInputWasVoice) return;
+      lastInputWasVoice = false; // task finished — stop gating further narration
+      agentWorking = false;      // task done → mic may resume after we speak
+      pendingNarration = null;
+      // Remember what we did so the companion can reference it later.
+      if (lastVoiceGoal || summary) {
+        try { sendMsg({ type: "VOICE_REMEMBER", goal: lastVoiceGoal, summary: summary || "" }); } catch (e) {}
+      }
+      lastVoiceGoal = "";
+      if (summary) speak(summary);   // → resumeListening (agentWorking now false → listen)
+      else resumeListening();        // no summary → just go back to listening
+    }
+
+    // Safety net: the agent can also end via error / user-stop, which never
+    // fires narrateDone. Called on any terminal AGENT_STATUS so we never get
+    // stuck in "Working…" with the mic off. Guarded so it won't fight a normal
+    // spoken summary (which clears agentWorking immediately).
+    function onAgentEnded() {
+      if (!enabled) return;
+      setTimeout(function () {
+        if (!enabled || !agentWorking) return;   // narrateDone already handled it
+        agentWorking = false;
+        lastInputWasVoice = false;
+        pendingNarration = null;
+        lastVoiceGoal = "";
+        if (state !== "speaking") resumeListening();
+      }, 1200);
+    }
+
+    /* ── Lifecycle ── */
+    async function enable() {
+      // Decide the STT engine. Brave disables Google's speech backend for
+      // privacy, so Chrome STT can't work there — auto-fall back to Groq.
+      var brave = false;
+      try {
+        if (navigator.brave && typeof navigator.brave.isBrave === "function") {
+          brave = await navigator.brave.isBrave();
+        }
+      } catch (e) { /* not Brave or detection failed */ }
+
+      var engine = (sttConfig.engine === "groq") ? "groq" : "chrome";
+      if (brave && engine !== "groq") engine = "groq";
+
+      if (engine === "groq") {
+        if (!groqSupported()) {
+          addChatMessage("system-info", "Voice mode (Groq) needs microphone recording support, which isn't available in this browser.");
+          return;
+        }
+        if (!sttConfig.groqKey) {
+          addChatMessage("system-info", brave
+            ? "Voice mode in Brave needs a Groq API key — Brave blocks Chrome's speech service. Add your free key in Settings → Speech-to-Text, then turn voice mode on. (Get one at console.groq.com)"
+            : "Groq transcription is selected but no API key is set. Add your Groq key in Settings → Speech-to-Text, or switch the engine back to Browser (Chrome).");
+          openSettingsToStt();
+          return;
+        }
+        usingGroq = true;
+      } else {
+        if (!supported()) {
+          addChatMessage("system-info", "Voice mode isn't supported in this browser (needs Web Speech API). Use Chrome, Edge, Opera, or Vivaldi — or switch to Groq transcription in Settings → Speech-to-Text.");
+          return;
+        }
+        usingGroq = false;
+      }
+
+      enabled = true;
+      finalTranscript = "";
+      lastInterim = "";
+      restartGuard = false;
+      // Warm up the voice list (async on some platforms).
+      if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged === null) {
+        window.speechSynthesis.onvoiceschanged = function(){ cachedVoice = null; pickVoice(); };
+      }
+      if (voiceBtn) { voiceBtn.classList.add("active"); voiceBtn.setAttribute("aria-pressed", "true"); }
+      showOverlay(true);
+      setState("listening");
+      setTranscript("");
+
+      if (usingGroq) {
+        groqStart();
+        return;
+      }
+
+      // Chrome path: best-effort permission warm-up, then start recognition
+      // (which requests the mic itself and surfaces denials via onerror).
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(function(t){ t.stop(); });
+        }
+      } catch (e) { /* don't abort — recognition.start() will prompt/error */ }
+      recognition = buildRecognition();
+      try { recognition.start(); } catch (e) {}
+    }
+
+    // Open the settings drawer focused on the Speech-to-Text section so the
+    // user can drop in their Groq key right away.
+    function openSettingsToStt() {
+      try {
+        if (settingsDrawer && !settingsDrawer.classList.contains("open") && settingsBtn) {
+          settingsBtn.click();
+        }
+        if (cfgGroqKey) setTimeout(function(){ try { cfgGroqKey.focus(); } catch (e) {} }, 150);
+      } catch (e) {}
+    }
+
+    function disable() {
+      enabled = false;
+      restartGuard = true;
+      lastInputWasVoice = false;
+      agentWorking = false;
+      pendingNarration = null;
+      lastVoiceGoal = "";
+      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+      try { recognition && recognition.stop(); } catch (e) {}
+      try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+      recognition = null;
+      if (usingGroq) groqStop();
+      usingGroq = false;
+      // Clear the voice conversation memory (fresh session next time).
+      try { sendMsg({ type: "VOICE_RESET" }); } catch (e) {}
+      if (voiceBtn) { voiceBtn.classList.remove("active"); voiceBtn.setAttribute("aria-pressed", "false"); }
+      showOverlay(false);
+      setState("idle");
+      setTranscript("");
+    }
+
+    function toggle() { enabled ? disable() : enable(); }
+
+    return {
+      toggle: toggle,
+      enable: enable,
+      disable: disable,
+      isActive: function() { return enabled; },
+      narrate: narrate,
+      narrateDone: narrateDone,
+      onAgentEnded: onAgentEnded
+    };
+  })();
+
+  /* ═══════════════════════════════════════════
    * Stop Agent
    * ═══════════════════════════════════════════ */
 
@@ -936,6 +1630,7 @@
     isRunning = false;
     updateButtons();
     setStatus("idle", "Stopped by user.");
+    VoiceController.onAgentEnded(); // exit "Working…" + resume mic (guarded)
   }
 
   /* ── UI helpers ── */
@@ -972,7 +1667,6 @@
     seenLogIds = {};
     agentLogBubble = null;
     agentLogSteps = null;
-    agentLogPlan = null;
     thinkingEl = null;
     agentStepCount = 0;
     lastShownLabel = "";
@@ -1480,8 +2174,12 @@
       maxSteps: parseInt(cfgMaxSteps.value, 10) || 20,
       interStepDelay: parseInt(cfgDelay.value, 10) || 2000,
       llmTimeout: parseInt(cfgTimeout.value, 10) || 100000,
-      wallTimeout: (parseInt(cfgWallTimeout.value, 10) || 300) * 1000
+      wallTimeout: (parseInt(cfgWallTimeout.value, 10) || 300) * 1000,
+      sttEngine: (cfgSttEngine && cfgSttEngine.value === "groq") ? "groq" : "chrome",
+      groqApiKey: cfgGroqKey ? cfgGroqKey.value.trim() : ""
     };
+    sttConfig.engine = config.sttEngine;
+    sttConfig.groqKey = config.groqApiKey;
     await sendMsg({ type: "SAVE_CONFIG", config: config });
     loadedProviders = providers;
     updateEmptyState(providers);
@@ -1533,6 +2231,10 @@
       cfgDelay.value    = cfg.interStepDelay || 2000;
       cfgTimeout.value  = cfg.llmTimeout || 100000;
       cfgWallTimeout.value = Math.round((cfg.wallTimeout || 300000) / 1000);
+      sttConfig.engine = (cfg.sttEngine === "groq") ? "groq" : "chrome";
+      sttConfig.groqKey = cfg.groqApiKey || "";
+      if (cfgSttEngine) cfgSttEngine.value = sttConfig.engine;
+      if (cfgGroqKey) cfgGroqKey.value = sttConfig.groqKey;
       loadedProviders = cfg.providers || {};
     }
 
@@ -1594,6 +2296,7 @@
         isRunning = false;
         updateButtons();
         hideThinkingIndicator();
+        VoiceController.onAgentEnded(); // exit "Working…" + resume mic (guarded)
       }
     }
 
@@ -1654,19 +2357,16 @@
    * Event Bindings
    * ═══════════════════════════════════════════ */
 
-  chatBtn.addEventListener("click", function() {
+  sendBtn.addEventListener("click", function() {
     if (isRunning) return;
     var text = goalInput.value.trim();
-    if (text) chatSend(text);
-  });
-
-  agentBtn.addEventListener("click", function() {
-    if (isRunning) return;
-    var text = goalInput.value.trim();
-    if (text) showTabChoice(text);
+    if (text) routeMessage(text);
   });
 
   stopBtn.addEventListener("click", stopAgent);
+
+  if (voiceBtn) voiceBtn.addEventListener("click", function() { VoiceController.toggle(); });
+  if (voiceCloseBtn) voiceCloseBtn.addEventListener("click", function() { VoiceController.disable(); });
 
   clearLogsBtn.addEventListener("click", function() {
     clearStream();
@@ -1712,7 +2412,7 @@
   });
 
 
-  // Keyboard: Enter = chat, Ctrl+Enter = agent
+  // Keyboard: Enter = smart auto-route (chat vs agent); Ctrl+Enter = force Agent
   goalInput.addEventListener("keydown", function(e) {
     if (isRunning) return;
     var text = goalInput.value.trim();
@@ -1720,10 +2420,10 @@
 
     if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
       e.preventDefault();
-      chatSend(text);
+      routeMessage(text);
     } else if (e.key === "Enter" && e.ctrlKey) {
       e.preventDefault();
-      showTabChoice(text);
+      routeMessage(text, { forceAgent: true });
     }
   });
 
