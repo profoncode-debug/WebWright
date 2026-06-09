@@ -636,8 +636,8 @@
       <div class="hero-badges">
         <span class="hero-badge">Chrome · Edge · Brave · Opera · Arc</span>
         <span class="hero-badge">8 LLM providers</span>
+        <span class="hero-badge">Hands-free voice</span>
         <span class="hero-badge">Free with Ollama</span>
-        <span class="hero-badge">Under 1 MB</span>
       </div>
     </div>
   </header>
@@ -649,7 +649,7 @@
         Most AI tools talk. <strong>WebWright works.</strong> Every popular AI sidebar is fundamentally a chatbot — it reads what you paste, answers questions about what you describe, and then stops. It can't reach the real browser tab where you're trying to get things done.
       </p>
       <p class="manifesto-sub">
-        WebWright is different. It perceives the page, reasons about it with an LLM, and takes real actions — clicks, types, navigates, fills forms, conducts research. It is not a chat wrapper. It is a real agentic AI.
+        WebWright is different. It perceives the page, reasons about it with an LLM, and takes real actions — clicks, types, navigates, fills forms, conducts research, even hands-free by voice. It is not a chat wrapper. It is a real agentic AI.
       </p>
     </div>
   </section>
@@ -685,6 +685,11 @@
               <td class="cell-feature">Takes real actions on your behalf</td>
               <td class="cell-typical"><span class="mark mark-no">✗</span>No</td>
               <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes — clicks, types, navigates, fills</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Hands-free voice control</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Rare / read-only</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Speak goals, hear replies, runs actions</td>
             </tr>
             <tr>
               <td class="cell-feature">Open source — read every line of code</td>
@@ -754,6 +759,43 @@
       <div class="feature-image">
         <img src="screenshots/webbwright_chat.png" alt="WebWright Chat Mode explaining the Hilbert Hotel paradox while viewing a YouTube video">
       </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Feature: Voice Mode ───────────────────── -->
+  <section id="voice" style="background: linear-gradient(135deg, rgba(124,106,239,0.06) 0%, rgba(157,140,255,0.02) 100%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="wrap" style="text-align: center;">
+      <span class="section-eyebrow">Voice Mode · New</span>
+      <h2 class="section-title">Talk to your browser. It talks back.</h2>
+      <p class="section-lead" style="margin: 0 auto;">Toggle the mic and go fully hands-free. WebWright transcribes your speech, figures out whether you're chatting or asking for an action, does it, and replies out loud in a warm, natural voice — then goes right back to listening.</p>
+      <div class="tiers" style="margin-top: 36px;">
+        <div class="tier-card">
+          <div class="tier-num" style="background:#7c6aef;">1</div>
+          <div class="tier-title">Listening</div>
+          <div class="tier-desc">Mic is live, capturing what you say.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="background:#e0a106;">2</div>
+          <div class="tier-title">Thinking</div>
+          <div class="tier-desc">Understanding your intent and forming a reply. Mic paused.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="background:#3b82f6;">3</div>
+          <div class="tier-title">Working</div>
+          <div class="tier-desc">Running the agent task you asked for. Mic paused.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="background:#34d399;">4</div>
+          <div class="tier-title">Speaking</div>
+          <div class="tier-desc">Reading the reply aloud, then back to listening.</div>
+        </div>
+      </div>
+      <ul class="feature-list" style="display:inline-block; text-align:left; margin: 30px auto 0; max-width: 720px;">
+        <li>Ask a question and hear the answer, or say <em>"open Gmail and start a new email"</em> and it runs the task</li>
+        <li>Text-to-speech is fully on-device; replies are cleaned for the ear — no URLs, markdown, or emojis read aloud</li>
+        <li>Remembers your recent voice turns, <strong>including the actions it performed</strong>, so you can ask "what did you just do?"</li>
+        <li>Default transcription uses the browser's speech engine; on <strong>Brave</strong> (or for higher accuracy) switch to <strong>Groq Whisper</strong> in Settings</li>
+      </ul>
     </div>
   </section>
 
@@ -880,7 +922,10 @@
             <div class="pillar-desc">The agent does not run in the background or wake on a schedule. It acts only when you, the human, give it a goal.</div>
           </div>
         </div>
-        <p style="margin-top: 28px; font-size: 0.95em; color: var(--text-2);">
+        <p style="margin-top: 28px; font-size: 0.9em; color: var(--muted);">
+          <strong>Voice Mode note:</strong> text-to-speech runs on your device. Speech-to-text sends microphone audio to a transcription service only while Voice Mode is on — Google's speech backend (default Browser engine) or Groq (Groq Whisper engine). WebWright stores no audio.
+        </p>
+        <p style="margin-top: 16px; font-size: 0.95em; color: var(--text-2);">
           Read the full policy: <a href="privacy-policy.html"><strong>Privacy Policy &amp; Permission Justifications →</strong></a>
         </p>
       </div>
@@ -904,6 +949,7 @@
             <li><a href="#m-providers">Choosing a provider &amp; model</a></li>
             <li><a href="#m-agent">Using Agent Mode</a></li>
             <li><a href="#m-chat">Using Chat Mode (Quick &amp; Pro)</a></li>
+            <li><a href="#m-voice">Using Voice Mode</a></li>
             <li><a href="#m-research">Using Research Mode</a></li>
             <li><a href="#m-workflows">Recording &amp; replaying Workflows</a></li>
             <li><a href="#m-vault">The Personal Info Vault</a></li>
@@ -967,11 +1013,12 @@
           <p>Agent Mode is for tasks where the agent must <em>do</em> things — navigate, click, type, fill forms, complete multi-step flows.</p>
           <h4>How to start a task</h4>
           <ol>
-            <li>Open the side panel.</li>
+            <li>Open the side panel and navigate to the page you want to work on.</li>
             <li>Type your goal in the input field at the bottom in plain English.</li>
-            <li>Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> or click the <strong>Agent</strong> (lightning) button.</li>
-            <li>The agent opens a new tab (or works on the current one), then runs step by step. You see every action in the live log above the input.</li>
+            <li>Press <kbd>Enter</kbd> — WebWright auto-detects that it's an action and runs the agent. (Use <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to force Agent mode if the wording is ambiguous.)</li>
+            <li>The agent works on your <strong>current tab</strong> and runs step by step. You see every action in the live log above the input.</li>
           </ol>
+          <div class="callout-tip"><strong>One smart input:</strong> there are no separate Chat and Agent buttons. A single <strong>Send</strong> button (and <kbd>Enter</kbd>) routes each message automatically — questions become chat answers, instructions launch the agent.</div>
           <h4>Example goals</h4>
           <div class="example">"Open YouTube and search for lofi study music. Open the first live stream."</div>
           <div class="example">"Search Amazon India for Sony WH-CH520 headphones, sort by price low-to-high, open the cheapest in-stock listing."</div>
@@ -992,8 +1039,9 @@
           <ol>
             <li>Navigate to the page you want to ask about.</li>
             <li>Type your question in the side panel input.</li>
-            <li>Press <kbd>Enter</kbd> or click the <strong>Chat</strong> (speech bubble) button.</li>
+            <li>Press <kbd>Enter</kbd> — WebWright recognises it as a question and answers in Chat mode (same input as Agent; no separate button).</li>
           </ol>
+          <p>If you navigate the tab or switch to a different one mid-conversation, the page context <strong>refreshes automatically</strong> on your next message — your conversation is kept, only the page content updates.</p>
           <h4>Quick vs Pro</h4>
           <p>Use the mode pill above the input to choose:</p>
           <ul>
@@ -1007,9 +1055,35 @@
           <div class="example">"Explain this paragraph in simple terms."</div>
         </div>
 
-        <!-- 5. Research Mode -->
+        <!-- 5. Voice Mode -->
+        <div class="manual-section" id="m-voice">
+          <h3><span class="num">5</span>Using Voice Mode</h3>
+          <p>Voice Mode lets you operate WebWright hands-free — speak your request, and it speaks the answer back. The same intent routing applies: a question is answered in chat, an instruction launches the agent.</p>
+          <h4>How to start</h4>
+          <ol>
+            <li>Click the <strong>mic</strong> button in the side panel to turn Voice Mode on.</li>
+            <li>The first time, your browser asks for microphone permission — click <strong>Allow</strong>.</li>
+            <li>Just talk. The voice bar shows what's happening: <strong>Listening</strong> → <strong>Thinking</strong> → <strong>Working</strong> (if it's running a task) → <strong>Speaking</strong> → back to Listening.</li>
+            <li>Click the mic again (or the ✕ on the bar) to turn it off.</li>
+          </ol>
+          <h4>Transcription engine (important for Brave)</h4>
+          <p>Speech-to-text has two engines, set under <strong>Settings → Speech-to-Text</strong>:</p>
+          <ul>
+            <li><strong>Browser (Chrome)</strong> — the default. Free, uses the browser's built-in speech recognition.</li>
+            <li><strong>Groq Whisper</strong> — higher accuracy, and the option for <strong>Brave</strong>, which disables the built-in engine for privacy. Paste a free key from <a href="https://console.groq.com" target="_blank">console.groq.com</a>. On Brave, WebWright uses this automatically once a key is set.</li>
+          </ul>
+          <h4>Good to know</h4>
+          <ul>
+            <li>While the agent is working, the mic is paused (bar shows <strong>Working</strong>) so it never mishears the task narration — it resumes listening the moment the task finishes.</li>
+            <li>It remembers your recent voice turns, including actions it performed, so follow-ups like "what did you just do?" work.</li>
+            <li>Text-to-speech runs on your device. URLs, markdown, and emojis are stripped so replies sound natural.</li>
+          </ul>
+          <div class="callout-tip"><strong>Privacy:</strong> text-to-speech is on-device. Speech-to-text sends your microphone audio to a transcription service — Google's speech backend (Browser engine) or Groq (Groq Whisper engine). No audio is stored by WebWright.</div>
+        </div>
+
+        <!-- 6. Research Mode -->
         <div class="manual-section" id="m-research">
-          <h3><span class="num">5</span>Using Research Mode</h3>
+          <h3><span class="num">6</span>Using Research Mode</h3>
           <p>Research Mode autonomously visits up to 10 sources on the web and synthesizes a final report. Ideal for "research X for me" requests.</p>
           <h4>How to start a research run</h4>
           <ol>
@@ -1036,9 +1110,9 @@
           <div class="callout-tip"><strong>Set a Research Model</strong> for best results. Ollama Cloud lets you configure a separate Research Model in Settings (defaults to <code>gemma4:31b-cloud</code>). Other providers fall back to your primary model.</div>
         </div>
 
-        <!-- 6. Workflows -->
+        <!-- 7. Workflows -->
         <div class="manual-section" id="m-workflows">
-          <h3><span class="num">6</span>Recording &amp; replaying Workflows</h3>
+          <h3><span class="num">7</span>Recording &amp; replaying Workflows</h3>
           <p>Workflows record a sequence of browser actions (clicks, typing, navigation) once, then replay them with a single click. Best for repetitive tasks where the actions are identical every time.</p>
           <h4>To record a workflow</h4>
           <ol>
@@ -1063,9 +1137,9 @@
           <div class="callout-warn"><strong>Workflows replay exactly what you recorded.</strong> Don't use them for tasks where decisions are needed (use Agent Mode instead) or for sites whose structure changes often.</div>
         </div>
 
-        <!-- 7. Personal Info Vault -->
+        <!-- 8. Personal Info Vault -->
         <div class="manual-section" id="m-vault">
-          <h3><span class="num">7</span>The Personal Info Vault</h3>
+          <h3><span class="num">8</span>The Personal Info Vault</h3>
           <p>Save your details once. The agent uses them to fill forms on demand — only when you explicitly ask for a form-related task.</p>
           <h4>To set up</h4>
           <ol>
@@ -1085,9 +1159,9 @@
           <p>Only Agent Mode + keyword match = vault sent.</p>
         </div>
 
-        <!-- 8. Vision Escalation -->
+        <!-- 9. Vision Escalation -->
         <div class="manual-section" id="m-vision">
-          <h3><span class="num">8</span>Vision Escalation explained</h3>
+          <h3><span class="num">9</span>Vision Escalation explained</h3>
           <p>When DOM-based actions fail, WebWright automatically climbs a 4-tier ladder. You don't trigger this manually — the agent escalates on its own when it detects it's stuck.</p>
           <ol>
             <li><strong>Tier 1 — DOM Analysis.</strong> Default. The agent reads the page's interactive elements and picks one. Fast and token-efficient.</li>
@@ -1099,9 +1173,9 @@
           <div class="callout-tip"><strong>To enable vision escalation</strong> you must configure a vision-capable model in Settings → your provider tab → Vision Model. Without one, the agent stays at Tier 1.</div>
         </div>
 
-        <!-- 9. Settings reference -->
+        <!-- 10. Settings reference -->
         <div class="manual-section" id="m-settings">
-          <h3><span class="num">9</span>Settings reference</h3>
+          <h3><span class="num">10</span>Settings reference</h3>
           <p>Open the gear icon in the side panel header.</p>
           <ul>
             <li><strong>Provider</strong> — which LLM service to use. Default: Ollama Cloud.</li>
@@ -1111,12 +1185,14 @@
             <li><strong>LLM Timeout</strong> — max wait per LLM call, in ms. Default: 100000 (100 s). Raise for slow models.</li>
             <li><strong>Wall Timeout</strong> — max total task duration, in ms. Default: 300000 (5 min).</li>
             <li><strong>Chat Mode default</strong> — pill defaults to Pro. Change to Quick if you want text-only by default.</li>
+            <li><strong>Speech-to-Text Engine</strong> (Voice Mode) — Browser (Chrome) by default, or <strong>Groq Whisper</strong> for higher accuracy and for Brave. Auto-used on Brave once a key is set.</li>
+            <li><strong>Groq API Key</strong> — stored locally; required only when the Groq Whisper engine is selected. Free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a>.</li>
           </ul>
         </div>
 
-        <!-- 10. Tips -->
+        <!-- 11. Tips -->
         <div class="manual-section" id="m-prompting">
-          <h3><span class="num">10</span>Tips for best results</h3>
+          <h3><span class="num">11</span>Tips for best results</h3>
           <p>The accuracy of any AI agent is a function of two things you control: how specifically you prompt it, and which model you point it at.</p>
           <h4>Prompting</h4>
           <ul>
@@ -1135,9 +1211,9 @@
           <div class="callout-tip"><strong>When a task fails:</strong> try a stronger model AND a more specific prompt before assuming it's a bug. Most "the agent is dumb" outcomes trace back to one of those two.</div>
         </div>
 
-        <!-- 11. Troubleshooting -->
+        <!-- 12. Troubleshooting -->
         <div class="manual-section" id="m-troubleshoot">
-          <h3><span class="num">11</span>Troubleshooting</h3>
+          <h3><span class="num">12</span>Troubleshooting</h3>
 
           <h4>"Ollama Cloud rejected the request (403)"</h4>
           <p>Your API key is missing, invalid, or has been rate-limited. Fix:</p>
@@ -1169,14 +1245,14 @@
           <p>Click the puzzle icon in your browser toolbar → pin WebWright. Then click its icon directly.</p>
         </div>
 
-        <!-- 12. Shortcuts -->
+        <!-- 13. Shortcuts -->
         <div class="manual-section" id="m-shortcuts">
-          <h3><span class="num">12</span>Keyboard shortcuts</h3>
+          <h3><span class="num">13</span>Keyboard shortcuts</h3>
           <ul>
-            <li><kbd>Enter</kbd> in the input → send a Chat message</li>
-            <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the input → run an Agent task</li>
+            <li><kbd>Enter</kbd> in the input → smart send (auto-routes to Chat or Agent)</li>
+            <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the input → force an Agent task</li>
             <li><kbd>Shift</kbd> + <kbd>Enter</kbd> in the input → new line (multi-line prompt)</li>
-            <li><kbd>Esc</kbd> while the agent is running → stop the agent</li>
+            <li>Click <strong>Stop</strong> while the agent is running → halt it immediately</li>
           </ul>
         </div>
 
