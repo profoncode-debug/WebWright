@@ -6,616 +6,116 @@
   <title>WebWright — Built for action, not just browsing</title>
   <meta name="description" content="An autonomous AI agent that lives in your browser sidebar. Sees web pages, reasons about them, and takes real actions to complete tasks for you. Not a chat wrapper.">
   <link rel="icon" type="image/png" href="icons/icon128.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <style>
-    :root {
-      --accent: #7c6aef;
-      --accent-2: #9d8cff;
-      --accent-bg: rgba(124,106,239,0.10);
-      --bg: #f5f6fa;
-      --bg-2: #eef0f6;
-      --card: #ffffff;
-      --text: #1c1c2e;
-      --text-2: #3a3a52;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --border-h: #d1d5db;
-      --hero-gradient: linear-gradient(135deg, #7c6aef 0%, #9d8cff 100%);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0a0a12;
-        --bg-2: #11111d;
-        --card: #151522;
-        --text: #e8e9f0;
-        --text-2: #c2c4d4;
-        --muted: #9ca3af;
-        --border: #262638;
-        --border-h: #34344c;
-      }
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.65;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { color: var(--accent-2); }
-    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
-
-    /* ── Top bar ── */
-    .topbar {
-      position: sticky; top: 0; z-index: 50;
-      background: color-mix(in srgb, var(--bg) 85%, transparent);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
-    }
-    .topbar-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 24px; max-width: 1120px; margin: 0 auto;
-    }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.05em; letter-spacing: -0.01em; }
-    .brand img { width: 28px; height: 28px; border-radius: 7px; }
-    .topbar-links { display: flex; gap: 24px; align-items: center; }
-    .topbar-links a { color: var(--text-2); font-weight: 500; font-size: 0.92em; }
-    .topbar-links a:hover { color: var(--accent); }
-    .topbar-cta {
-      background: var(--accent); color: #fff !important;
-      padding: 8px 16px; border-radius: 8px;
-      font-weight: 600; font-size: 0.88em;
-      transition: background 0.15s;
-    }
-    .topbar-cta:hover { background: var(--accent-2); }
-
-    /* ── Hero ── */
-    .hero {
-      position: relative;
-      padding: 100px 0 80px;
-      text-align: center;
-      overflow: hidden;
-    }
-    .hero::before {
-      content: ""; position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse 800px 400px at 50% 0%, var(--accent-bg) 0%, transparent 70%),
-        radial-gradient(ellipse 600px 300px at 20% 30%, rgba(157,140,255,0.08) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .hero-content { position: relative; z-index: 1; }
-    .hero-logo {
-      width: 96px; height: 96px;
-      border-radius: 22px;
-      margin: 0 auto 28px;
-      box-shadow: 0 20px 60px -15px rgba(124,106,239,0.45), 0 8px 24px -8px rgba(0,0,0,0.15);
-    }
-    .hero h1 {
-      font-size: clamp(2.4em, 5.5vw, 4em);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 16px;
-      line-height: 1.1;
-    }
-    .hero h1 .gradient {
-      background: var(--hero-gradient);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .hero-tagline {
-      font-size: clamp(1.05em, 1.8vw, 1.25em);
-      color: var(--text-2);
-      max-width: 620px; margin: 0 auto 14px;
-      font-weight: 500;
-    }
-    .hero-sub {
-      font-size: clamp(0.95em, 1.4vw, 1.05em);
-      color: var(--muted);
-      max-width: 580px; margin: 0 auto 36px;
-    }
-    .hero-cta { display: inline-flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 14px 26px; border-radius: 12px;
-      font-weight: 600; font-size: 1em;
-      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
-      border: 1px solid transparent;
-      cursor: pointer;
-    }
-    .btn-primary {
-      background: var(--accent); color: #fff !important;
-      box-shadow: 0 10px 24px -10px rgba(124,106,239,0.55);
-    }
-    .btn-primary:hover { background: var(--accent-2); transform: translateY(-2px); box-shadow: 0 14px 30px -10px rgba(124,106,239,0.7); }
-    .btn-ghost {
-      background: var(--card); color: var(--text) !important;
-      border: 1px solid var(--border);
-    }
-    .btn-ghost:hover { border-color: var(--accent); color: var(--accent) !important; }
-    .btn svg { width: 18px; height: 18px; }
-
-    .hero-badges {
-      display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
-      margin-top: 36px;
-    }
-    .hero-badge {
-      font-size: 0.78em; padding: 5px 12px; border-radius: 999px;
-      background: var(--accent-bg); color: var(--accent);
-      border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-      font-weight: 600;
-    }
-
-    /* ── Manifesto block ── */
-    .manifesto {
-      padding: 60px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-2);
-    }
-    .manifesto-quote {
-      max-width: 780px; margin: 0 auto;
-      font-size: clamp(1.15em, 2vw, 1.55em);
-      line-height: 1.55; font-weight: 500;
-      text-align: center; color: var(--text);
-    }
-    .manifesto-quote strong { color: var(--accent); font-weight: 700; }
-    .manifesto-sub {
-      text-align: center; color: var(--muted);
-      max-width: 720px; margin: 20px auto 0;
-      font-size: 1em;
-    }
-
-    /* ── Section base ── */
-    section { padding: 80px 0; }
-    .section-eyebrow {
-      display: inline-block;
-      font-size: 0.78em; font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 12px;
-    }
-    .section-title {
-      font-size: clamp(1.6em, 3.2vw, 2.4em);
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      margin-bottom: 18px;
-    }
-    .section-lead {
-      font-size: 1.05em; color: var(--text-2);
-      max-width: 620px;
-    }
-
-    /* ── Feature row (alternating image + text) ── */
-    .feature-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 60px;
-      align-items: center;
-    }
-    .feature-row.reverse { direction: rtl; }
-    .feature-row.reverse > * { direction: ltr; }
-    .feature-image {
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      box-shadow: 0 30px 60px -25px rgba(0,0,0,0.20), 0 12px 24px -12px rgba(0,0,0,0.10);
-      background: var(--card);
-    }
-    .feature-image img { display: block; width: 100%; height: auto; }
-    .feature-list { margin-top: 22px; list-style: none; padding: 0; }
-    .feature-list li {
-      position: relative; padding-left: 26px;
-      margin-bottom: 10px; font-size: 0.98em; color: var(--text-2);
-    }
-    .feature-list li::before {
-      content: ""; position: absolute; left: 0; top: 10px;
-      width: 14px; height: 14px; border-radius: 50%;
-      background: var(--accent-bg);
-      border: 2px solid var(--accent);
-    }
-    @media (max-width: 880px) {
-      .feature-row, .feature-row.reverse {
-        grid-template-columns: 1fr;
-        direction: ltr;
-        gap: 36px;
-      }
-      .feature-row.reverse .feature-image { order: 2; }
-    }
-
-    /* ── Comparison table ── */
-    .compare-table-wrap {
-      margin-top: 36px;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      box-shadow: 0 20px 50px -25px rgba(0,0,0,0.18), 0 8px 16px -8px rgba(0,0,0,0.08);
-      background: var(--card);
-    }
-    .compare-table { width: 100%; border-collapse: collapse; }
-    .compare-table th, .compare-table td {
-      padding: 16px 22px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.96em;
-      vertical-align: middle;
-    }
-    .compare-table thead th { font-weight: 700; background: var(--bg-2); }
-    .compare-table thead th.col-ww {
-      color: var(--accent);
-      position: relative;
-    }
-    .compare-table thead th.col-ww::after {
-      content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
-      background: var(--accent);
-    }
-    .compare-table tbody tr:last-child td { border-bottom: none; }
-    .compare-table td.cell-feature { width: 46%; color: var(--text-2); font-weight: 500; }
-    .compare-table td.cell-typical { color: var(--muted); }
-    .compare-table td.cell-ww { color: var(--accent); font-weight: 600; }
-    .compare-table .mark {
-      display: inline-block;
-      width: 22px; height: 22px;
-      line-height: 22px; text-align: center;
-      border-radius: 50%;
-      font-weight: 700; font-size: 0.85em;
-      margin-right: 8px;
-      vertical-align: -2px;
-    }
-    .compare-table .mark-yes { background: var(--accent); color: #fff; }
-    .compare-table .mark-no { background: rgba(217,119,119,0.18); color: #d97777; }
-    .compare-table tr.row-emph td { font-weight: 700; }
-    .compare-table tr.row-emph td.cell-feature { color: var(--text); }
-    .compare-table tr.row-emph td.cell-ww { background: var(--accent-bg); }
-    @media (max-width: 720px) {
-      .compare-table th, .compare-table td { padding: 12px 14px; font-size: 0.85em; }
-      .compare-table .mark { width: 18px; height: 18px; line-height: 18px; font-size: 0.75em; }
-    }
-
-    /* ── Vision tiers grid ── */
-    .tiers {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-top: 32px;
-    }
-    .tier-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 22px 20px;
-      transition: border-color 0.15s, transform 0.15s;
-    }
-    .tier-card:hover { border-color: var(--accent); transform: translateY(-3px); }
-    .tier-num {
-      display: inline-block;
-      width: 32px; height: 32px;
-      background: var(--accent); color: #fff;
-      border-radius: 8px;
-      text-align: center; line-height: 32px;
-      font-weight: 800; font-size: 0.95em;
-      margin-bottom: 14px;
-    }
-    .tier-title { font-weight: 700; margin-bottom: 6px; font-size: 1.02em; }
-    .tier-desc { font-size: 0.86em; color: var(--muted); line-height: 1.5; }
-    @media (max-width: 820px) { .tiers { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px) { .tiers { grid-template-columns: 1fr; } }
-
-    /* ── Providers ── */
-    .providers-wrap {
-      display: flex; flex-wrap: wrap; gap: 10px;
-      margin-top: 28px;
-    }
-    .provider-pill {
-      padding: 10px 18px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      font-weight: 600; font-size: 0.92em;
-      color: var(--text-2);
-      transition: border-color 0.15s, color 0.15s;
-    }
-    .provider-pill:hover { border-color: var(--accent); color: var(--accent); }
-    .provider-pill .free {
-      display: inline-block;
-      margin-left: 8px; padding: 2px 8px;
-      background: var(--accent-bg); color: var(--accent);
-      border-radius: 999px; font-size: 0.72em; font-weight: 700;
-    }
-
-    /* ── Privacy callout ── */
-    .privacy-section {
-      background: var(--bg-2);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .privacy-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 40px;
-      margin-top: 32px;
-    }
-    .privacy-pillars {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 28px;
-      margin-top: 28px;
-    }
-    .pillar-title {
-      font-weight: 700; margin-bottom: 6px; color: var(--accent);
-      font-size: 0.95em;
-    }
-    .pillar-desc { font-size: 0.92em; color: var(--text-2); line-height: 1.6; }
-    @media (max-width: 720px) { .privacy-pillars { grid-template-columns: 1fr; } .privacy-card { padding: 28px 22px; } }
-
-    /* ── User Manual ── */
-    .manual-wrap { margin-top: 32px; }
-    .manual-toc {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px 24px;
-      margin-bottom: 24px;
-    }
-    .manual-toc h3 {
-      font-size: 0.78em; font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--muted); margin-bottom: 12px;
-    }
-    .manual-toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 28px; }
-    .manual-toc li { margin-bottom: 4px; font-size: 0.92em; color: var(--text-2); break-inside: avoid; }
-    .manual-toc a { color: var(--text-2); }
-    .manual-toc a:hover { color: var(--accent); }
-    @media (max-width: 640px) { .manual-toc ol { columns: 1; } }
-
-    .manual-section {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px 32px;
-      margin-bottom: 14px;
-      scroll-margin-top: 80px;
-    }
-    .manual-section h3 {
-      font-size: 1.22em; font-weight: 800;
-      margin-bottom: 10px; letter-spacing: -0.01em;
-      color: var(--text); display: flex; align-items: center; gap: 12px;
-    }
-    .manual-section h3 .num {
-      display: inline-block; width: 28px; height: 28px;
-      background: var(--accent); color: #fff;
-      border-radius: 8px; text-align: center; line-height: 28px;
-      font-weight: 800; font-size: 0.78em; flex-shrink: 0;
-    }
-    .manual-section h4 {
-      font-size: 0.98em; font-weight: 700;
-      margin-top: 18px; margin-bottom: 6px;
-      color: var(--text-2);
-    }
-    .manual-section p, .manual-section li {
-      font-size: 0.94em; color: var(--text-2); line-height: 1.7;
-    }
-    .manual-section p { margin-bottom: 10px; }
-    .manual-section ul, .manual-section ol {
-      margin: 6px 0 12px 22px;
-    }
-    .manual-section ul li, .manual-section ol li { margin-bottom: 5px; }
-    .manual-section code {
-      background: var(--bg-2);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-family: 'SF Mono', Consolas, Monaco, monospace;
-      font-size: 0.85em; color: var(--accent);
-    }
-    .manual-section kbd {
-      background: var(--bg-2);
-      border: 1px solid var(--border);
-      border-bottom-width: 2px;
-      border-radius: 4px;
-      padding: 1px 7px;
-      font-family: 'SF Mono', Consolas, Monaco, monospace;
-      font-size: 0.82em;
-      color: var(--text);
-      box-shadow: 0 1px 0 var(--border);
-    }
-    .manual-section .example {
-      background: var(--bg-2);
-      border-left: 3px solid var(--accent);
-      padding: 10px 14px;
-      margin: 10px 0;
-      border-radius: 0 8px 8px 0;
-      font-style: italic;
-      font-size: 0.93em;
-    }
-    .manual-section .callout-tip,
-    .manual-section .callout-warn {
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin: 12px 0;
-      font-size: 0.92em;
-    }
-    .manual-section .callout-tip {
-      background: var(--accent-bg);
-      border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-    }
-    .manual-section .callout-tip strong { color: var(--accent); }
-    .manual-section .callout-warn {
-      background: rgba(217,119,119,0.08);
-      border: 1px solid rgba(217,119,119,0.25);
-    }
-    .manual-section .callout-warn strong { color: #c95a5a; }
-    @media (max-width: 640px) {
-      .manual-section { padding: 22px 20px; }
-    }
-
-    /* ── Final CTA ── */
-    .final-cta {
-      text-align: center;
-      padding: 90px 0;
-      background: linear-gradient(135deg, rgba(124,106,239,0.10) 0%, rgba(157,140,255,0.04) 100%);
-      border-top: 1px solid var(--border);
-    }
-    .final-cta h2 {
-      font-size: clamp(1.8em, 4vw, 2.6em);
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 14px;
-    }
-    .final-cta p { color: var(--text-2); max-width: 560px; margin: 0 auto 32px; }
-
-    /* ── Footer ── */
-    footer {
-      padding: 40px 0 50px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.9em;
-    }
-    footer .footer-links { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
-    footer .footer-links a { color: var(--text-2); font-weight: 500; }
-    footer .footer-links a:hover { color: var(--accent); }
-    .footer-tag { font-size: 0.85em; opacity: 0.7; }
-
-    /* ─────────────────────────────────────────────
-       Mobile / tablet responsive layer
-       ───────────────────────────────────────────── */
-
-    /* Tablet portrait + small laptops: tighten section padding, stack hero CTAs */
-    @media (max-width: 880px) {
-      .wrap { padding: 0 20px; }
-      section { padding: 64px 0; }
-      .hero { padding: 80px 0 60px; }
-      .manifesto { padding: 48px 0; }
-      .final-cta { padding: 72px 0; }
-    }
-
-    /* Phone landscape / small tablet portrait */
-    @media (max-width: 760px) {
-      .wrap { padding: 0 18px; }
-      section { padding: 52px 0; }
-
-      /* Hero */
-      .hero { padding: 56px 0 48px; }
-      .hero-logo { width: 76px; height: 76px; margin-bottom: 22px; border-radius: 18px; }
-      .hero-tagline { font-size: 1em; }
-      .hero-sub { font-size: 0.95em; margin-bottom: 28px; }
-      .hero-cta { width: 100%; flex-direction: column; gap: 10px; }
-      .hero-cta .btn { width: 100%; justify-content: center; padding: 13px 22px; }
-      .hero-badges { gap: 6px; margin-top: 28px; }
-      .hero-badge { font-size: 0.74em; padding: 4px 10px; }
-
-      /* Topbar: hide text nav links — keep brand + "Add to Chrome" CTA only */
-      .topbar-inner { padding: 12px 16px; }
-      .topbar-links a:not(.topbar-cta) { display: none; }
-      .topbar-links { gap: 12px; }
-      .brand { font-size: 0.98em; }
-
-      /* Manifesto + final CTA */
-      .manifesto { padding: 40px 0; }
-      .manifesto-quote { font-size: 1.05em; }
-      .manifesto-sub { font-size: 0.92em; margin-top: 14px; }
-      .final-cta { padding: 56px 0; }
-      .final-cta h2 { font-size: 1.7em; }
-      .final-cta p { font-size: 0.95em; }
-
-      /* Section headings */
-      .section-title { font-size: 1.6em; }
-      .section-lead { font-size: 0.98em; }
-      .section-eyebrow { font-size: 0.72em; letter-spacing: 0.1em; }
-
-      /* Feature rows already stack at 880; tighten gap on small screens */
-      .feature-row, .feature-row.reverse { gap: 28px; }
-
-      /* Comparison table */
-      .compare-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .compare-table th, .compare-table td { padding: 10px 12px; font-size: 0.82em; }
-      .compare-table td.cell-feature { width: auto; min-width: 140px; }
-      .compare-table .mark { width: 18px; height: 18px; line-height: 18px; font-size: 0.7em; margin-right: 6px; }
-
-      /* Provider pills */
-      .provider-pill { font-size: 0.85em; padding: 8px 14px; }
-      .provider-pill .free { font-size: 0.68em; padding: 2px 6px; }
-
-      /* Privacy card */
-      .privacy-card { padding: 24px 18px; }
-
-      /* User manual */
-      .manual-toc { padding: 16px 18px; }
-      .manual-section { padding: 22px 18px; }
-      .manual-section h3 { font-size: 1.1em; gap: 10px; }
-      .manual-section h3 .num { width: 24px; height: 24px; line-height: 24px; font-size: 0.72em; }
-      .manual-section .example { padding: 8px 12px; font-size: 0.88em; }
-      .manual-section .callout-tip,
-      .manual-section .callout-warn { padding: 10px 14px; font-size: 0.88em; }
-
-      /* Footer */
-      footer { padding: 28px 0 36px; font-size: 0.85em; }
-      footer .footer-links { gap: 16px; }
-    }
-
-    /* Small phones */
-    @media (max-width: 480px) {
-      .wrap { padding: 0 14px; }
-      section { padding: 44px 0; }
-
-      .hero { padding: 44px 0 36px; }
-      .hero-logo { width: 64px; height: 64px; margin-bottom: 18px; border-radius: 16px; }
-      .hero h1 { letter-spacing: -0.02em; }
-      .hero-tagline { font-size: 0.95em; max-width: 90%; }
-      .hero-sub { font-size: 0.9em; max-width: 90%; }
-      .hero-badges { margin-top: 22px; }
-
-      .topbar-inner { padding: 10px 14px; }
-      .topbar-cta { padding: 7px 12px; font-size: 0.82em; }
-      .brand { gap: 8px; font-size: 0.95em; }
-      .brand img { width: 24px; height: 24px; border-radius: 6px; }
-
-      .section-title { font-size: 1.4em; }
-      .section-lead { font-size: 0.95em; }
-
-      .compare-table th, .compare-table td { padding: 8px 10px; font-size: 0.78em; }
-
-      .privacy-card { padding: 20px 16px; }
-      .manual-section { padding: 20px 14px; }
-      .manual-section h3 { font-size: 1.05em; }
-      .manual-section p, .manual-section li { font-size: 0.9em; }
-
-      .final-cta { padding: 48px 0; }
-      .final-cta h2 { font-size: 1.5em; }
-    }
-  </style>
+  <link rel="stylesheet" href="site.css">
 </head>
 <body>
 
   <!-- ───────────────────── Top bar ───────────────────── -->
   <div class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="#top">
+      <a class="brand" href="index.html">
         <img src="icons/icon128.png" alt="WebWright">
         WebWright
       </a>
       <div class="topbar-links">
-        <a href="#features">Features</a>
-        <a href="#providers">Providers</a>
-        <a href="#manual">User Manual</a>
-        <a href="#privacy">Privacy</a>
+        <a href="features.html">Features</a>
+        <a href="manual.html">User Manual</a>
+        <a href="privacy-policy.html">Privacy</a>
+        <a href="https://github.com/profoncode-debug/WebWright" target="_blank">GitHub</a>
         <a href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank" class="topbar-cta">Add to Chrome</a>
       </div>
     </div>
   </div>
 
-  <!-- ───────────────────── Hero ───────────────────── -->
-  <header id="top" class="hero">
+  <!-- ───────────────────── Looping promo animation (top) ───────────────────── -->
+  <section class="promo-hero">
+    <div class="promo-stage">
+      <div id="stage" aria-label="WebWright animated promo">
+        <div class="blob a"></div>
+        <div class="blob b"></div>
+
+        <section class="scene" id="s1">
+          <div class="badge rise d1">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="2.6" fill="#fff"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="wordmark rise d2">Web<b>Wright</b></div>
+          <div class="eyebrow rise d3">Agentic AI · in your browser</div>
+        </section>
+
+        <section class="scene" id="s2">
+          <div class="kicker rise d1">This is <s>not a chat wrapper</s></div>
+          <h1 class="thesis rise d2">Built for <span class="glow">action</span>,<br>not just browsing.</h1>
+          <p class="sub rise d3">It sees the page, reasons about it, and takes real actions for you — clicks, types, navigates, fills forms, researches.</p>
+        </section>
+
+        <section class="scene" id="s3">
+          <div class="loopwrap">
+            <div class="looptag rise d1">
+              <span id="lp1">Perceive</span><i>→</i><span id="lp2">Reason</span><i>→</i><span id="lp3">Act</span>
+            </div>
+            <div class="console rise d2">
+              <div class="console-top">
+                <span class="dot3"><i></i><i></i><i></i></span>
+                <span class="ctitle">WebWright · Agent</span>
+                <span class="cstatus" id="cstatus">Agent completed</span>
+              </div>
+              <div class="cmdline">
+                <span class="prompt">▸</span><span class="typed" id="typed"></span><span class="caret" id="caret"></span>
+              </div>
+              <div class="log" id="log">
+                <div class="logrow"><span class="mark"></span><span class="txt">Opening youtube.com</span></div>
+                <div class="logrow"><span class="mark"></span><span class="txt">Searching "lofi hip hop radio"</span></div>
+                <div class="logrow"><span class="mark"></span><span class="txt">Clicking the live stream</span></div>
+                <div class="logrow"><span class="mark"></span><span class="txt">Pressing play</span></div>
+                <div class="result" id="result"><span class="spark">✦</span>&nbsp;Done — your lofi stream is now playing.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="scene" id="s4">
+          <h2 class="sec-title rise d1">A real agent loop. Not autocomplete.</h2>
+          <div class="grid">
+            <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h4>Agent Mode</h4><p>Give a goal in plain English — it executes multi-step tasks autonomously.</p></div>
+            <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg></div><h4>Vision Escalation</h4><p>When the DOM isn't enough, it switches to seeing the page — 4 tiers deep.</p></div>
+            <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><h4>Deep Research</h4><p>Reads 10+ sources and writes you a synthesized, multi-column report.</p></div>
+            <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><h4>Record & Replay</h4><p>Capture any workflow once, then replay it with a single click.</p></div>
+            <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div><h4>Voice Mode</h4><p>Talk to your browser hands-free — it transcribes, acts, and speaks back.</p></div>
+            <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 20h8M12 18v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><h4>8 LLM Providers</h4><p>Claude, GPT, Gemini, Grok, DeepSeek, Ollama — or fully self-hosted.</p></div>
+          </div>
+        </section>
+
+        <section class="scene" id="s5">
+          <div class="prov-title rise d1">Bring your own model</div>
+          <div class="pills rise d2">
+            <span class="pill">Claude</span><span class="pill">GPT</span><span class="pill">Gemini</span>
+            <span class="pill">Grok</span><span class="pill">DeepSeek</span><span class="pill">Ollama</span>
+          </div>
+          <div class="compat rise d3">Works on <b>Chrome · Edge · Brave · Opera · Vivaldi · Arc</b></div>
+          <div class="privacy rise d4">No servers · No telemetry · Just a browser extension</div>
+        </section>
+
+        <section class="scene" id="s6">
+          <h1 class="cta-line rise d1">Stop browsing.<br><span class="b">Start commanding.</span></h1>
+          <div class="cta-foot rise d3">
+            <span class="badge-sm"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg></span>
+            <b>WebWright</b><span>·&nbsp; github.com/profoncode-debug/WebWright</span>
+          </div>
+        </section>
+
+        <div id="bar"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Slim hero / install ───────────────────── -->
+  <header id="top" class="hero slim">
     <div class="wrap hero-content">
-      <img src="icons/icon128.png" alt="WebWright" class="hero-logo">
-      <h1>Built for <span class="gradient">action</span>,<br>not just browsing.</h1>
-      <p class="hero-tagline">An autonomous AI agent that lives in your browser sidebar — sees web pages, reasons about them, and takes real actions to complete tasks for you.</p>
+      <p class="hero-tagline">An autonomous AI agent in your browser sidebar — it sees the page, reasons about it, and takes real actions for you.</p>
       <p class="hero-sub">Tell it what you want. Watch it work.</p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank">
@@ -642,620 +142,37 @@
     </div>
   </header>
 
-  <!-- ───────────────────── Manifesto ───────────────────── -->
-  <section class="manifesto">
+  <!-- ───────────────────── Documentation hub ───────────────────── -->
+  <section class="hub">
     <div class="wrap">
-      <p class="manifesto-quote">
-        Most AI tools talk. <strong>WebWright works.</strong> Every popular AI sidebar is fundamentally a chatbot — it reads what you paste, answers questions about what you describe, and then stops. It can't reach the real browser tab where you're trying to get things done.
-      </p>
-      <p class="manifesto-sub">
-        WebWright is different. It perceives the page, reasons about it with an LLM, and takes real actions — clicks, types, navigates, fills forms, conducts research, even hands-free by voice. It is not a chat wrapper. It is a real agentic AI.
-      </p>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Comparison Table ───────────────────── -->
-  <section id="compare">
-    <div class="wrap">
-      <span class="section-eyebrow">Why WebWright</span>
-      <h2 class="section-title">Not just another LLM wrapper.</h2>
-      <p class="section-lead">Most "AI sidebars" are ChatGPT inside a panel. They read pages, answer questions, and stop. WebWright crosses the line into action — and stays open-source, server-free, and yours.</p>
-
-      <div class="compare-table-wrap">
-        <table class="compare-table">
-          <thead>
-            <tr>
-              <th></th>
-              <th class="col-typical">Typical AI Sidebar</th>
-              <th class="col-ww">WebWright</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="cell-feature">Reads page content</td>
-              <td class="cell-typical"><span class="mark mark-yes">✓</span>Yes</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes</td>
-            </tr>
-            <tr>
-              <td class="cell-feature">Chats about the page</td>
-              <td class="cell-typical"><span class="mark mark-yes">✓</span>Yes</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes</td>
-            </tr>
-            <tr class="row-emph">
-              <td class="cell-feature">Takes real actions on your behalf</td>
-              <td class="cell-typical"><span class="mark mark-no">✗</span>No</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes — clicks, types, navigates, fills</td>
-            </tr>
-            <tr>
-              <td class="cell-feature">Hands-free voice control</td>
-              <td class="cell-typical"><span class="mark mark-no">✗</span>Rare / read-only</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>Speak goals, hear replies, runs actions</td>
-            </tr>
-            <tr>
-              <td class="cell-feature">Open source — read every line of code</td>
-              <td class="cell-typical"><span class="mark mark-no">✗</span>Rarely</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>MIT-licensed on GitHub</td>
-            </tr>
-            <tr>
-              <td class="cell-feature">Free, with a fully on-device option</td>
-              <td class="cell-typical"><span class="mark mark-no">✗</span>Usually paid</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>Free; Ollama Local = $0</td>
-            </tr>
-            <tr>
-              <td class="cell-feature">Your data stays on your device</td>
-              <td class="cell-typical"><span class="mark mark-no">✗</span>Routed via dev server</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>No server exists</td>
-            </tr>
-            <tr>
-              <td class="cell-feature">Zero telemetry, analytics, tracking</td>
-              <td class="cell-typical"><span class="mark mark-no">✗</span>Typical</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>None — verifiable in source</td>
-            </tr>
-            <tr>
-              <td class="cell-feature">Provider freedom (bring your own key)</td>
-              <td class="cell-typical"><span class="mark mark-no">✗</span>Locked to one LLM</td>
-              <td class="cell-ww"><span class="mark mark-yes">✓</span>8 providers, any model</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Feature: Agent Mode ───────────────────── -->
-  <section id="features">
-    <div class="wrap feature-row">
-      <div>
-        <span class="section-eyebrow">Agent Mode</span>
-        <h2 class="section-title">Type a goal. Watch the agent finish it.</h2>
-        <p class="section-lead">Give the agent a goal in plain English. It navigates, clicks, types, fills forms, and reports back — across multiple pages and steps — while you watch every action in a live log.</p>
-        <ul class="feature-list">
-          <li>Multi-step flows: login, search, filter, checkout, booking, form fill</li>
-          <li>Auto-escalates from DOM to vision when a page deviates from expectation</li>
-          <li>Anti-loop detection: catches its own repetition and changes strategy</li>
-          <li>Pause or stop at any time — you stay in control</li>
-        </ul>
-      </div>
-      <div class="feature-image">
-        <img src="screenshots/webwright_poster%20(1).png" alt="WebWright agent completing a YouTube search task autonomously">
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Feature: Chat Mode ───────────────────── -->
-  <section style="background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-    <div class="wrap feature-row reverse">
-      <div>
-        <span class="section-eyebrow">Chat Mode</span>
-        <h2 class="section-title">Talk to any web page. Quick or Pro.</h2>
-        <p class="section-lead">Ask questions about the article, dashboard, or video page you're viewing. Multi-turn conversation with full page context. Two intelligence levels at one click.</p>
-        <ul class="feature-list">
-          <li><strong>⚡ Quick</strong> — Text only. Fastest, cheapest. Best for articles and plain pages.</li>
-          <li><strong>✨ Pro</strong> — Also attaches a live screenshot. The model literally <em>sees</em> the layout, charts, and visuals.</li>
-          <li>Works on dashboards, video pages, complex docs — anywhere text alone isn't enough</li>
-          <li>Your mode choice is remembered locally</li>
-        </ul>
-      </div>
-      <div class="feature-image">
-        <img src="screenshots/webbwright_chat.png" alt="WebWright Chat Mode explaining the Hilbert Hotel paradox while viewing a YouTube video">
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Feature: Voice Mode ───────────────────── -->
-  <section id="voice" style="background: linear-gradient(135deg, rgba(124,106,239,0.06) 0%, rgba(157,140,255,0.02) 100%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-    <div class="wrap" style="text-align: center;">
-      <span class="section-eyebrow">Voice Mode · New</span>
-      <h2 class="section-title">Talk to your browser. It talks back.</h2>
-      <p class="section-lead" style="margin: 0 auto;">Toggle the mic and go fully hands-free. WebWright transcribes your speech, figures out whether you're chatting or asking for an action, does it, and replies out loud in a warm, natural voice — then goes right back to listening.</p>
-      <div class="tiers" style="margin-top: 36px;">
-        <div class="tier-card">
-          <div class="tier-num" style="background:#7c6aef;">1</div>
-          <div class="tier-title">Listening</div>
-          <div class="tier-desc">Mic is live, capturing what you say.</div>
-        </div>
-        <div class="tier-card">
-          <div class="tier-num" style="background:#e0a106;">2</div>
-          <div class="tier-title">Thinking</div>
-          <div class="tier-desc">Understanding your intent and forming a reply. Mic paused.</div>
-        </div>
-        <div class="tier-card">
-          <div class="tier-num" style="background:#3b82f6;">3</div>
-          <div class="tier-title">Working</div>
-          <div class="tier-desc">Running the agent task you asked for. Mic paused.</div>
-        </div>
-        <div class="tier-card">
-          <div class="tier-num" style="background:#34d399;">4</div>
-          <div class="tier-title">Speaking</div>
-          <div class="tier-desc">Reading the reply aloud, then back to listening.</div>
-        </div>
-      </div>
-      <ul class="feature-list" style="display:inline-block; text-align:left; margin: 30px auto 0; max-width: 720px;">
-        <li>Ask a question and hear the answer, or say <em>"open Gmail and start a new email"</em> and it runs the task</li>
-        <li>Text-to-speech is fully on-device; replies are cleaned for the ear — no URLs, markdown, or emojis read aloud</li>
-        <li>Remembers your recent voice turns, <strong>including the actions it performed</strong>, so you can ask "what did you just do?"</li>
-        <li>Default transcription uses the browser's speech engine; on <strong>Brave</strong> (or for higher accuracy) switch to <strong>Groq Whisper</strong> in Settings</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Feature: Research Mode ───────────────────── -->
-  <section>
-    <div class="wrap feature-row">
-      <div>
-        <span class="section-eyebrow">Research Mode</span>
-        <h2 class="section-title">Deep web research in 2–3 minutes.</h2>
-        <p class="section-lead">Enter a topic. WebWright opens Google, captures the AI Overview, visits the top 10 organic sources, summarizes each one, and synthesizes a final cross-source conclusion. A polished HTML report opens in a new tab.</p>
-        <ul class="feature-list">
-          <li>Per-source 60-second hard cap, 45-second LLM call timeout</li>
-          <li>Vision fallback for low-text or JS-heavy pages</li>
-          <li>Live per-source status: active · done · error · skipped</li>
-          <li>Instant abort plus a history of past reports you can re-open or delete</li>
-        </ul>
-      </div>
-      <div class="feature-image">
-        <img src="screenshots/webwright_poster_research.png" alt="WebWright Research Mode showing Google AI Overview and source summaries on AI agents in 2026">
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Feature: Workflows + Settings ───────────────────── -->
-  <section style="background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-    <div class="wrap feature-row reverse">
-      <div>
-        <span class="section-eyebrow">Workflows · Vault · Settings</span>
-        <h2 class="section-title">Record once, replay forever. Your keys, your choice.</h2>
-        <p class="section-lead">Repetitive tasks become one-click replays. Personal info you save locally fills forms on demand. Eight providers in Settings, every model field editable — switch any time.</p>
-        <ul class="feature-list">
-          <li>Record clicks, typing, and navigation across tabs — replay with pause/resume</li>
-          <li>Personal Info Vault used only when you ask the agent to fill a form</li>
-          <li>Pick the right model per role: Agent, Vision, Chat, Research</li>
-          <li>API keys stored locally in <code>chrome.storage.local</code> — never seen by us</li>
-        </ul>
-      </div>
-      <div class="feature-image">
-        <img src="screenshots/webwright_poster_config_workflows%20(2).png" alt="WebWright sidebar and settings panel showing eight LLM provider tabs and model fields">
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Vision tiers ───────────────────── -->
-  <section>
-    <div class="wrap">
-      <span class="section-eyebrow">Vision Escalation</span>
-      <h2 class="section-title">When DOM isn't enough, the agent climbs.</h2>
-      <p class="section-lead">Most agentic extensions stay at DOM analysis and fail when pages deviate from their assumptions. WebWright climbs a 4-tier ladder until it gets unstuck.</p>
-      <div class="tiers">
-        <div class="tier-card">
-          <div class="tier-num">1</div>
-          <div class="tier-title">DOM Analysis</div>
-          <div class="tier-desc">Default mode. Fast and token-efficient. Ranks interactive elements.</div>
-        </div>
-        <div class="tier-card">
-          <div class="tier-num">2</div>
-          <div class="tier-title">Vision · 80 marks</div>
-          <div class="tier-desc">Screenshot with Set-of-Marks overlay sent to a vision LLM.</div>
-        </div>
-        <div class="tier-card">
-          <div class="tier-num">3</div>
-          <div class="tier-title">Vision · 160 marks</div>
-          <div class="tier-desc">Denser overlay for harder pages with many small elements.</div>
-        </div>
-        <div class="tier-card">
-          <div class="tier-num">4</div>
-          <div class="tier-title">Raw Coordinates</div>
-          <div class="tier-desc">Last resort: synthetic click at X,Y via the Chrome DevTools Protocol.</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Providers ───────────────────── -->
-  <section id="providers" style="background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-    <div class="wrap">
-      <span class="section-eyebrow">Providers</span>
-      <h2 class="section-title">Zero vendor lock-in. Bring your own key, or run fully local.</h2>
-      <p class="section-lead">Eight LLM providers supported out of the box. Every model field is editable so new releases work the day they ship. Use a frontier model where reliability matters; a cheap fast one where speed matters more.</p>
-      <div class="providers-wrap">
-        <span class="provider-pill">Ollama Cloud <span class="free">FREE TIER</span></span>
-        <span class="provider-pill">Ollama Local <span class="free">FREE</span></span>
-        <span class="provider-pill">OpenAI</span>
-        <span class="provider-pill">Anthropic Claude</span>
-        <span class="provider-pill">Google Gemini <span class="free">FREE TIER</span></span>
-        <span class="provider-pill">DeepSeek <span class="free">FREE TIER</span></span>
-        <span class="provider-pill">xAI Grok</span>
-        <span class="provider-pill">Custom endpoint</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── Privacy ───────────────────── -->
-  <section id="privacy" class="privacy-section">
-    <div class="wrap">
-      <span class="section-eyebrow">Privacy &amp; Security</span>
-      <h2 class="section-title">Local-first. Verifiable. Yours.</h2>
-      <p class="section-lead">There is no developer-controlled server. No telemetry. No analytics. No data sharing with any third party. The local-first architecture is structural, not policy — there is nothing on our side to collect data even if we wanted to.</p>
-      <div class="privacy-card">
-        <div class="privacy-pillars">
-          <div>
-            <div class="pillar-title">Stored locally</div>
-            <div class="pillar-desc">Settings, API keys, Personal Info, workflows, reports — all live in <code>chrome.storage.local</code>, sandboxed per-extension and encrypted at rest.</div>
-          </div>
-          <div>
-            <div class="pillar-title">Your provider, your key</div>
-            <div class="pillar-desc">Network requests go only to the LLM endpoint you configure. WebWright never holds a key on your behalf. Revoke any time on the provider's dashboard.</div>
-          </div>
-          <div>
-            <div class="pillar-title">No remote code</div>
-            <div class="pillar-desc">Every line of JavaScript is bundled in the published package. No dynamically-fetched modules. Verifiable by reading the source on GitHub.</div>
-          </div>
-          <div>
-            <div class="pillar-title">Ollama Local = zero egress</div>
-            <div class="pillar-desc">Run an LLM on your own machine and no data leaves your device — not to us, not to any cloud. Pure on-device AI.</div>
-          </div>
-          <div>
-            <div class="pillar-title">Limited Use compliant</div>
-            <div class="pillar-desc">Adheres to the Chrome Web Store User Data Policy. No advertising. No human reads your data without affirmative consent.</div>
-          </div>
-          <div>
-            <div class="pillar-title">User-initiated only</div>
-            <div class="pillar-desc">The agent does not run in the background or wake on a schedule. It acts only when you, the human, give it a goal.</div>
-          </div>
-        </div>
-        <p style="margin-top: 28px; font-size: 0.9em; color: var(--muted);">
-          <strong>Voice Mode note:</strong> text-to-speech runs on your device. Speech-to-text sends microphone audio to a transcription service only while Voice Mode is on — Google's speech backend (default Browser engine) or Groq (Groq Whisper engine). WebWright stores no audio.
-        </p>
-        <p style="margin-top: 16px; font-size: 0.95em; color: var(--text-2);">
-          Read the full policy: <a href="privacy-policy.html"><strong>Privacy Policy &amp; Permission Justifications →</strong></a>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── User Manual ───────────────────── -->
-  <section id="manual">
-    <div class="wrap">
-      <span class="section-eyebrow">User Manual</span>
-      <h2 class="section-title">Everything you need to know.</h2>
-      <p class="section-lead">A complete guide to getting WebWright running and getting good results out of it. Skim the table of contents, jump to what you need.</p>
-
-      <div class="manual-wrap">
-
-        <!-- Table of contents -->
-        <div class="manual-toc">
-          <h3>Contents</h3>
-          <ol>
-            <li><a href="#m-install">Install &amp; first run</a></li>
-            <li><a href="#m-providers">Choosing a provider &amp; model</a></li>
-            <li><a href="#m-agent">Using Agent Mode</a></li>
-            <li><a href="#m-chat">Using Chat Mode (Quick &amp; Pro)</a></li>
-            <li><a href="#m-voice">Using Voice Mode</a></li>
-            <li><a href="#m-research">Using Research Mode</a></li>
-            <li><a href="#m-workflows">Recording &amp; replaying Workflows</a></li>
-            <li><a href="#m-vault">The Personal Info Vault</a></li>
-            <li><a href="#m-vision">Vision Escalation explained</a></li>
-            <li><a href="#m-settings">Settings reference</a></li>
-            <li><a href="#m-prompting">Tips for best results</a></li>
-            <li><a href="#m-troubleshoot">Troubleshooting</a></li>
-            <li><a href="#m-shortcuts">Keyboard shortcuts</a></li>
-          </ol>
-        </div>
-
-        <!-- 1. Install -->
-        <div class="manual-section" id="m-install">
-          <h3><span class="num">1</span>Install &amp; first run</h3>
-          <p>WebWright runs on every Chromium-based browser — Chrome, Microsoft Edge, Brave, Opera, Vivaldi, and Arc.</p>
-          <h4>Install from the Chrome Web Store</h4>
-          <ol>
-            <li>Open the <a href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank">WebWright listing on the Chrome Web Store</a>.</li>
-            <li>Click <strong>Add to Chrome</strong> → <strong>Add extension</strong>.</li>
-            <li>Pin the WebWright icon to the toolbar (click the puzzle icon → pin).</li>
-            <li>Click the WebWright icon to open the side panel.</li>
-          </ol>
-          <h4>Install from source (Edge / Brave / Opera or for developers)</h4>
-          <ol>
-            <li>Clone the repo: <code>git clone https://github.com/profoncode-debug/WebWright</code></li>
-            <li>Open your browser's extensions page (<code>chrome://extensions/</code>, <code>edge://extensions/</code>, etc.).</li>
-            <li>Toggle <strong>Developer mode</strong>.</li>
-            <li>Click <strong>Load unpacked</strong> and select the cloned folder.</li>
-          </ol>
-          <div class="callout-tip"><strong>First-time setup:</strong> On first launch the side panel asks you to add an Ollama Cloud API key (free at <a href="https://ollama.com" target="_blank">ollama.com</a>) — or switch to any of the other 7 providers in Settings. Without a key you'll see a "Add API Key" banner instead of the suggestion chips.</div>
-        </div>
-
-        <!-- 2. Providers -->
-        <div class="manual-section" id="m-providers">
-          <h3><span class="num">2</span>Choosing a provider &amp; model</h3>
-          <p>Open <strong>Settings</strong> (gear icon, top-right of the sidebar). WebWright supports 8 LLM providers, each on its own tab:</p>
-          <ul>
-            <li><strong>Ollama Cloud</strong> — free tier available. Get a key at <a href="https://ollama.com" target="_blank">ollama.com</a>.</li>
-            <li><strong>Ollama Local</strong> — runs models on your own machine. Free forever. Zero data leaves your device.</li>
-            <li><strong>OpenAI</strong> — GPT-4o and newer. Bring your own API key.</li>
-            <li><strong>Anthropic / Claude</strong> — Claude Sonnet 4 and newer.</li>
-            <li><strong>Google Gemini</strong> — Gemini 2.0 Flash, free tier available.</li>
-            <li><strong>DeepSeek</strong> — DeepSeek-Chat, free tier.</li>
-            <li><strong>xAI / Grok</strong></li>
-            <li><strong>Custom endpoint</strong> — any OpenAI-compatible or Ollama-compatible URL.</li>
-          </ul>
-          <h4>Model slots</h4>
-          <p>You can configure four separate models per provider so the right model handles each job:</p>
-          <ul>
-            <li><strong>Agent Model</strong> — picks actions in Agent Mode. Use a strong reasoning model.</li>
-            <li><strong>Vision Model</strong> — interprets annotated screenshots during vision escalation. Must be vision-capable.</li>
-            <li><strong>Chat Model</strong> — handles page Q&amp;A in Chat Mode.</li>
-            <li><strong>Research Model</strong> (Ollama Cloud only) — summarizes sources in Research Mode.</li>
-          </ul>
-          <div class="callout-tip"><strong>Best free combo:</strong> Ollama Cloud's free tier with <code>gpt-oss:120b-cloud</code> for agent + <code>gemma4:31b-cloud</code> for vision/research. Or Gemini 2.0 Flash for everything if you have a free Google AI Studio key.</div>
-        </div>
-
-        <!-- 3. Agent Mode -->
-        <div class="manual-section" id="m-agent">
-          <h3><span class="num">3</span>Using Agent Mode</h3>
-          <p>Agent Mode is for tasks where the agent must <em>do</em> things — navigate, click, type, fill forms, complete multi-step flows.</p>
-          <h4>How to start a task</h4>
-          <ol>
-            <li>Open the side panel and navigate to the page you want to work on.</li>
-            <li>Type your goal in the input field at the bottom in plain English.</li>
-            <li>Press <kbd>Enter</kbd> — WebWright auto-detects that it's an action and runs the agent. (Use <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to force Agent mode if the wording is ambiguous.)</li>
-            <li>The agent works on your <strong>current tab</strong> and runs step by step. You see every action in the live log above the input.</li>
-          </ol>
-          <div class="callout-tip"><strong>One smart input:</strong> there are no separate Chat and Agent buttons. A single <strong>Send</strong> button (and <kbd>Enter</kbd>) routes each message automatically — questions become chat answers, instructions launch the agent.</div>
-          <h4>Example goals</h4>
-          <div class="example">"Open YouTube and search for lofi study music. Open the first live stream."</div>
-          <div class="example">"Search Amazon India for Sony WH-CH520 headphones, sort by price low-to-high, open the cheapest in-stock listing."</div>
-          <div class="example">"Open Google Flights and find the cheapest non-stop flight from Delhi to Tokyo on July 15, return July 22, 1 adult."</div>
-          <h4>Pausing &amp; stopping</h4>
-          <ul>
-            <li>Click <strong>Stop</strong> at any time to halt the agent immediately.</li>
-            <li>The agent automatically stops after <code>Max Steps</code> actions (default 20) or <code>Wall Timeout</code> seconds (default 300).</li>
-          </ul>
-          <div class="callout-warn"><strong>Important:</strong> The agent does what you ask. Don't give it goals you wouldn't take responsibility for completing — financial transactions, irreversible posts, deletions. The recommended pattern is "researcher + form-filler" — let it find and prepare, then you review and submit.</div>
-        </div>
-
-        <!-- 4. Chat Mode -->
-        <div class="manual-section" id="m-chat">
-          <h3><span class="num">4</span>Using Chat Mode (Quick &amp; Pro)</h3>
-          <p>Chat Mode answers questions about the page you're currently viewing. Multi-turn conversation, full page context.</p>
-          <h4>How to start a chat</h4>
-          <ol>
-            <li>Navigate to the page you want to ask about.</li>
-            <li>Type your question in the side panel input.</li>
-            <li>Press <kbd>Enter</kbd> — WebWright recognises it as a question and answers in Chat mode (same input as Agent; no separate button).</li>
-          </ol>
-          <p>If you navigate the tab or switch to a different one mid-conversation, the page context <strong>refreshes automatically</strong> on your next message — your conversation is kept, only the page content updates.</p>
-          <h4>Quick vs Pro</h4>
-          <p>Use the mode pill above the input to choose:</p>
-          <ul>
-            <li><strong>⚡ Quick</strong> — sends only the page <em>text</em>. Fastest, cheapest. Best for articles, blog posts, plain text pages.</li>
-            <li><strong>✨ Pro</strong> — also attaches a live <em>screenshot</em>. The model literally sees the layout, charts, dashboards, visuals. Best for complex pages where layout matters.</li>
-          </ul>
-          <p>Your choice is remembered across sessions. Switch any time.</p>
-          <h4>Example questions</h4>
-          <div class="example">"Summarize this article in 5 bullet points, focusing on the financial figures."</div>
-          <div class="example">"What stands out about the trend in the second chart on this dashboard?" <em>(needs Pro mode)</em></div>
-          <div class="example">"Explain this paragraph in simple terms."</div>
-        </div>
-
-        <!-- 5. Voice Mode -->
-        <div class="manual-section" id="m-voice">
-          <h3><span class="num">5</span>Using Voice Mode</h3>
-          <p>Voice Mode lets you operate WebWright hands-free — speak your request, and it speaks the answer back. The same intent routing applies: a question is answered in chat, an instruction launches the agent.</p>
-          <h4>How to start</h4>
-          <ol>
-            <li>Click the <strong>mic</strong> button in the side panel to turn Voice Mode on.</li>
-            <li>The first time, your browser asks for microphone permission — click <strong>Allow</strong>.</li>
-            <li>Just talk. The voice bar shows what's happening: <strong>Listening</strong> → <strong>Thinking</strong> → <strong>Working</strong> (if it's running a task) → <strong>Speaking</strong> → back to Listening.</li>
-            <li>Click the mic again (or the ✕ on the bar) to turn it off.</li>
-          </ol>
-          <h4>Transcription engine (important for Brave)</h4>
-          <p>Speech-to-text has two engines, set under <strong>Settings → Speech-to-Text</strong>:</p>
-          <ul>
-            <li><strong>Browser (Chrome)</strong> — the default. Free, uses the browser's built-in speech recognition.</li>
-            <li><strong>Groq Whisper</strong> — higher accuracy, and the option for <strong>Brave</strong>, which disables the built-in engine for privacy. Paste a free key from <a href="https://console.groq.com" target="_blank">console.groq.com</a>. On Brave, WebWright uses this automatically once a key is set.</li>
-          </ul>
-          <h4>Good to know</h4>
-          <ul>
-            <li>While the agent is working, the mic is paused (bar shows <strong>Working</strong>) so it never mishears the task narration — it resumes listening the moment the task finishes.</li>
-            <li>It remembers your recent voice turns, including actions it performed, so follow-ups like "what did you just do?" work.</li>
-            <li>Text-to-speech runs on your device. URLs, markdown, and emojis are stripped so replies sound natural.</li>
-          </ul>
-          <div class="callout-tip"><strong>Privacy:</strong> text-to-speech is on-device. Speech-to-text sends your microphone audio to a transcription service — Google's speech backend (Browser engine) or Groq (Groq Whisper engine). No audio is stored by WebWright.</div>
-        </div>
-
-        <!-- 6. Research Mode -->
-        <div class="manual-section" id="m-research">
-          <h3><span class="num">6</span>Using Research Mode</h3>
-          <p>Research Mode autonomously visits up to 10 sources on the web and synthesizes a final report. Ideal for "research X for me" requests.</p>
-          <h4>How to start a research run</h4>
-          <ol>
-            <li>Click the <strong>Research</strong> (magnifying glass) icon in the side panel header.</li>
-            <li>Type a topic in the search box.</li>
-            <li>Click <strong>Research</strong>.</li>
-          </ol>
-          <h4>What happens next</h4>
-          <ol>
-            <li>WebWright opens a working tab and searches Google.</li>
-            <li>It captures Google's AI Overview using a vision LLM.</li>
-            <li>It extracts the top 10 organic result URLs.</li>
-            <li>It visits each source, scrapes text (vision fallback for low-text pages), and summarizes it.</li>
-            <li>It synthesizes a final cross-source conclusion.</li>
-            <li>A polished multi-column HTML report opens in a new tab.</li>
-          </ol>
-          <p>The drawer shows live per-source status: <strong>active</strong> · <strong>done</strong> · <strong>error</strong> · <strong>skipped</strong>.</p>
-          <h4>Controls</h4>
-          <ul>
-            <li>Click <strong>Abort</strong> at any time to stop the run instantly.</li>
-            <li>Past reports are listed in the drawer — click to re-open in a new tab, or delete to remove.</li>
-            <li>Per-source hard cap is 60 seconds; LLM call timeout is 45 seconds.</li>
-          </ul>
-          <div class="callout-tip"><strong>Set a Research Model</strong> for best results. Ollama Cloud lets you configure a separate Research Model in Settings (defaults to <code>gemma4:31b-cloud</code>). Other providers fall back to your primary model.</div>
-        </div>
-
-        <!-- 7. Workflows -->
-        <div class="manual-section" id="m-workflows">
-          <h3><span class="num">7</span>Recording &amp; replaying Workflows</h3>
-          <p>Workflows record a sequence of browser actions (clicks, typing, navigation) once, then replay them with a single click. Best for repetitive tasks where the actions are identical every time.</p>
-          <h4>To record a workflow</h4>
-          <ol>
-            <li>Open the side panel and click the <strong>Workflows</strong> button.</li>
-            <li>Click <strong>Start Recording</strong>.</li>
-            <li>Perform the task — clicks, typing, and navigation are captured across tabs.</li>
-            <li>Click <strong>Stop</strong>, give the workflow a name, save.</li>
-          </ol>
-          <h4>To replay a workflow</h4>
-          <ol>
-            <li>Open the Workflows panel.</li>
-            <li>Click <strong>Play</strong> on any saved workflow.</li>
-            <li>Use <strong>Pause</strong> / <strong>Resume</strong> mid-playback if needed.</li>
-          </ol>
-          <h4>Best use cases</h4>
-          <ul>
-            <li>Daily startup routine — open Gmail, Slack, Notion, Calendar in one click</li>
-            <li>Job board sweeps — open LinkedIn Jobs, Indeed, HN Who's Hiring with your filters</li>
-            <li>Standup setup — open Jira, meeting link, Slack channel</li>
-            <li>Daily portfolio checks across multiple sites</li>
-          </ul>
-          <div class="callout-warn"><strong>Workflows replay exactly what you recorded.</strong> Don't use them for tasks where decisions are needed (use Agent Mode instead) or for sites whose structure changes often.</div>
-        </div>
-
-        <!-- 8. Personal Info Vault -->
-        <div class="manual-section" id="m-vault">
-          <h3><span class="num">8</span>The Personal Info Vault</h3>
-          <p>Save your details once. The agent uses them to fill forms on demand — only when you explicitly ask for a form-related task.</p>
-          <h4>To set up</h4>
-          <ol>
-            <li>Click the <strong>Personal Info</strong> (person) icon in the side panel header.</li>
-            <li>Fill in any of: Name, Age, Sex, Father's Name, Mother's Name, Address, plus up to 5 custom fields (label + value).</li>
-            <li>Click <strong>Save</strong>. Data is stored locally in <code>chrome.storage.local</code>, never sent anywhere unless the agent uses it for a form fill.</li>
-          </ol>
-          <h4>When the vault is sent to the LLM</h4>
-          <p>Only when your goal contains form-related keywords like: <code>fill</code>, <code>form</code>, <code>complete</code>, <code>enter</code>, <code>register</code>, <code>signup</code>, <code>apply</code>, <code>application</code>, <code>checkout</code>, <code>booking</code>, <code>my name</code>, <code>my address</code>, <code>my info</code>, etc.</p>
-          <p>If the keyword check doesn't match, the vault is <strong>never</strong> added to the LLM prompt — for example, "summarize this article" or "research Hanta virus" will never include your personal info.</p>
-          <h4>Modes that never see your vault</h4>
-          <ul>
-            <li>Chat Mode (Quick or Pro)</li>
-            <li>Research Mode</li>
-            <li>Workflow replay</li>
-          </ul>
-          <p>Only Agent Mode + keyword match = vault sent.</p>
-        </div>
-
-        <!-- 9. Vision Escalation -->
-        <div class="manual-section" id="m-vision">
-          <h3><span class="num">9</span>Vision Escalation explained</h3>
-          <p>When DOM-based actions fail, WebWright automatically climbs a 4-tier ladder. You don't trigger this manually — the agent escalates on its own when it detects it's stuck.</p>
-          <ol>
-            <li><strong>Tier 1 — DOM Analysis.</strong> Default. The agent reads the page's interactive elements and picks one. Fast and token-efficient.</li>
-            <li><strong>Tier 2 — Vision + 80 marks.</strong> Triggered when a DOM click fails, an element isn't found, or the agent gets stuck in a loop. A screenshot is taken with up to 80 numbered markers overlaid on interactive elements, then sent to a vision-capable LLM.</li>
-            <li><strong>Tier 3 — Vision + 160 marks.</strong> If Tier 2 still can't resolve the action, marker density is doubled for harder pages with many small elements.</li>
-            <li><strong>Tier 4 — Raw Coordinates.</strong> Last resort. The LLM picks an X,Y point on the screenshot and WebWright dispatches a synthetic click via the Chrome DevTools Protocol.</li>
-          </ol>
-          <p>The agent also has <strong>anti-loop detection</strong>: if it repeats the same action three times, oscillates between two elements, or detects that a step claimed success but the page state didn't change, it changes strategy or escalates.</p>
-          <div class="callout-tip"><strong>To enable vision escalation</strong> you must configure a vision-capable model in Settings → your provider tab → Vision Model. Without one, the agent stays at Tier 1.</div>
-        </div>
-
-        <!-- 10. Settings reference -->
-        <div class="manual-section" id="m-settings">
-          <h3><span class="num">10</span>Settings reference</h3>
-          <p>Open the gear icon in the side panel header.</p>
-          <ul>
-            <li><strong>Provider</strong> — which LLM service to use. Default: Ollama Cloud.</li>
-            <li><strong>Endpoint, API Key, Models</strong> — set per provider.</li>
-            <li><strong>Max Steps</strong> — auto-stop the agent after N actions. Default: 20. Raise this for complex tasks; lower it to keep the agent on a short leash.</li>
-            <li><strong>Step Delay</strong> — pause between actions, in milliseconds. Default: 2000. Lower it for speed; raise it on slow sites.</li>
-            <li><strong>LLM Timeout</strong> — max wait per LLM call, in ms. Default: 100000 (100 s). Raise for slow models.</li>
-            <li><strong>Wall Timeout</strong> — max total task duration, in ms. Default: 300000 (5 min).</li>
-            <li><strong>Chat Mode default</strong> — pill defaults to Pro. Change to Quick if you want text-only by default.</li>
-            <li><strong>Speech-to-Text Engine</strong> (Voice Mode) — Browser (Chrome) by default, or <strong>Groq Whisper</strong> for higher accuracy and for Brave. Auto-used on Brave once a key is set.</li>
-            <li><strong>Groq API Key</strong> — stored locally; required only when the Groq Whisper engine is selected. Free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a>.</li>
-          </ul>
-        </div>
-
-        <!-- 11. Tips -->
-        <div class="manual-section" id="m-prompting">
-          <h3><span class="num">11</span>Tips for best results</h3>
-          <p>The accuracy of any AI agent is a function of two things you control: how specifically you prompt it, and which model you point it at.</p>
-          <h4>Prompting</h4>
-          <ul>
-            <li><strong>Name the site</strong> when relevant. "On Flipkart…" beats "find me a phone."</li>
-            <li><strong>State a stop condition.</strong> "…and open the cheapest in-stock listing" beats "buy headphones" (which runs forever).</li>
-            <li><strong>Spell out filters and constraints up front</strong> — under $X, in stock, before this date.</li>
-            <li><strong>Avoid pronouns.</strong> Restate the actual goal each time instead of "do that again."</li>
-          </ul>
-          <h4>Model choice</h4>
-          <ul>
-            <li><strong>Frontier reasoning models</strong> (GPT-4o, Claude Sonnet 4, Gemini 2.0 Flash, gpt-oss:120b-cloud) handle long agent loops most reliably.</li>
-            <li><strong>Mid-tier models</strong> (DeepSeek-Chat, Grok-3-mini, gemma4:31b) are good for everyday navigation but may stall on complex multi-step flows.</li>
-            <li><strong>Small local models</strong> (qwen2.5-coder:7b, llava:13b) work for simple tasks but expect retries on complex sites.</li>
-            <li><strong>Always pair text-only providers with a vision model.</strong> Without one, vision escalation can't recover from DOM failures.</li>
-          </ul>
-          <div class="callout-tip"><strong>When a task fails:</strong> try a stronger model AND a more specific prompt before assuming it's a bug. Most "the agent is dumb" outcomes trace back to one of those two.</div>
-        </div>
-
-        <!-- 12. Troubleshooting -->
-        <div class="manual-section" id="m-troubleshoot">
-          <h3><span class="num">12</span>Troubleshooting</h3>
-
-          <h4>"Ollama Cloud rejected the request (403)"</h4>
-          <p>Your API key is missing, invalid, or has been rate-limited. Fix:</p>
-          <ol>
-            <li>Go to <a href="https://ollama.com" target="_blank">ollama.com</a> and sign up (free).</li>
-            <li>Generate a personal API key.</li>
-            <li>Paste it into <strong>Settings → Ollama Cloud → API Key</strong>.</li>
-          </ol>
-
-          <h4>"Local Ollama rejected the request (403)"</h4>
-          <p>Ollama is blocking the extension's origin. Set the environment variable <code>OLLAMA_ORIGINS=*</code> and restart Ollama.</p>
-
-          <h4>The agent is stuck in a loop</h4>
-          <p>The agent's anti-loop detection usually catches this. If it doesn't:</p>
-          <ul>
-            <li>Click <strong>Stop</strong> to halt manually.</li>
-            <li>Rephrase the goal to be more specific (sites, stop condition, constraints).</li>
-            <li>Switch to a stronger model.</li>
-            <li>Make sure a Vision Model is configured so vision escalation can fire.</li>
-          </ul>
-
-          <h4>Agent ignores my personal info on a form</h4>
-          <p>The vault is only sent when your goal includes form-related keywords. Try rephrasing: "<em>fill</em> this <em>form</em> with my saved info" instead of "do this for me."</p>
-
-          <h4>Research Mode keeps timing out on sources</h4>
-          <p>Some sites are slow or block bots. The 60-second per-source hard cap will skip them and move on. If many sources fail, switch to a faster Research Model or try a more specific topic that surfaces less spammy sources.</p>
-
-          <h4>Side panel won't open</h4>
-          <p>Click the puzzle icon in your browser toolbar → pin WebWright. Then click its icon directly.</p>
-        </div>
-
-        <!-- 13. Shortcuts -->
-        <div class="manual-section" id="m-shortcuts">
-          <h3><span class="num">13</span>Keyboard shortcuts</h3>
-          <ul>
-            <li><kbd>Enter</kbd> in the input → smart send (auto-routes to Chat or Agent)</li>
-            <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the input → force an Agent task</li>
-            <li><kbd>Shift</kbd> + <kbd>Enter</kbd> in the input → new line (multi-line prompt)</li>
-            <li>Click <strong>Stop</strong> while the agent is running → halt it immediately</li>
-          </ul>
-        </div>
-
+      <span class="section-eyebrow">Explore</span>
+      <h2 class="section-title">Everything about WebWright.</h2>
+      <p class="section-lead">The deep stuff lives on focused pages — pick where to dive in.</p>
+      <div class="hub-grid">
+        <a class="hub-card" href="features.html">
+          <div class="hub-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3>Features &amp; how it works</h3>
+          <p>Agent Mode, vision escalation, Voice Mode, research, workflows, providers — and why it's not a chat wrapper.</p>
+          <div class="hub-arrow">Explore features →</div>
+        </a>
+        <a class="hub-card" href="manual.html">
+          <div class="hub-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 12h16M4 19h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <h3>User Manual</h3>
+          <p>Install, pick a provider, run tasks, troubleshoot — the complete step-by-step guide.</p>
+          <div class="hub-arrow">Read the manual →</div>
+        </a>
+        <a class="hub-card" href="privacy-policy.html">
+          <div class="hub-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
+          <h3>Privacy &amp; Permissions</h3>
+          <p>Local-first, no servers, no telemetry — plus a code-verified justification for every permission.</p>
+          <div class="hub-arrow">View policy →</div>
+        </a>
+        <a class="hub-card" href="https://github.com/profoncode-debug/WebWright" target="_blank">
+          <div class="hub-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.66.5 12.02c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55 0-.27-.01-1.18-.02-2.14-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.34.95.1-.74.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.71 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11.04 11.04 0 015.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.24 2.75.12 3.04.74.81 1.18 1.84 1.18 3.1 0 4.44-2.69 5.42-5.26 5.7.41.36.78 1.05.78 2.12 0 1.53-.01 2.77-.01 3.14 0 .31.21.66.79.55 4.57-1.53 7.86-5.84 7.86-10.93C23.5 5.66 18.35.5 12 .5z"/></svg></div>
+          <h3>Source Code</h3>
+          <p>MIT-licensed, vanilla JS, no build step. Read every line on GitHub.</p>
+          <div class="hub-arrow">Open the repo →</div>
+        </a>
       </div>
     </div>
   </section>
@@ -1291,6 +208,73 @@
       <div class="footer-tag">© 2026 · A user-built, locally-running browser agent.</div>
     </div>
   </footer>
+
+  <!-- ───────────────────── Looping promo player ───────────────────── -->
+  <script>
+  (function () {
+    var stage = document.getElementById('stage');
+    if (!stage) return;
+    var stageWrap = stage.parentElement; // .promo-stage
+    function fit() { stage.style.transform = 'scale(' + (stageWrap.clientWidth / 1280) + ')'; }
+    window.addEventListener('resize', fit); fit();
+    // Re-fit once fonts load (metrics can shift the scaled box).
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
+    var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var scenes = ['s1','s2','s3','s4','s5','s6'].map(function (id) { return document.getElementById(id); });
+    var TOTAL = 33500, LOOP_AT = 34200;
+    var timers = [];
+    function at(ms, fn) { timers.push(setTimeout(fn, reduce ? ms * 0.5 : ms)); }
+    function clearAll() { timers.forEach(clearTimeout); timers = []; }
+    function show(i) { scenes.forEach(function (s, k) { s.classList.toggle('is-active', k === i); }); }
+
+    var CMD = 'Open YouTube and play lofi music';
+    function typeCmd() {
+      var el = document.getElementById('typed'); el.textContent = '';
+      var i = 0, speed = reduce ? 10 : 55;
+      (function step() { if (i <= CMD.length) { el.textContent = CMD.slice(0, i); i++; timers.push(setTimeout(step, speed)); } })();
+    }
+
+    function runLog() {
+      var rows = [].slice.call(document.querySelectorAll('#s3 .logrow'));
+      var base = reduce ? 1200 : 2900;
+      rows.forEach(function (r, k) {
+        var t = base + k * (reduce ? 260 : 760);
+        at(t, function () {
+          r.classList.add('in', 'run');
+          document.getElementById('lp1').classList.add('on');
+          timers.push(setTimeout(function () { document.getElementById('lp2').classList.add('on'); }, 200));
+          timers.push(setTimeout(function () { document.getElementById('lp3').classList.add('on'); }, 400));
+        });
+        at(t + (reduce ? 180 : 560), function () { r.classList.remove('run'); r.classList.add('done'); });
+      });
+      var end = base + rows.length * (reduce ? 260 : 760);
+      at(end + 200, function () { document.getElementById('result').classList.add('in'); document.getElementById('cstatus').classList.add('show'); });
+    }
+
+    function play() {
+      clearAll();
+      document.querySelectorAll('#s3 .logrow').forEach(function (r) { r.classList.remove('in', 'run', 'done'); });
+      document.getElementById('result').classList.remove('in');
+      document.getElementById('cstatus').classList.remove('show');
+      ['lp1','lp2','lp3'].forEach(function (id) { document.getElementById(id).classList.remove('on'); });
+      document.getElementById('typed').textContent = '';
+
+      var bar = document.getElementById('bar'); bar.style.transition = 'none'; bar.style.width = '0';
+      requestAnimationFrame(function () { bar.style.transition = 'width ' + ((reduce ? TOTAL * 0.5 : TOTAL) / 1000) + 's linear'; bar.style.width = '100%'; });
+
+      at(200,  function () { show(0); });
+      at(3300, function () { show(1); });
+      at(7600, function () { show(2); typeCmd(); runLog(); });
+      at(16800,function () { show(3); });
+      at(23200,function () { show(4); });
+      at(27600,function () { show(5); });
+      at(LOOP_AT, play);   // ← keeps looping forever
+    }
+
+    play();
+  })();
+  </script>
 
 </body>
 </html>

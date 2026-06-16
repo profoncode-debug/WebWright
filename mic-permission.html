@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebWright — Microphone Permission</title>
   <style>
-    :root { --accent:#7c6aef; --bg:#0c0c14; --card:#151522; --text:#e8e9f0; --muted:#9ca3af; --border:#262638; --green:#34d399; --red:#f87171; }
+    :root { --accent:#7c6aef; --accent-2:#9d8cff; --bg:#0c0c14; --card:#151522; --card-2:#1b1b2b; --text:#e8e9f0; --muted:#9ca3af; --border:#262638; --green:#34d399; --red:#f87171; }
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:"Inter","Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:32px; max-width:460px; width:100%; box-shadow:0 20px 60px -20px rgba(0,0,0,.5); }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:32px; max-width:480px; width:100%; box-shadow:0 20px 60px -20px rgba(0,0,0,.5); }
     h1 { font-size:1.4em; font-weight:800; margin-bottom:8px; }
     p { color:var(--muted); font-size:.95em; line-height:1.6; margin-bottom:16px; }
     .status { display:flex; align-items:center; gap:10px; padding:14px 16px; border-radius:10px; font-weight:600; font-size:.95em; margin:18px 0; border:1px solid var(--border); }
@@ -17,15 +17,35 @@
     .status.denied  { color:var(--red); }   .status.denied .dot { background:var(--red); }
     .status.prompt  { color:var(--accent); } .status.prompt .dot { background:var(--accent); }
     button { width:100%; padding:13px 20px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-weight:700; font-size:1em; cursor:pointer; transition:.15s; }
-    button:hover { background:#9d8cff; }
+    button:hover { background:var(--accent-2); }
     .hint { font-size:.82em; color:var(--muted); margin-top:18px; line-height:1.6; }
-    code { background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-size:.85em; color:var(--accent); }
+    code { background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-size:.85em; color:var(--accent); word-break:break-all; }
+
+    /* ── Manual steps ── */
+    .divider { display:flex; align-items:center; gap:12px; margin:28px 0 20px; color:var(--muted); font-size:.8em; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .divider::before, .divider::after { content:""; flex:1; height:1px; background:var(--border); }
+    .manual { background:var(--card-2); border:1px solid var(--border); border-radius:12px; padding:20px 22px; }
+    .manual-title { font-weight:700; font-size:1em; margin-bottom:4px; }
+    .manual-sub { color:var(--muted); font-size:.86em; margin-bottom:16px; }
+    ol.steps { list-style:none; counter-reset:step; margin:0; padding:0; }
+    ol.steps li { counter-increment:step; position:relative; padding-left:38px; margin-bottom:14px; font-size:.92em; line-height:1.5; color:var(--text); }
+    ol.steps li:last-child { margin-bottom:0; }
+    ol.steps li::before {
+      content:counter(step); position:absolute; left:0; top:-1px;
+      width:24px; height:24px; border-radius:50%;
+      background:var(--accent); color:#fff;
+      font-size:.78em; font-weight:800; line-height:24px; text-align:center;
+    }
+    ol.steps li .sub { display:block; color:var(--muted); font-size:.88em; margin-top:2px; }
+    .pill { display:inline-block; background:rgba(124,106,239,.14); border:1px solid rgba(124,106,239,.35); color:var(--accent); border-radius:6px; padding:0 6px; font-weight:700; font-size:.9em; }
+    .brave-note { margin-top:16px; font-size:.84em; color:var(--muted); line-height:1.55; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+    .brave-note strong { color:var(--text); }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>🎙️ Enable Voice Mode</h1>
-    <p>WebWright's hands-free Voice Mode needs permission to use your microphone. Click the button below and choose <strong>Allow</strong> when your browser asks.</p>
+    <p>WebWright's hands-free Voice Mode needs permission to use your microphone. Click the button below and choose <strong>Allow</strong> if your browser asks.</p>
 
     <div class="status prompt" id="status">
       <span class="dot"></span><span id="statusText">Microphone permission: not yet requested</span>
@@ -34,8 +54,89 @@
     <button id="grantBtn">Allow microphone access</button>
 
     <p class="hint" id="hint">
-      Once allowed, return to the WebWright side panel and turn Voice Mode on again.<br><br>
-      <strong>Note:</strong> Voice transcription uses Chrome's built-in speech recognition, which sends audio to Google's servers. Text-to-speech and everything else stay on your device.
+      Once allowed, return to the WebWright side panel and turn Voice Mode on again.
+    </p>
+
+    <!-- ── Manual fallback ── -->
+    <div class="divider">No prompt? Do it manually</div>
+
+    <div class="manual">
+      <div class="manual-title">Turn the microphone on manually</div>
+      <div class="manual-sub">If no permission popup appeared, grant it from the extension's site permissions — it takes a few seconds:</div>
+      <ol class="steps">
+        <li>
+          Click the puzzle-piece <span class="pill">🧩</span> <strong>Extensions</strong> icon in your browser toolbar.
+          <span class="sub">This opens the list of your installed extensions.</span>
+        </li>
+        <li>
+          Click the <strong>three-dots <span class="pill">⋮</span> menu</strong> next to <strong>WebWright</strong>.
+          <span class="sub">Or right-click the WebWright icon directly to open the same menu.</span>
+        </li>
+        <li>
+          Click <strong>“View web permissions”</strong>.
+          <span class="sub">On some browsers this is <strong>“Manage extension” → “Site permissions”</strong> instead.</span>
+        </li>
+        <li>
+          Find <strong>Microphone</strong> in the list and change it to <strong>Allow</strong>.
+          <span class="sub">Leave it set to “Allow” so it stays on for next time.</span>
+        </li>
+        <li>
+          <strong>Restart your browser</strong> — close all windows and reopen it.
+          <span class="sub">Microsoft Edge and Chrome often don't apply a newly-granted microphone permission until the browser restarts.</span>
+        </li>
+        <li>Reopen the WebWright side panel and turn <strong>Voice Mode</strong> on again.</li>
+      </ol>
+      <p class="hint" style="margin-top:16px">
+        The exact wording varies a little between Chrome, Edge, Brave, Opera, and Vivaldi, but the path is always the same: <strong>Extensions icon → ⋮ menu → web permissions → Microphone → Allow → restart browser</strong>.
+      </p>
+    </div>
+
+    <!-- ── Groq setup ── -->
+    <div class="divider">Using Brave? Set up Groq</div>
+
+    <div class="manual">
+      <div class="manual-title">Set up Groq transcription (free)</div>
+      <div class="manual-sub">
+        Voice transcription needs Groq on <strong>Brave</strong> — Brave blocks the browser's built-in speech engine for privacy, so even with the mic allowed, the default engine won't hear you. (It's also an option on any browser if you want more accurate transcription.) Setup takes about a minute:
+      </div>
+      <ol class="steps">
+        <li>
+          Open <code>console.groq.com</code> and <strong>sign in</strong>.
+          <span class="sub">It's free — you can sign in with a Google or GitHub account.</span>
+        </li>
+        <li>
+          In the left menu open <strong>API Keys</strong> → <strong>Create API Key</strong>, name it, and <strong>copy</strong> it.
+          <span class="sub">The key starts with <code>gsk_</code>. Copy it now — Groq shows it only once.</span>
+        </li>
+        <li>
+          Back in WebWright, open the side panel and click the <strong>Settings <span class="pill">⚙</span></strong> (gear) icon.
+        </li>
+        <li>
+          Scroll to the <strong>Speech-to-Text (Voice Mode)</strong> section.
+        </li>
+        <li>
+          Set <strong>Transcription Engine</strong> to <strong>Groq Whisper</strong>.
+          <span class="sub">On Brave this is selected for you automatically once a key is saved.</span>
+        </li>
+        <li>
+          Paste your key into <strong>Groq API Key</strong> and click <strong>Save</strong>.
+        </li>
+        <li>Turn <strong>Voice Mode</strong> on (the mic button) and start talking.</li>
+      </ol>
+      <p class="hint" style="margin-top:16px">
+        Your key is stored locally on your device only. When the Groq engine is active, short audio clips of your speech are sent to Groq for transcription — nothing else.
+      </p>
+    </div>
+
+    <!-- ── Which engine? ── -->
+    <div class="brave-note">
+      <strong>Which engine should I use?</strong><br>
+      • <strong>Chrome, Edge, Opera, Vivaldi</strong> → the default <strong>Browser</strong> engine works out of the box (no key needed). Switch to Groq only if you want higher accuracy.<br>
+      • <strong>Brave</strong> → you must use <strong>Groq Whisper</strong> (steps above). The built-in engine is disabled there.
+    </div>
+
+    <p class="hint">
+      <strong>Privacy note:</strong> the spoken replies (text-to-speech) and everything else stay on your device. Only speech-to-text leaves your machine: the default Browser engine sends audio to your browser's speech service (Google on Chromium), and the Groq engine sends audio to Groq. No audio is stored by WebWright. See the privacy policy for full details.
     </p>
   </div>
 
@@ -57,16 +158,16 @@
           if (p.state === "granted") {
             setStatus("granted", "Microphone permission: granted ✓");
             grantBtn.textContent = "Granted — you can close this tab";
-            hint.innerHTML = "All set. Return to the WebWright side panel and turn Voice Mode on.<br><br><strong>Note:</strong> Voice transcription uses Chrome's built-in speech recognition (audio sent to Google). Everything else stays on your device.";
+            hint.innerHTML = "All set. Return to the WebWright side panel and turn Voice Mode on.";
           } else if (p.state === "denied") {
-            setStatus("denied", "Microphone permission: denied ✗");
-            hint.innerHTML = "Permission was blocked. Click the camera/mic icon in the address bar (or open <code>chrome://settings/content/microphone</code>) and allow this extension, then reload this page.";
+            setStatus("denied", "Microphone permission: blocked ✗");
+            hint.innerHTML = "Permission is blocked. Use the manual steps below to set Microphone to <strong>Allow</strong>, then reload this page.";
           } else {
             setStatus("prompt", "Microphone permission: click the button to request");
           }
           p.onchange = refreshState;
         }
-      } catch (e) { /* permissions API not available — button still works */ }
+      } catch (e) { /* permissions API not available — button + manual steps still work */ }
     }
 
     grantBtn.addEventListener("click", async () => {
@@ -77,8 +178,8 @@
         grantBtn.textContent = "Granted — you can close this tab";
         hint.innerHTML = "All set. Return to the WebWright side panel and turn Voice Mode on.";
       } catch (e) {
-        setStatus("denied", "Microphone access was blocked (" + (e.name || "error") + ")");
-        hint.innerHTML = "Click the camera/mic icon in the address bar (or open <code>chrome://settings/content/microphone</code>), allow this extension, then reload this page.";
+        setStatus("denied", "No prompt / access blocked (" + (e.name || "error") + ")");
+        hint.innerHTML = "Your browser didn't show a prompt. Use the manual steps below to set Microphone to <strong>Allow</strong>, then reload this page.";
       }
     });
 

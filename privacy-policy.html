@@ -26,6 +26,7 @@
 </head>
 <body>
   <div class="wrap">
+    <p style="margin-bottom:18px"><a href="index.html" style="font-weight:600;font-size:0.9em">&larr; Home</a> &nbsp;·&nbsp; <a href="features.html" style="font-weight:600;font-size:0.9em">Features</a> &nbsp;·&nbsp; <a href="manual.html" style="font-weight:600;font-size:0.9em">User Manual</a></p>
     <h1>WebWright Privacy Policy</h1>
     <div class="updated">Last updated: May 2, 2026</div>
 
@@ -70,12 +71,17 @@
     <h2>Voice Mode</h2>
     <p>WebWright includes an optional, hands-free <strong>Voice Mode</strong> that is <strong>off by default</strong> and only active while you toggle it on. When enabled:</p>
     <ul>
-      <li><strong>Speech-to-text (listening)</strong> uses your browser's built-in <code>SpeechRecognition</code> API. In Chrome and other Chromium browsers, this API <strong>streams your microphone audio to Google's speech-recognition servers</strong> for transcription, governed by <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>. This is the only part of WebWright that sends data off your device to a party other than the LLM provider you configured. WebWright does not store, log, or transmit your audio anywhere itself.</li>
+      <li><strong>Speech-to-text (listening)</strong> uses one of two transcription engines you choose in <em>Settings → Speech-to-Text</em>:
+        <ul>
+          <li><strong>Browser (default).</strong> Uses your browser's built-in <code>SpeechRecognition</code> API. In Chrome and most Chromium browsers this <strong>streams your microphone audio to Google's speech-recognition servers</strong> for transcription, governed by <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</li>
+          <li><strong>Groq Whisper (optional — used automatically on Brave, which disables the built-in engine for privacy).</strong> Records a short audio clip of your speech and sends it to <strong>Groq's transcription API</strong>, governed by <a href="https://groq.com/privacy-policy/" target="_blank">Groq's Privacy Policy</a>. This engine is used only if you select it and provide a Groq API key, which is stored locally on your device.</li>
+        </ul>
+        In either case, audio is sent only to produce a text transcript. WebWright itself does not store, log, or transmit your audio anywhere, and no audio is sent when Voice Mode is off.</li>
       <li><strong>Text-to-speech (the agent speaking back)</strong> uses the browser's <code>SpeechSynthesis</code> API, which runs <strong>fully on-device</strong> — no audio leaves your machine.</li>
       <li>The transcribed text is then handled exactly like text you type: classified as a chat question or an agent command and sent only to the LLM provider you configured.</li>
       <li>Microphone access is requested at runtime via a standard browser permission prompt. You can revoke it at any time in your browser's site settings. Turning Voice Mode off stops all microphone listening immediately.</li>
     </ul>
-    <p>If you do not want any audio sent to Google's speech service, simply leave Voice Mode off and use WebWright by typing as usual.</p>
+    <p>Voice transcription is the only part of WebWright that may send data off your device to a party other than the LLM provider you configured. If you do not want any audio sent to a third-party speech service, simply leave Voice Mode off and use WebWright by typing as usual.</p>
 
     <h2>Data We Do NOT Collect</h2>
     <ul>
@@ -85,7 +91,7 @@
       <li>No data sent to WebWright developers or any first-party server</li>
       <li>No advertising or third-party data sharing</li>
     </ul>
-    <p><strong>WebWright does not sell, rent, trade, or share your personal information with any third party for any purpose.</strong> The only outbound network calls are the LLM API calls you initiate, sent to the provider <em>you</em> configured.</p>
+    <p><strong>WebWright does not sell, rent, trade, or share your personal information with any third party for any purpose.</strong> The only outbound network calls are the LLM API calls you initiate, sent to the provider <em>you</em> configured — plus, if you enable Voice Mode, the speech-to-text transcription described above.</p>
 
     <h2>Permissions Explained</h2>
     <p>This section is the authoritative, code-verified justification for every permission WebWright declares in its manifest — the same wording used in the Chrome Web Store developer dashboard. Every API named here is grep-verifiable against the open-source code on GitHub.</p>
@@ -99,7 +105,7 @@
 
       <li><strong>sidePanel</strong> — required because WebWright's entire user interface is delivered as a Chrome Side Panel. <code>chrome.sidePanel.setPanelBehavior({openPanelOnActionClick: true})</code> is called once at startup so that clicking the WebWright toolbar icon opens <code>sidepanel/sidepanel.html</code>, which hosts the chat view, agent action log, research drawer, workflow controls, Personal Info Vault, and Settings. The side panel is the only UI surface the extension uses — no popup, no content-script overlay, no injected iframe. Opening is always user-initiated.</li>
 
-      <li><strong>tabs</strong> — required because Agent Mode and Research Mode do more than read the active tab. <code>chrome.tabs.create</code> opens new tabs when the user's goal targets a different site (e.g. "open YouTube and search for…") and opens the final research report; <code>chrome.tabs.update</code> navigates the agent's working tab — Research Mode drives one tab through up to 10 source URLs in sequence; <code>chrome.tabs.remove</code> closes the working tab when a research run is aborted; <code>chrome.tabs.sendMessage</code> carries the message channel between side panel, service worker, and content script; <code>chrome.tabs.query</code>, <code>chrome.tabs.get</code>, and <code>chrome.tabs.onUpdated</code> read tab metadata (URL, title) and detect navigation completion. Used only on tabs related to the user's running task. The extension never enumerates, monitors, or reads content from unrelated tabs.</li>
+      <li><strong>tabs</strong> — required because Agent Mode and Research Mode do more than read the active tab. <code>chrome.tabs.create</code> opens the final research report in a new tab, and opens a usable tab when the user's current page is a restricted browser page (e.g. a new-tab or <code>chrome://</code> page) where the agent cannot operate — Agent Mode otherwise runs on the user's current tab; <code>chrome.tabs.update</code> navigates the agent's working tab — Research Mode drives one tab through up to 10 source URLs in sequence; <code>chrome.tabs.remove</code> closes the working tab when a research run is aborted; <code>chrome.tabs.sendMessage</code> carries the message channel between side panel, service worker, and content script; <code>chrome.tabs.query</code>, <code>chrome.tabs.get</code>, and <code>chrome.tabs.onUpdated</code> read tab metadata (URL, title) and detect navigation completion. Used only on tabs related to the user's running task. The extension never enumerates, monitors, or reads content from unrelated tabs.</li>
 
       <li><strong>webNavigation</strong> — required to detect single-page-application (SPA) navigations on the agent's working tab. Modern frameworks — React Router, Next.js, Vue Router, Angular Router — change the URL via <code>history.pushState()</code> without triggering a full page reload, so <code>chrome.tabs.onUpdated</code> never fires for those transitions. WebWright registers one <code>chrome.webNavigation.onHistoryStateUpdated</code> listener that filters strictly by <code>details.tabId === agentState.tabId</code> and <code>details.frameId === 0</code>. When it fires, the agent loop knows the page state has changed and re-extracts interactive elements before issuing the next action. No other <code>webNavigation</code> events are subscribed to. Never used for browsing-history collection, cross-tab monitoring, or any background activity.</li>
 

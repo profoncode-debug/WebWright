@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebWright — Features</title>
+  <meta name="description" content="WebWright features: autonomous Agent Mode, 4-tier vision escalation, hands-free Voice Mode, deep research, record &amp; replay workflows, and 8 LLM providers.">
+  <link rel="icon" type="image/png" href="icons/icon128.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html"><img src="icons/icon128.png" alt="WebWright">WebWright</a>
+      <div class="topbar-links">
+        <a href="features.html">Features</a>
+        <a href="manual.html">User Manual</a>
+        <a href="privacy-policy.html">Privacy</a>
+        <a href="https://github.com/profoncode-debug/WebWright" target="_blank">GitHub</a>
+        <a href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank" class="topbar-cta">Add to Chrome</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="page-head">
+    <div class="wrap">
+      <a class="back-link" href="index.html">&larr; Home</a>
+      <h1>Features &amp; how it works</h1>
+      <p>Everything WebWright does — and the real agent loop that makes it more than a chat wrapper.</p>
+    </div>
+  </section>
+  <!-- ───────────────────── Manifesto ───────────────────── -->
+  <section class="manifesto">
+    <div class="wrap">
+      <p class="manifesto-quote">
+        Most AI tools talk. <strong>WebWright works.</strong> Every popular AI sidebar is fundamentally a chatbot — it reads what you paste, answers questions about what you describe, and then stops. It can't reach the real browser tab where you're trying to get things done.
+      </p>
+      <p class="manifesto-sub">
+        WebWright is different. It perceives the page, reasons about it with an LLM, and takes real actions — clicks, types, navigates, fills forms, conducts research, even hands-free by voice. It is not a chat wrapper. It is a real agentic AI.
+      </p>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Comparison Table ───────────────────── -->
+  <section id="compare">
+    <div class="wrap">
+      <span class="section-eyebrow">Why WebWright</span>
+      <h2 class="section-title">Not just another LLM wrapper.</h2>
+      <p class="section-lead">Most "AI sidebars" are ChatGPT inside a panel. They read pages, answer questions, and stop. WebWright crosses the line into action — and stays open-source, server-free, and yours.</p>
+
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="col-typical">Typical AI Sidebar</th>
+              <th class="col-ww">WebWright</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cell-feature">Reads page content</td>
+              <td class="cell-typical"><span class="mark mark-yes">✓</span>Yes</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Chats about the page</td>
+              <td class="cell-typical"><span class="mark mark-yes">✓</span>Yes</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes</td>
+            </tr>
+            <tr class="row-emph">
+              <td class="cell-feature">Takes real actions on your behalf</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>No</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Yes — clicks, types, navigates, fills</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Hands-free voice control</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Rare / read-only</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Speak goals, hear replies, runs actions</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Open source — read every line of code</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Rarely</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>MIT-licensed on GitHub</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Free, with a fully on-device option</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Usually paid</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>Free; Ollama Local = $0</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Your data stays on your device</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Routed via dev server</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>No server exists</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Zero telemetry, analytics, tracking</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Typical</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>None — verifiable in source</td>
+            </tr>
+            <tr>
+              <td class="cell-feature">Provider freedom (bring your own key)</td>
+              <td class="cell-typical"><span class="mark mark-no">✗</span>Locked to one LLM</td>
+              <td class="cell-ww"><span class="mark mark-yes">✓</span>8 providers, any model</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Feature: Agent Mode ───────────────────── -->
+  <section id="features">
+    <div class="wrap feature-row">
+      <div>
+        <span class="section-eyebrow">Agent Mode</span>
+        <h2 class="section-title">Type a goal. Watch the agent finish it.</h2>
+        <p class="section-lead">Give the agent a goal in plain English. It navigates, clicks, types, fills forms, and reports back — across multiple pages and steps — while you watch every action in a live log.</p>
+        <ul class="feature-list">
+          <li>Multi-step flows: login, search, filter, checkout, booking, form fill</li>
+          <li>Auto-escalates from DOM to vision when a page deviates from expectation</li>
+          <li>Anti-loop detection: catches its own repetition and changes strategy</li>
+          <li>Pause or stop at any time — you stay in control</li>
+        </ul>
+      </div>
+      <div class="feature-image">
+        <img src="screenshots/webwright_poster%20(1).png" alt="WebWright agent completing a YouTube search task autonomously">
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Feature: Chat Mode ───────────────────── -->
+  <section style="background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="wrap feature-row reverse">
+      <div>
+        <span class="section-eyebrow">Chat Mode</span>
+        <h2 class="section-title">Talk to any web page. Quick or Pro.</h2>
+        <p class="section-lead">Ask questions about the article, dashboard, or video page you're viewing. Multi-turn conversation with full page context. Two intelligence levels at one click.</p>
+        <ul class="feature-list">
+          <li><strong>⚡ Quick</strong> — Text only. Fastest, cheapest. Best for articles and plain pages.</li>
+          <li><strong>✨ Pro</strong> — Also attaches a live screenshot. The model literally <em>sees</em> the layout, charts, and visuals.</li>
+          <li>Works on dashboards, video pages, complex docs — anywhere text alone isn't enough</li>
+          <li>Your mode choice is remembered locally</li>
+        </ul>
+      </div>
+      <div class="feature-image">
+        <img src="screenshots/webbwright_chat.png" alt="WebWright Chat Mode explaining the Hilbert Hotel paradox while viewing a YouTube video">
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Feature: Voice Mode ───────────────────── -->
+  <section id="voice" style="background: linear-gradient(135deg, rgba(124,106,239,0.06) 0%, rgba(157,140,255,0.02) 100%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="wrap" style="text-align: center;">
+      <span class="section-eyebrow">Voice Mode · New</span>
+      <h2 class="section-title">Talk to your browser. It talks back.</h2>
+      <p class="section-lead" style="margin: 0 auto;">Toggle the mic and go fully hands-free. WebWright transcribes your speech, figures out whether you're chatting or asking for an action, does it, and replies out loud in a warm, natural voice — then goes right back to listening.</p>
+      <div class="tiers" style="margin-top: 36px;">
+        <div class="tier-card">
+          <div class="tier-num" style="background:#7c6aef;">1</div>
+          <div class="tier-title">Listening</div>
+          <div class="tier-desc">Mic is live, capturing what you say.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="background:#e0a106;">2</div>
+          <div class="tier-title">Thinking</div>
+          <div class="tier-desc">Understanding your intent and forming a reply. Mic paused.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="background:#3b82f6;">3</div>
+          <div class="tier-title">Working</div>
+          <div class="tier-desc">Running the agent task you asked for. Mic paused.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num" style="background:#34d399;">4</div>
+          <div class="tier-title">Speaking</div>
+          <div class="tier-desc">Reading the reply aloud, then back to listening.</div>
+        </div>
+      </div>
+      <ul class="feature-list" style="display:inline-block; text-align:left; margin: 30px auto 0; max-width: 720px;">
+        <li>Ask a question and hear the answer, or say <em>"open Gmail and start a new email"</em> and it runs the task</li>
+        <li>Text-to-speech is fully on-device; replies are cleaned for the ear — no URLs, markdown, or emojis read aloud</li>
+        <li>Remembers your recent voice turns, <strong>including the actions it performed</strong>, so you can ask "what did you just do?"</li>
+        <li>Default transcription uses the browser's speech engine; on <strong>Brave</strong> (or for higher accuracy) switch to <strong>Groq Whisper</strong> in Settings</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Feature: Research Mode ───────────────────── -->
+  <section>
+    <div class="wrap feature-row">
+      <div>
+        <span class="section-eyebrow">Research Mode</span>
+        <h2 class="section-title">Deep web research in 2–3 minutes.</h2>
+        <p class="section-lead">Enter a topic. WebWright opens Google, captures the AI Overview, visits the top 10 organic sources, summarizes each one, and synthesizes a final cross-source conclusion. A polished HTML report opens in a new tab.</p>
+        <ul class="feature-list">
+          <li>Per-source 60-second hard cap, 45-second LLM call timeout</li>
+          <li>Vision fallback for low-text or JS-heavy pages</li>
+          <li>Live per-source status: active · done · error · skipped</li>
+          <li>Instant abort plus a history of past reports you can re-open or delete</li>
+        </ul>
+      </div>
+      <div class="feature-image">
+        <img src="screenshots/webwright_poster_research.png" alt="WebWright Research Mode showing Google AI Overview and source summaries on AI agents in 2026">
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Feature: Workflows + Settings ───────────────────── -->
+  <section style="background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="wrap feature-row reverse">
+      <div>
+        <span class="section-eyebrow">Workflows · Vault · Settings</span>
+        <h2 class="section-title">Record once, replay forever. Your keys, your choice.</h2>
+        <p class="section-lead">Repetitive tasks become one-click replays. Personal info you save locally fills forms on demand. Eight providers in Settings, every model field editable — switch any time.</p>
+        <ul class="feature-list">
+          <li>Record clicks, typing, and navigation across tabs — replay with pause/resume</li>
+          <li>Personal Info Vault used only when you ask the agent to fill a form</li>
+          <li>Pick the right model per role: Agent, Vision, Chat, Research</li>
+          <li>API keys stored locally in <code>chrome.storage.local</code> — never seen by us</li>
+        </ul>
+      </div>
+      <div class="feature-image">
+        <img src="screenshots/webwright_poster_config_workflows%20(2).png" alt="WebWright sidebar and settings panel showing eight LLM provider tabs and model fields">
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Vision tiers ───────────────────── -->
+  <section>
+    <div class="wrap">
+      <span class="section-eyebrow">Vision Escalation</span>
+      <h2 class="section-title">When DOM isn't enough, the agent climbs.</h2>
+      <p class="section-lead">Most agentic extensions stay at DOM analysis and fail when pages deviate from their assumptions. WebWright climbs a 4-tier ladder until it gets unstuck.</p>
+      <div class="tiers">
+        <div class="tier-card">
+          <div class="tier-num">1</div>
+          <div class="tier-title">DOM Analysis</div>
+          <div class="tier-desc">Default mode. Fast and token-efficient. Ranks interactive elements.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num">2</div>
+          <div class="tier-title">Vision · 80 marks</div>
+          <div class="tier-desc">Screenshot with Set-of-Marks overlay sent to a vision LLM.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num">3</div>
+          <div class="tier-title">Vision · 160 marks</div>
+          <div class="tier-desc">Denser overlay for harder pages with many small elements.</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num">4</div>
+          <div class="tier-title">Raw Coordinates</div>
+          <div class="tier-desc">Last resort: synthetic click at X,Y via the Chrome DevTools Protocol.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Providers ───────────────────── -->
+  <section id="providers" style="background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="wrap">
+      <span class="section-eyebrow">Providers</span>
+      <h2 class="section-title">Zero vendor lock-in. Bring your own key, or run fully local.</h2>
+      <p class="section-lead">Eight LLM providers supported out of the box. Every model field is editable so new releases work the day they ship. Use a frontier model where reliability matters; a cheap fast one where speed matters more.</p>
+      <div class="providers-wrap">
+        <span class="provider-pill">Ollama Cloud <span class="free">FREE TIER</span></span>
+        <span class="provider-pill">Ollama Local <span class="free">FREE</span></span>
+        <span class="provider-pill">OpenAI</span>
+        <span class="provider-pill">Anthropic Claude</span>
+        <span class="provider-pill">Google Gemini <span class="free">FREE TIER</span></span>
+        <span class="provider-pill">DeepSeek <span class="free">FREE TIER</span></span>
+        <span class="provider-pill">xAI Grok</span>
+        <span class="provider-pill">Custom endpoint</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Privacy ───────────────────── -->
+  <section id="privacy" class="privacy-section">
+    <div class="wrap">
+      <span class="section-eyebrow">Privacy &amp; Security</span>
+      <h2 class="section-title">Local-first. Verifiable. Yours.</h2>
+      <p class="section-lead">There is no developer-controlled server. No telemetry. No analytics. No data sharing with any third party. The local-first architecture is structural, not policy — there is nothing on our side to collect data even if we wanted to.</p>
+      <div class="privacy-card">
+        <div class="privacy-pillars">
+          <div>
+            <div class="pillar-title">Stored locally</div>
+            <div class="pillar-desc">Settings, API keys, Personal Info, workflows, reports — all live in <code>chrome.storage.local</code>, sandboxed per-extension and encrypted at rest.</div>
+          </div>
+          <div>
+            <div class="pillar-title">Your provider, your key</div>
+            <div class="pillar-desc">Network requests go only to the LLM endpoint you configure. WebWright never holds a key on your behalf. Revoke any time on the provider's dashboard.</div>
+          </div>
+          <div>
+            <div class="pillar-title">No remote code</div>
+            <div class="pillar-desc">Every line of JavaScript is bundled in the published package. No dynamically-fetched modules. Verifiable by reading the source on GitHub.</div>
+          </div>
+          <div>
+            <div class="pillar-title">Ollama Local = zero egress</div>
+            <div class="pillar-desc">Run an LLM on your own machine and no data leaves your device — not to us, not to any cloud. Pure on-device AI.</div>
+          </div>
+          <div>
+            <div class="pillar-title">Limited Use compliant</div>
+            <div class="pillar-desc">Adheres to the Chrome Web Store User Data Policy. No advertising. No human reads your data without affirmative consent.</div>
+          </div>
+          <div>
+            <div class="pillar-title">User-initiated only</div>
+            <div class="pillar-desc">The agent does not run in the background or wake on a schedule. It acts only when you, the human, give it a goal.</div>
+          </div>
+        </div>
+        <p style="margin-top: 28px; font-size: 0.9em; color: var(--muted);">
+          <strong>Voice Mode note:</strong> text-to-speech runs on your device. Speech-to-text sends microphone audio to a transcription service only while Voice Mode is on — Google's speech backend (default Browser engine) or Groq (Groq Whisper engine). WebWright stores no audio.
+        </p>
+        <p style="margin-top: 16px; font-size: 0.95em; color: var(--text-2);">
+          Read the full policy: <a href="privacy-policy.html"><strong>Privacy Policy &amp; Permission Justifications →</strong></a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Final CTA ───────────────────── -->
+  <section class="final-cta">
+    <div class="wrap">
+      <h2>Stop browsing.<br><span style="background: var(--hero-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Start commanding.</span></h2>
+      <p>Open-source, under 1 MB, runs on every Chromium browser. Bring your own API key, or run fully local with Ollama.</p>
+      <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank">
+        <svg viewBox="0 0 48 48" width="20" height="20" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px">
+          <circle cx="24" cy="24" r="11" fill="#fff"/>
+          <path fill="#EA4335" d="M3.3 14.3 13.1 31.4A12 12 0 0 1 12 24a12 12 0 0 1 12-12h20.4A23.94 23.94 0 0 0 24 0a23.94 23.94 0 0 0-20.7 12z"/>
+          <path fill="#34A853" d="M3.3 14.3A24 24 0 0 0 0 24a24 24 0 0 0 24 24 24 24 0 0 0 8.9-1.7L20.6 27.4a12 12 0 0 1-7.5-3.3z"/>
+          <path fill="#FBBC04" d="M44.4 12H24a12 12 0 0 1 10.9 16.9L19.6 47.7A24 24 0 0 0 48 24a24 24 0 0 0-3.6-12z"/>
+          <circle cx="24" cy="24" r="7.5" fill="#1A73E8"/>
+        </svg>
+        Add to Chrome — it's free
+      </a>
+    </div>
+  </section>
+
+  <!-- ───────────────────── Footer ───────────────────── -->
+  <footer>
+    <div class="wrap">
+      <div class="footer-links">
+        <a href="https://github.com/profoncode-debug/WebWright" target="_blank">GitHub</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="mailto:profoncode@gmail.com">Contact</a>
+        <a href="https://github.com/profoncode-debug/WebWright/blob/main/LICENSE" target="_blank">MIT License</a>
+      </div>
+      <div>WebWright — Built for action, not just browsing.</div>
+      <div class="footer-tag">© 2026 · A user-built, locally-running browser agent.</div>
+    </div>
+  </footer>
+
+</body>
+</html>

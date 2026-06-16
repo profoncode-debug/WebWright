@@ -38,9 +38,6 @@
   var activityBar    = document.getElementById("activityBar");
   var chatTyping     = document.getElementById("chatTyping");
   var providerTabs   = document.getElementById("providerTabs");
-  var tabChoiceOverlay = document.getElementById("tabChoiceOverlay");
-  var tabChoiceThis  = document.getElementById("tabChoiceThis");
-  var tabChoiceNew   = document.getElementById("tabChoiceNew");
   var workflowBtn    = document.getElementById("workflowBtn");
   var workflowDrawer = document.getElementById("workflowDrawer");
   var closeWorkflowBtn = document.getElementById("closeWorkflowBtn");
@@ -101,7 +98,6 @@
   var agentStepCount = 0;
   var agentLogBubble = null; // The current agent log message bubble (for appending steps)
   var agentLogSteps  = null; // The steps container inside the agent log bubble
-  var pendingAgentText = ""; // Text waiting for tab choice
 
   var PROVIDERS = ["ollama_cloud", "ollama_local", "chatgpt", "claude", "gemini", "deepseek", "grok", "custom"];
 
@@ -200,11 +196,11 @@
         var text = btn.getAttribute("data-text");
         var mode = btn.getAttribute("data-mode");
         if (text && !isRunning) {
-          goalInput.value = text;
           if (mode === "chat" || text.toLowerCase().indexOf("summarize") >= 0) {
             chatSend(text);
           } else {
-            showTabChoice(text);
+            // Run the task on the current tab — no tab-choice prompt.
+            agentSend(text, true);
           }
         }
       });
@@ -874,16 +870,6 @@
    * Agent Send
    * ═══════════════════════════════════════════ */
 
-  function showTabChoice(text) {
-    pendingAgentText = text;
-    if (tabChoiceOverlay) tabChoiceOverlay.classList.remove("hidden");
-  }
-
-  function hideTabChoice() {
-    if (tabChoiceOverlay) tabChoiceOverlay.classList.add("hidden");
-    pendingAgentText = "";
-  }
-
   async function agentSend(text, useCurrentTab, alreadyEchoed) {
     if (!text || isRunning) return;
 
@@ -1415,6 +1401,8 @@
       }, 250);
     }
 
+    // On-device TTS. Watchdog + poll are essential: Chrome's SpeechSynthesis
+    // often never fires onend after a few utterances, which would kill listening.
     function speak(text) {
       var clean = plainTextForSpeech(text);
       if (!clean || !window.speechSynthesis) { resumeListening(); return; }
@@ -1429,9 +1417,6 @@
       var voice = pickVoice();
       if (voice) utter.voice = voice;
 
-      // Single-shot completion — whichever fires first resumes listening exactly
-      // once. The WATCHDOG + poll are essential: Chrome's SpeechSynthesis often
-      // never fires onend after a few utterances, which would kill listening.
       var finished = false, watchdog = null, resumePoll = null;
       function finish() {
         if (finished) return;
@@ -1460,15 +1445,29 @@
       try { window.speechSynthesis.speak(utter); } catch (e) { finish(); }
     }
 
+    // Pick the best female voice available, per browser:
+    //  • Chrome → "Google US English" (its high-quality network female voice)
+    //  • Edge   → "Aria"/"Jenny" Online (Natural) — Azure neural female voices
+    //  • Brave  → Microsoft Zira (Brave strips the better voices, so the local
+    //             named-female voice is used instead)
+    //  • Others → a named female voice (Zira / Hazel / etc.) in your language.
     var cachedVoice = null;
     function pickVoice() {
       if (cachedVoice) return cachedVoice;
       var voices = window.speechSynthesis.getVoices() || [];
       if (!voices.length) return null;
-      var lang = (navigator.language || "en-US").toLowerCase();
+      var twoLetter = (navigator.language || "en-US").toLowerCase().slice(0, 2);
+      function isLang(v) { return v.lang && v.lang.toLowerCase().startsWith(twoLetter); }
+      var FEMALE = /\b(zira|hazel|aria|jenny|ana|michelle|emma|ava|female|samantha|susan|fiona|tessa)\b/i;
       cachedVoice =
-        voices.find(function(v){ return v.lang && v.lang.toLowerCase() === lang && /female|google|natural/i.test(v.name); }) ||
-        voices.find(function(v){ return v.lang && v.lang.toLowerCase().startsWith(lang.slice(0,2)); }) ||
+        // Chrome's Google voice in your language (female, best quality)
+        voices.find(function(v){ return isLang(v) && /google/i.test(v.name); }) ||
+        // Edge's Online (Natural) neural female voices (Aria / Jenny / …)
+        voices.find(function(v){ return isLang(v) && /natural|online/i.test(v.name) && FEMALE.test(v.name); }) ||
+        // Otherwise a named female voice in your language (Zira on Windows/Brave)
+        voices.find(function(v){ return isLang(v) && FEMALE.test(v.name); }) ||
+        voices.find(function(v){ return FEMALE.test(v.name); }) ||
+        voices.find(isLang) ||
         voices[0];
       return cachedVoice;
     }
@@ -2504,27 +2503,6 @@
       closeChatModePopover();
     }
   });
-
-  // Tab choice popover bindings
-  if (tabChoiceThis) {
-    tabChoiceThis.addEventListener("click", function() {
-      var text = pendingAgentText;
-      hideTabChoice();
-      if (text) agentSend(text, true);
-    });
-  }
-  if (tabChoiceNew) {
-    tabChoiceNew.addEventListener("click", function() {
-      var text = pendingAgentText;
-      hideTabChoice();
-      if (text) agentSend(text, false);
-    });
-  }
-  if (tabChoiceOverlay) {
-    tabChoiceOverlay.addEventListener("click", function(e) {
-      if (e.target === tabChoiceOverlay) hideTabChoice();
-    });
-  }
 
   /* ── Boot ── */
   init();
