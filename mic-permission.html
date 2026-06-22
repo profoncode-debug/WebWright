@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebWright — Microphone Permission</title>
+  <title>WebAgent Labs — Microphone Permission</title>
   <style>
     :root { --accent:#7c6aef; --accent-2:#9d8cff; --bg:#0c0c14; --card:#151522; --card-2:#1b1b2b; --text:#e8e9f0; --muted:#9ca3af; --border:#262638; --green:#34d399; --red:#f87171; }
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -45,7 +45,7 @@
 <body>
   <div class="card">
     <h1>🎙️ Enable Voice Mode</h1>
-    <p>WebWright's hands-free Voice Mode needs permission to use your microphone. Click the button below and choose <strong>Allow</strong> if your browser asks.</p>
+    <p>WebAgent Labs's hands-free Voice Mode needs permission to use your microphone. Click the button below and choose <strong>Allow</strong> if your browser asks.</p>
 
     <div class="status prompt" id="status">
       <span class="dot"></span><span id="statusText">Microphone permission: not yet requested</span>
@@ -54,7 +54,7 @@
     <button id="grantBtn">Allow microphone access</button>
 
     <p class="hint" id="hint">
-      Once allowed, return to the WebWright side panel and turn Voice Mode on again.
+      Once allowed, return to the WebAgent Labs side panel and turn Voice Mode on again.
     </p>
 
     <!-- ── Manual fallback ── -->
@@ -69,8 +69,8 @@
           <span class="sub">This opens the list of your installed extensions.</span>
         </li>
         <li>
-          Click the <strong>three-dots <span class="pill">⋮</span> menu</strong> next to <strong>WebWright</strong>.
-          <span class="sub">Or right-click the WebWright icon directly to open the same menu.</span>
+          Click the <strong>three-dots <span class="pill">⋮</span> menu</strong> next to <strong>WebAgent Labs</strong>.
+          <span class="sub">Or right-click the WebAgent Labs icon directly to open the same menu.</span>
         </li>
         <li>
           Click <strong>“View web permissions”</strong>.
@@ -84,7 +84,7 @@
           <strong>Restart your browser</strong> — close all windows and reopen it.
           <span class="sub">Microsoft Edge and Chrome often don't apply a newly-granted microphone permission until the browser restarts.</span>
         </li>
-        <li>Reopen the WebWright side panel and turn <strong>Voice Mode</strong> on again.</li>
+        <li>Reopen the WebAgent Labs side panel and turn <strong>Voice Mode</strong> on again.</li>
       </ol>
       <p class="hint" style="margin-top:16px">
         The exact wording varies a little between Chrome, Edge, Brave, Opera, and Vivaldi, but the path is always the same: <strong>Extensions icon → ⋮ menu → web permissions → Microphone → Allow → restart browser</strong>.
@@ -109,7 +109,7 @@
           <span class="sub">The key starts with <code>gsk_</code>. Copy it now — Groq shows it only once.</span>
         </li>
         <li>
-          Back in WebWright, open the side panel and click the <strong>Settings <span class="pill">⚙</span></strong> (gear) icon.
+          Back in WebAgent Labs, open the side panel and click the <strong>Settings <span class="pill">⚙</span></strong> (gear) icon.
         </li>
         <li>
           Scroll to the <strong>Speech-to-Text (Voice Mode)</strong> section.
@@ -136,7 +136,7 @@
     </div>
 
     <p class="hint">
-      <strong>Privacy note:</strong> the spoken replies (text-to-speech) and everything else stay on your device. Only speech-to-text leaves your machine: the default Browser engine sends audio to your browser's speech service (Google on Chromium), and the Groq engine sends audio to Groq. No audio is stored by WebWright. See the privacy policy for full details.
+      <strong>Privacy note:</strong> the spoken replies (text-to-speech) and everything else stay on your device. Only speech-to-text leaves your machine: the default Browser engine sends audio to your browser's speech service (Google on Chromium), and the Groq engine sends audio to Groq. No audio is stored by WebAgent Labs. See the privacy policy for full details.
     </p>
   </div>
 
@@ -158,7 +158,7 @@
           if (p.state === "granted") {
             setStatus("granted", "Microphone permission: granted ✓");
             grantBtn.textContent = "Granted — you can close this tab";
-            hint.innerHTML = "All set. Return to the WebWright side panel and turn Voice Mode on.";
+            hint.innerHTML = "All set. Return to the WebAgent Labs side panel and turn Voice Mode on.";
           } else if (p.state === "denied") {
             setStatus("denied", "Microphone permission: blocked ✗");
             hint.innerHTML = "Permission is blocked. Use the manual steps below to set Microphone to <strong>Allow</strong>, then reload this page.";
@@ -176,7 +176,7 @@
         stream.getTracks().forEach(t => t.stop());
         setStatus("granted", "Microphone permission: granted ✓");
         grantBtn.textContent = "Granted — you can close this tab";
-        hint.innerHTML = "All set. Return to the WebWright side panel and turn Voice Mode on.";
+        hint.innerHTML = "All set. Return to the WebAgent Labs side panel and turn Voice Mode on.";
       } catch (e) {
         setStatus("denied", "No prompt / access blocked (" + (e.name || "error") + ")");
         hint.innerHTML = "Your browser didn't show a prompt. Use the manual steps below to set Microphone to <strong>Allow</strong>, then reload this page.";

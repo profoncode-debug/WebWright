@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebWright</title>
+  <title>WebAgent Labs</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -14,23 +14,23 @@
        Tokens
        ═══════════════════════════════════════════ */
     :root {
-      --bg-root: #09090b;
-      --bg-1: #0f0f13;
-      --bg-2: #15151b;
-      --bg-3: #1b1b23;
-      --bg-4: #22222d;
-      --bg-5: #2a2a37;
+      --bg-root: #141110;
+      --bg-1: #1A1715;
+      --bg-2: #211D1A;
+      --bg-3: #2A2420;
+      --bg-4: #322B26;
+      --bg-5: #3B332D;
 
-      --text-primary: #ececf1;
-      --text-secondary: #a1a1b5;
-      --text-tertiary: #6b6b80;
-      --text-muted: #45455a;
+      --text-primary: #F5F5F5;
+      --text-secondary: #D8D2CC;
+      --text-tertiary: #A39A92;
+      --text-muted: #6E665F;
 
-      --accent: #7c6aef;
-      --accent-light: #9d8ff5;
-      --accent-bg: rgba(124,106,239,0.08);
-      --accent-bg-h: rgba(124,106,239,0.14);
-      --accent-glow: rgba(124,106,239,0.30);
+      --accent: #D97757;
+      --accent-light: #E8927A;
+      --accent-bg: rgba(217,119,87,0.08);
+      --accent-bg-h: rgba(217,119,87,0.14);
+      --accent-glow: rgba(217,119,87,0.14);
 
       --green: #34d399;
       --green-bg: rgba(52,211,153,0.08);
@@ -49,12 +49,12 @@
       --orange: #fb923c;
       --orange-bg: rgba(251,146,60,0.08);
 
-      --blue: #60a5fa;
-      --blue-bg: rgba(96,165,250,0.08);
+      --blue: #fb923c;
+      --blue-bg: rgba(251,146,60,0.08);
 
       --border: rgba(255,255,255,0.06);
       --border-h: rgba(255,255,255,0.10);
-      --border-accent: rgba(124,106,239,0.25);
+      --border-accent: rgba(217,119,87,0.25);
 
       --radius: 10px;
       --radius-sm: 6px;
@@ -63,7 +63,7 @@
       --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       --mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-      --shadow-glow: 0 0 40px -8px var(--accent-glow);
+      --shadow-glow: 0 6px 22px -10px rgba(0,0,0,0.45);
     }
 
     /* ═══════════════════════════════════════════
@@ -122,7 +122,7 @@
     }
     .header::before {
       content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(124,106,239,0.55), rgba(192,132,252,0.35), transparent);
+      background: linear-gradient(90deg, transparent, rgba(217,119,87,0.55), rgba(232,146,122,0.35), transparent);
       pointer-events: none; z-index: 1;
     }
     .header::after {
@@ -139,9 +139,9 @@
     .logo-mark {
       width: 26px; height: 26px;
       border-radius: 7px;
-      background: linear-gradient(135deg, #6d57e8 0%, #9d8ff5 55%, #c4b5fd 100%);
+      background: linear-gradient(135deg, #C2553F 0%, #E8927A 55%, #EBA088 100%);
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 14px rgba(124,106,239,0.55), inset 0 1px 0 rgba(255,255,255,0.18);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
       position: relative; overflow: hidden;
     }
     .logo-mark::before {
@@ -159,7 +159,7 @@
 
     .logo-text {
       font-weight: 700; font-size: 14px; letter-spacing: -0.4px;
-      background: linear-gradient(100deg, #ececf1 30%, #a78bfa 100%);
+      background: linear-gradient(100deg, #F5F5F5 30%, #E8927A 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
     }
@@ -237,7 +237,7 @@
       flex-shrink: 0;
     }
     .mode-chip.agent { background: var(--accent-bg); color: var(--accent-light); border: 1px solid var(--border-accent); }
-    .mode-chip.chat { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+    .mode-chip.chat { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(251,146,60,0.2); }
     /* ═══════════════════════════════════════════
        Activity Bar
        ═══════════════════════════════════════════ */
@@ -276,9 +276,9 @@
     /* ─── Orb: clean glow with subtle pulse ─── */
     .empty-orb {
       width: 64px; height: 64px; border-radius: 18px;
-      background: linear-gradient(135deg, rgba(124,106,239,0.18), rgba(167,139,250,0.08));
-      border: 1.5px solid rgba(124,106,239,0.35);
-      box-shadow: 0 0 32px -4px rgba(124,106,239,0.45), 0 0 64px -16px rgba(192,132,252,0.25);
+      background: linear-gradient(135deg, rgba(217,119,87,0.18), rgba(232,146,122,0.08));
+      border: 1.5px solid rgba(217,119,87,0.35);
+      box-shadow: 0 8px 26px -12px rgba(0,0,0,0.45);
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 20px;
       position: relative;
@@ -286,14 +286,14 @@
     }
     .empty-orb::before {
       content: ''; position: absolute; inset: -1px; border-radius: inherit;
-      background: linear-gradient(135deg, rgba(124,106,239,0.15), rgba(124,106,239,0.05));
+      background: linear-gradient(135deg, rgba(217,119,87,0.15), rgba(217,119,87,0.05));
       opacity: 0;
       animation: orb-glow 3s 0.5s ease-in-out infinite;
       z-index: -1;
     }
     .empty-orb::after {
       content: ''; position: absolute; inset: -7px;
-      border-radius: 24px; border: 1px solid rgba(124,106,239,0.18);
+      border-radius: 24px; border: 1px solid rgba(217,119,87,0.18);
       animation: orb-ring-pulse 3s ease-in-out infinite;
       pointer-events: none;
     }
@@ -305,7 +305,7 @@
       width: 28px; height: 28px; fill: none; stroke: var(--accent-light);
       stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
       position: relative; z-index: 1;
-      filter: drop-shadow(0 0 6px rgba(124,106,239,0.35));
+      filter: none;
     }
     @keyframes orb-enter {
       0% { opacity: 0; transform: scale(0.7); }
@@ -319,7 +319,7 @@
     /* ─── Tagline: typewriter with glowing cursor ─── */
     .empty-tagline {
       font-size: 16px; font-weight: 700;
-      background: linear-gradient(135deg, #a78bfa 0%, #7c6aef 40%, #c084fc 100%);
+      background: linear-gradient(135deg, #E8927A 0%, #D97757 40%, #EBA088 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
       margin-bottom: 6px;
@@ -345,7 +345,7 @@
       content: '';
       position: absolute;
       top: 0; left: -100%; width: 100%; height: 100%;
-      background: linear-gradient(90deg, transparent 0%, rgba(124,106,239,0.25) 50%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, rgba(217,119,87,0.25) 50%, transparent 100%);
       animation: tagline-glow-sweep 1.2s 0.2s ease-out forwards;
     }
     @keyframes tagline-glow-sweep {
@@ -365,7 +365,7 @@
     .no-api-banner {
       display: flex; flex-direction: column; align-items: center;
       gap: 10px; padding: 16px 18px; border-radius: var(--radius);
-      background: var(--blue-bg); border: 1px solid rgba(96,165,250,0.18);
+      background: var(--blue-bg); border: 1px solid rgba(251,146,60,0.18);
       max-width: 280px; width: 100%;
       opacity: 0;
       animation: fade-up 0.5s 1.8s ease forwards;
@@ -398,7 +398,7 @@
       padding: 10px 14px;
       background: var(--bg-2);
       border: 1px solid var(--border);
-      border-left: 2px solid rgba(124,106,239,0.45);
+      border-left: 2px solid rgba(217,119,87,0.45);
       border-radius: var(--radius);
       color: var(--text-secondary);
       font-family: var(--sans); font-size: 12px; font-weight: 500;
@@ -421,7 +421,7 @@
       border-left-color: var(--accent-light);
       color: var(--text-primary);
       transform: translateY(-2px) scale(1.01);
-      box-shadow: 0 4px 18px -4px rgba(124,106,239,0.30);
+      box-shadow: 0 4px 14px -6px rgba(0,0,0,0.4);
     }
     .suggestion-chip .chip-icon {
       width: 28px; height: 28px; border-radius: 8px;
@@ -525,7 +525,7 @@
       vertical-align: top;
     }
     .chat-bubble th {
-      background: rgba(124,106,239,0.08);
+      background: rgba(217,119,87,0.08);
       font-weight: 600;
       color: var(--text-primary);
     }
@@ -603,11 +603,11 @@
                   background 180ms cubic-bezier(.2,.8,.2,1);
     }
     .input-container:focus-within {
-      border-color: rgba(124,106,239,0.55);
+      border-color: rgba(217,119,87,0.55);
       box-shadow:
         inset 0 1px 0 rgba(255,255,255,0.06),
-        0 0 0 3px rgba(124,106,239,0.16),
-        0 8px 24px -10px rgba(124,106,239,0.45);
+        0 0 0 3px rgba(217,119,87,0.16),
+        0 8px 24px -10px rgba(217,119,87,0.45);
     }
 
     .goal-input {
@@ -622,14 +622,14 @@
       overflow-y: auto;
       transition: height 120ms cubic-bezier(.2,.8,.2,1);
       scrollbar-width: thin;
-      scrollbar-color: rgba(124,106,239,0.35) transparent;
+      scrollbar-color: rgba(217,119,87,0.35) transparent;
     }
     .goal-input::-webkit-scrollbar { width: 6px; }
     .goal-input::-webkit-scrollbar-thumb {
-      background: rgba(124,106,239,0.3);
+      background: rgba(217,119,87,0.3);
       border-radius: 3px;
     }
-    .goal-input::-webkit-scrollbar-thumb:hover { background: rgba(124,106,239,0.5); }
+    .goal-input::-webkit-scrollbar-thumb:hover { background: rgba(217,119,87,0.5); }
     .goal-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
     .goal-input:disabled { opacity: 0.35; cursor: not-allowed; }
 
@@ -663,13 +663,13 @@
       transition: all 180ms cubic-bezier(.2,.8,.2,1);
     }
     .chat-mode-pill:hover {
-      background: rgba(124,106,239,0.10);
-      border-color: rgba(124,106,239,0.35);
+      background: rgba(217,119,87,0.10);
+      border-color: rgba(217,119,87,0.35);
       color: var(--text-primary);
     }
     .chat-mode-pill[data-mode="pro"] {
-      background: linear-gradient(135deg, rgba(124,106,239,0.18), rgba(124,106,239,0.08));
-      border-color: rgba(124,106,239,0.45);
+      background: linear-gradient(135deg, rgba(217,119,87,0.18), rgba(217,119,87,0.08));
+      border-color: rgba(217,119,87,0.45);
       color: var(--accent-light);
     }
     .chat-mode-pill .pill-icon {
@@ -716,14 +716,14 @@
       cursor: pointer;
       transition: background 150ms ease;
     }
-    .chat-mode-option:hover { background: rgba(124,106,239,0.10); }
+    .chat-mode-option:hover { background: rgba(217,119,87,0.10); }
     .chat-mode-option.active {
-      background: rgba(124,106,239,0.16);
+      background: rgba(217,119,87,0.16);
     }
     .chat-mode-option .opt-icon {
       width: 22px; height: 22px;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(124,106,239,0.14);
+      background: rgba(217,119,87,0.14);
       border-radius: 6px;
       font-size: 12px;
       flex-shrink: 0;
@@ -786,11 +786,11 @@
     .send-btn svg { transform: translateX(-1px); }
 
     .agent-mode-btn {
-      background: rgba(124,106,239,0.12);
+      background: rgba(217,119,87,0.12);
       color: var(--accent-light);
-      border: 1px solid rgba(124,106,239,0.18);
+      border: 1px solid rgba(217,119,87,0.18);
     }
-    .agent-mode-btn:hover { background: rgba(124,106,239,0.22); }
+    .agent-mode-btn:hover { background: rgba(217,119,87,0.22); }
 
     /* ═══════════════════════════════════════════
        Voice Mode
@@ -805,20 +805,20 @@
       background: var(--accent);
       color: #fff;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(124,106,239,0.25);
+      box-shadow: 0 0 0 3px rgba(217,119,87,0.25);
       animation: voice-btn-pulse 2s ease-in-out infinite;
     }
     @keyframes voice-btn-pulse {
-      0%,100% { box-shadow: 0 0 0 3px rgba(124,106,239,0.25); }
-      50%     { box-shadow: 0 0 0 5px rgba(124,106,239,0.12); }
+      0%,100% { box-shadow: 0 0 0 3px rgba(217,119,87,0.25); }
+      50%     { box-shadow: 0 0 0 5px rgba(217,119,87,0.12); }
     }
 
     /* In-flow voice bar — sits above the input, never covers the log */
     .voice-bar {
       flex-shrink: 0;
       padding: 9px 12px 8px;
-      background: linear-gradient(180deg, rgba(124,106,239,0.10), var(--bg-1, #0e0e16) 92%);
-      border-top: 1px solid rgba(124,106,239,0.35);
+      background: linear-gradient(180deg, rgba(217,119,87,0.10), var(--bg-1, #1A1715) 92%);
+      border-top: 1px solid rgba(217,119,87,0.35);
       animation: voice-bar-in 200ms cubic-bezier(.16,1,.3,1) both;
     }
     .voice-bar.hidden { display: none; }
@@ -830,7 +830,7 @@
     .voice-state-label {
       flex: 1; min-width: 0;
       font-size: 12px; font-weight: 700;
-      color: var(--accent-light, #9d8ff5);
+      color: var(--accent-light, #E8927A);
       letter-spacing: 0.2px;
     }
     .voice-close-btn {
@@ -898,7 +898,7 @@
       color: var(--amber);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      background: linear-gradient(90deg, rgba(124,106,239,0.07), transparent);
+      background: linear-gradient(90deg, rgba(217,119,87,0.07), transparent);
       border-left: 2px solid var(--accent);
     }
     .agent-log-header svg {
@@ -1214,100 +1214,6 @@
     }
 
     /* ═══════════════════════════════════════════
-       Research Drawer
-       ═══════════════════════════════════════════ */
-    .research-drawer {
-      flex-shrink: 0; border-top: 1px solid var(--border);
-      background: var(--bg-1); max-height: 0; overflow: hidden;
-      transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1);
-    }
-    .research-drawer.open { max-height: 70vh; }
-    .research-inner { padding: 12px 10px; max-height: calc(70vh - 2px); overflow-y: auto; }
-    .research-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-    .research-head-text { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-    .research-hint { font-size: 10px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
-
-    .research-input-row { display: flex; gap: 6px; margin-bottom: 10px; }
-    .research-query-input {
-      flex: 1; padding: 7px 9px;
-      background: var(--bg-root); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); color: var(--text-primary);
-      font-family: var(--sans); font-size: 11px; outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .research-query-input:focus { border-color: rgba(124,106,239,0.4); box-shadow: 0 0 0 3px var(--accent-bg); }
-    .research-query-input::placeholder { color: var(--text-muted); }
-
-    .research-start-btn {
-      padding: 7px 14px; font-size: 11px; font-weight: 600;
-      border-radius: var(--radius-sm); border: none;
-      background: var(--accent); color: #fff; cursor: pointer;
-      transition: all 0.15s; white-space: nowrap;
-    }
-    .research-start-btn:hover { background: var(--accent-light); }
-    .research-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .research-abort-btn {
-      padding: 7px 14px; font-size: 11px; font-weight: 600;
-      border-radius: var(--radius-sm); border: 1px solid rgba(248,113,113,0.3);
-      background: rgba(248,113,113,0.08); color: #f87171; cursor: pointer;
-      transition: all 0.15s; white-space: nowrap; display: none;
-    }
-    .research-abort-btn:hover { background: rgba(248,113,113,0.18); }
-    .research-abort-btn.visible { display: inline-block; }
-
-    .research-progress { margin-bottom: 10px; }
-    .research-progress.hidden { display: none; }
-    .research-progress-title { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-    .research-source-row {
-      display: flex; align-items: center; gap: 8px;
-      padding: 5px 8px; font-size: 11px; color: var(--text-secondary);
-      border-radius: var(--radius-sm); transition: background 0.15s;
-    }
-    .research-source-row:nth-child(even) { background: var(--bg-2); }
-    .research-source-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--text-muted); flex-shrink: 0;
-      transition: all 0.3s;
-    }
-    .research-source-dot.active { background: var(--amber); box-shadow: 0 0 6px var(--amber-glow); animation: dot-breathe 1s ease-in-out infinite; }
-    .research-source-dot.done { background: var(--green); box-shadow: 0 0 6px var(--green-glow); }
-    .research-source-dot.error { background: var(--red); box-shadow: 0 0 6px rgba(248,113,113,0.3); }
-    .research-source-dot.skipped { background: var(--text-muted); opacity: 0.4; }
-    .research-source-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .research-source-status { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
-
-    .research-view-btn {
-      width: 100%; padding: 8px; font-size: 11px; font-weight: 600;
-      border-radius: var(--radius-sm); border: none;
-      background: var(--accent); color: #fff; cursor: pointer;
-      transition: all 0.15s; margin-bottom: 10px; display: none;
-    }
-    .research-view-btn:hover { background: var(--accent-light); }
-    .research-view-btn.visible { display: block; }
-
-    .research-reports-section { border-top: 1px solid var(--border); padding-top: 8px; }
-    .research-reports-section.hidden { display: none; }
-    .research-reports-title { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-    .research-report-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 8px; background: var(--bg-2);
-      border: 1px solid var(--border); border-radius: var(--radius-sm);
-      margin-bottom: 4px; cursor: pointer; transition: all 0.15s;
-    }
-    .research-report-item:hover { background: var(--accent-bg); border-color: var(--border-accent); }
-    .research-report-info { flex: 1; min-width: 0; }
-    .research-report-query { font-size: 11px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .research-report-meta { font-size: 9px; color: var(--text-muted); margin-top: 1px; }
-    .research-report-delete {
-      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-      background: transparent; border: none; border-radius: 4px;
-      color: var(--text-tertiary); cursor: pointer; transition: all 0.15s;
-    }
-    .research-report-delete:hover { background: var(--bg-3); color: #f87171; }
-    .research-report-delete svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-    /* ═══════════════════════════════════════════
        Settings Drawer
        ═══════════════════════════════════════════ */
     .settings-drawer {
@@ -1367,7 +1273,7 @@
       font-family: var(--mono); font-size: 10.5px; outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .field-input:focus { border-color: rgba(124,106,239,0.4); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .field-input:focus { border-color: rgba(217,119,87,0.4); box-shadow: 0 0 0 3px var(--accent-bg); }
     .field-input::placeholder { color: var(--text-muted); }
     select.field-input { appearance: auto; cursor: pointer; }
 
@@ -1407,12 +1313,9 @@
       <div class="logo-mark">
         <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z"/><circle cx="13.5" cy="11" r="3"/><line x1="15.7" y1="13.2" x2="18" y2="15.5"/></svg>
       </div>
-      <div class="logo-text">WebWright</div>
+      <div class="logo-text">WebAgent Labs</div>
     </div>
     <div class="header-actions">
-      <button class="hdr-btn" id="researchBtn" title="Research Mode">
-        <span class="icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="11" cy="14" r="3"/><line x1="13.1" y1="16.1" x2="15" y2="18"/></svg></span>
-      </button>
       <button class="hdr-btn" id="personalInfoBtn" title="Personal Info">
         <span class="icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
       </button>
@@ -1446,6 +1349,7 @@
         </div>
         <div class="empty-tagline"><span class="tagline-text" id="taglineText"></span></div>
         <div class="empty-desc">Ask a question or tell me what to do. I'll figure out the rest.</div>
+        <div class="empty-desc" style="margin-top:6px">New to WebAgent Labs? <a href="https://profoncode-debug.github.io/WebWright/" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:none">Visit our website&nbsp;&rarr;</a></div>
 
         <!-- No API Key Banner (shown when Ollama Cloud key is missing) -->
         <div class="no-api-banner hidden" id="noApiBanner">
@@ -1524,23 +1428,6 @@
           </div>
         </div>
         <div class="field-row">
-          <div class="field">
-            <label class="field-label">Research Model</label>
-            <select class="field-input" data-cfg="ollama_cloud.researchModel" id="ollamaCloudResearchModel">
-              <option value="gemma4:31b-cloud">gemma4:31b-cloud</option>
-              <option value="gemini-3-flash-preview:cloud">gemini-3-flash-preview:cloud</option>
-              <option value="kimi-k2.6:cloud">kimi-k2.6:cloud</option>
-              <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud</option>
-              <option value="minimax-m2.7:cloud">minimax-m2.7:cloud</option>
-              <option value="glm-5:cloud">glm-5:cloud</option>
-              <option value="deepseek-v3.2:cloud">deepseek-v3.2:cloud</option>
-              <option value="deepseek-v4-flash:cloud">deepseek-v4-flash:cloud</option>
-              <option value="deepseek-v4-pro:cloud">deepseek-v4-pro:cloud</option>
-              <option value="qwen3.6:35b-a3b-bf16">qwen3.6:35b-a3b-bf16</option>
-              <option value="__custom__">Custom</option>
-            </select>
-            <input class="field-input hidden" id="ollamaCloudResearchModelCustom" type="text" placeholder="Enter model name" spellcheck="false" style="margin-top:4px" />
-          </div>
           <div class="field">
             <label class="field-label">Chat Model</label>
             <select class="field-input" data-cfg="ollama_cloud.chatModel" id="ollamaCloudChatModel">
@@ -1672,33 +1559,6 @@
       </div>
       <div class="workflow-list" id="workflowList">
         <div class="workflow-empty" id="workflowEmpty">No saved workflows yet. Start recording to create one.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Research Drawer -->
-  <div class="research-drawer" id="researchDrawer">
-    <div class="research-inner">
-      <div class="research-head">
-        <span class="research-head-text">Research Mode</span>
-        <button class="hdr-btn" id="closeResearchBtn" title="Close">
-          <span class="icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
-        </button>
-      </div>
-      <div class="research-hint">Enter a topic to research across Google's top results. Opens a professional report in a new tab.</div>
-      <div class="research-input-row">
-        <input class="research-query-input" id="researchQueryInput" type="text" placeholder="e.g. quantum computing breakthroughs" spellcheck="false" />
-        <button class="research-start-btn" id="researchStartBtn">Research</button>
-        <button class="research-abort-btn" id="researchAbortBtn">Abort</button>
-      </div>
-      <div class="research-progress hidden" id="researchProgress">
-        <div class="research-progress-title">Sources</div>
-        <div id="researchSourceList"></div>
-      </div>
-      <button class="research-view-btn" id="researchViewBtn">View Report</button>
-      <div class="research-reports-section hidden" id="researchReportsSection">
-        <div class="research-reports-title">Previous Reports</div>
-        <div id="researchReportsList"></div>
       </div>
     </div>
   </div>

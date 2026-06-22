@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebWright — User Manual</title>
-  <meta name="description" content="The complete WebWright user manual: install, choose a provider, Agent Mode, Chat, Voice Mode, Research, Workflows, the Personal Info Vault, settings, and troubleshooting.">
+  <title>WebAgent Labs — User Manual</title>
+  <meta name="description" content="The complete WebAgent Labs user manual: install, choose a provider, Agent Mode, Chat, Voice Mode, Workflows, the Personal Info Vault, settings, and troubleshooting.">
   <link rel="icon" type="image/png" href="icons/icon128.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
 
   <div class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="index.html"><img src="icons/icon128.png" alt="WebWright">WebWright</a>
+      <a class="brand" href="index.html"><img src="icons/icon128.png" alt="WebAgent Labs">WebAgent Labs</a>
       <div class="topbar-links">
         <a href="features.html">Features</a>
         <a href="manual.html">User Manual</a>
@@ -35,7 +35,7 @@
     <div class="wrap">
       <span class="section-eyebrow">User Manual</span>
       <h2 class="section-title">Everything you need to know.</h2>
-      <p class="section-lead">A complete guide to getting WebWright running and getting good results out of it. Skim the table of contents, jump to what you need.</p>
+      <p class="section-lead">A complete guide to getting WebAgent Labs running and getting good results out of it. Skim the table of contents, jump to what you need.</p>
 
       <div class="manual-wrap">
 
@@ -48,7 +48,6 @@
             <li><a href="#m-agent">Using Agent Mode</a></li>
             <li><a href="#m-chat">Using Chat Mode (Quick &amp; Pro)</a></li>
             <li><a href="#m-voice">Using Voice Mode</a></li>
-            <li><a href="#m-research">Using Research Mode</a></li>
             <li><a href="#m-workflows">Recording &amp; replaying Workflows</a></li>
             <li><a href="#m-vault">The Personal Info Vault</a></li>
             <li><a href="#m-vision">Vision Escalation explained</a></li>
@@ -62,13 +61,13 @@
         <!-- 1. Install -->
         <div class="manual-section" id="m-install">
           <h3><span class="num">1</span>Install &amp; first run</h3>
-          <p>WebWright runs on every Chromium-based browser — Chrome, Microsoft Edge, Brave, Opera, Vivaldi, and Arc.</p>
+          <p>WebAgent Labs runs on every Chromium-based browser — Chrome, Microsoft Edge, Brave, Opera, Vivaldi, and Arc.</p>
           <h4>Install from the Chrome Web Store</h4>
           <ol>
-            <li>Open the <a href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank">WebWright listing on the Chrome Web Store</a>.</li>
+            <li>Open the <a href="https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf" target="_blank">WebAgent Labs listing on the Chrome Web Store</a>.</li>
             <li>Click <strong>Add to Chrome</strong> → <strong>Add extension</strong>.</li>
-            <li>Pin the WebWright icon to the toolbar (click the puzzle icon → pin).</li>
-            <li>Click the WebWright icon to open the side panel.</li>
+            <li>Pin the WebAgent Labs icon to the toolbar (click the puzzle icon → pin).</li>
+            <li>Click the WebAgent Labs icon to open the side panel.</li>
           </ol>
           <h4>Install from source (Edge / Brave / Opera or for developers)</h4>
           <ol>
@@ -83,7 +82,7 @@
         <!-- 2. Providers -->
         <div class="manual-section" id="m-providers">
           <h3><span class="num">2</span>Choosing a provider &amp; model</h3>
-          <p>Open <strong>Settings</strong> (gear icon, top-right of the sidebar). WebWright supports 8 LLM providers, each on its own tab:</p>
+          <p>Open <strong>Settings</strong> (gear icon, top-right of the sidebar). WebAgent Labs supports 8 LLM providers, each on its own tab:</p>
           <ul>
             <li><strong>Ollama Cloud</strong> — free tier available. Get a key at <a href="https://ollama.com" target="_blank">ollama.com</a>.</li>
             <li><strong>Ollama Local</strong> — runs models on your own machine. Free forever. Zero data leaves your device.</li>
@@ -100,9 +99,8 @@
             <li><strong>Agent Model</strong> — picks actions in Agent Mode. Use a strong reasoning model.</li>
             <li><strong>Vision Model</strong> — interprets annotated screenshots during vision escalation. Must be vision-capable.</li>
             <li><strong>Chat Model</strong> — handles page Q&amp;A in Chat Mode.</li>
-            <li><strong>Research Model</strong> (Ollama Cloud only) — summarizes sources in Research Mode.</li>
           </ul>
-          <div class="callout-tip"><strong>Best free combo:</strong> Ollama Cloud's free tier with <code>gpt-oss:120b-cloud</code> for agent + <code>gemma4:31b-cloud</code> for vision/research. Or Gemini 2.0 Flash for everything if you have a free Google AI Studio key.</div>
+          <div class="callout-tip"><strong>Best free combo:</strong> Ollama Cloud's free tier with <code>gpt-oss:120b-cloud</code> for agent + <code>gemma4:31b-cloud</code> for vision. Or Gemini 2.0 Flash for everything if you have a free Google AI Studio key.</div>
         </div>
 
         <!-- 3. Agent Mode -->
@@ -113,7 +111,7 @@
           <ol>
             <li>Open the side panel and navigate to the page you want to work on.</li>
             <li>Type your goal in the input field at the bottom in plain English.</li>
-            <li>Press <kbd>Enter</kbd> — WebWright auto-detects that it's an action and runs the agent. (Use <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to force Agent mode if the wording is ambiguous.)</li>
+            <li>Press <kbd>Enter</kbd> — WebAgent Labs auto-detects that it's an action and runs the agent. (Use <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to force Agent mode if the wording is ambiguous.)</li>
             <li>The agent works on your <strong>current tab</strong> and runs step by step. You see every action in the live log above the input.</li>
           </ol>
           <div class="callout-tip"><strong>One smart input:</strong> there are no separate Chat and Agent buttons. A single <strong>Send</strong> button (and <kbd>Enter</kbd>) routes each message automatically — questions become chat answers, instructions launch the agent.</div>
@@ -137,7 +135,7 @@
           <ol>
             <li>Navigate to the page you want to ask about.</li>
             <li>Type your question in the side panel input.</li>
-            <li>Press <kbd>Enter</kbd> — WebWright recognises it as a question and answers in Chat mode (same input as Agent; no separate button).</li>
+            <li>Press <kbd>Enter</kbd> — WebAgent Labs recognises it as a question and answers in Chat mode (same input as Agent; no separate button).</li>
           </ol>
           <p>If you navigate the tab or switch to a different one mid-conversation, the page context <strong>refreshes automatically</strong> on your next message — your conversation is kept, only the page content updates.</p>
           <h4>Quick vs Pro</h4>
@@ -156,7 +154,7 @@
         <!-- 5. Voice Mode -->
         <div class="manual-section" id="m-voice">
           <h3><span class="num">5</span>Using Voice Mode</h3>
-          <p>Voice Mode lets you operate WebWright hands-free — speak your request, and it speaks the answer back. The same intent routing applies: a question is answered in chat, an instruction launches the agent.</p>
+          <p>Voice Mode lets you operate WebAgent Labs hands-free — speak your request, and it speaks the answer back. The same intent routing applies: a question is answered in chat, an instruction launches the agent.</p>
           <h4>How to start</h4>
           <ol>
             <li>Click the <strong>mic</strong> button in the side panel to turn Voice Mode on.</li>
@@ -168,7 +166,7 @@
           <p>Speech-to-text has two engines, set under <strong>Settings → Speech-to-Text</strong>:</p>
           <ul>
             <li><strong>Browser (Chrome)</strong> — the default. Free, uses the browser's built-in speech recognition.</li>
-            <li><strong>Groq Whisper</strong> — higher accuracy, and the option for <strong>Brave</strong>, which disables the built-in engine for privacy. Paste a free key from <a href="https://console.groq.com" target="_blank">console.groq.com</a>. On Brave, WebWright uses this automatically once a key is set.</li>
+            <li><strong>Groq Whisper</strong> — higher accuracy, and the option for <strong>Brave</strong>, which disables the built-in engine for privacy. Paste a free key from <a href="https://console.groq.com" target="_blank">console.groq.com</a>. On Brave, WebAgent Labs uses this automatically once a key is set.</li>
           </ul>
           <h4>Good to know</h4>
           <ul>
@@ -176,41 +174,12 @@
             <li>It remembers your recent voice turns, including actions it performed, so follow-ups like "what did you just do?" work.</li>
             <li>Text-to-speech runs on your device. URLs, markdown, and emojis are stripped so replies sound natural.</li>
           </ul>
-          <div class="callout-tip"><strong>Privacy:</strong> text-to-speech is on-device. Speech-to-text sends your microphone audio to a transcription service — Google's speech backend (Browser engine) or Groq (Groq Whisper engine). No audio is stored by WebWright.</div>
-        </div>
-
-        <!-- 6. Research Mode -->
-        <div class="manual-section" id="m-research">
-          <h3><span class="num">6</span>Using Research Mode</h3>
-          <p>Research Mode autonomously visits up to 10 sources on the web and synthesizes a final report. Ideal for "research X for me" requests.</p>
-          <h4>How to start a research run</h4>
-          <ol>
-            <li>Click the <strong>Research</strong> (magnifying glass) icon in the side panel header.</li>
-            <li>Type a topic in the search box.</li>
-            <li>Click <strong>Research</strong>.</li>
-          </ol>
-          <h4>What happens next</h4>
-          <ol>
-            <li>WebWright opens a working tab and searches Google.</li>
-            <li>It captures Google's AI Overview using a vision LLM.</li>
-            <li>It extracts the top 10 organic result URLs.</li>
-            <li>It visits each source, scrapes text (vision fallback for low-text pages), and summarizes it.</li>
-            <li>It synthesizes a final cross-source conclusion.</li>
-            <li>A polished multi-column HTML report opens in a new tab.</li>
-          </ol>
-          <p>The drawer shows live per-source status: <strong>active</strong> · <strong>done</strong> · <strong>error</strong> · <strong>skipped</strong>.</p>
-          <h4>Controls</h4>
-          <ul>
-            <li>Click <strong>Abort</strong> at any time to stop the run instantly.</li>
-            <li>Past reports are listed in the drawer — click to re-open in a new tab, or delete to remove.</li>
-            <li>Per-source hard cap is 60 seconds; LLM call timeout is 45 seconds.</li>
-          </ul>
-          <div class="callout-tip"><strong>Set a Research Model</strong> for best results. Ollama Cloud lets you configure a separate Research Model in Settings (defaults to <code>gemma4:31b-cloud</code>). Other providers fall back to your primary model.</div>
+          <div class="callout-tip"><strong>Privacy:</strong> text-to-speech is on-device. Speech-to-text sends your microphone audio to a transcription service — Google's speech backend (Browser engine) or Groq (Groq Whisper engine). No audio is stored by WebAgent Labs.</div>
         </div>
 
         <!-- 7. Workflows -->
         <div class="manual-section" id="m-workflows">
-          <h3><span class="num">7</span>Recording &amp; replaying Workflows</h3>
+          <h3><span class="num">6</span>Recording &amp; replaying Workflows</h3>
           <p>Workflows record a sequence of browser actions (clicks, typing, navigation) once, then replay them with a single click. Best for repetitive tasks where the actions are identical every time.</p>
           <h4>To record a workflow</h4>
           <ol>
@@ -237,7 +206,7 @@
 
         <!-- 8. Personal Info Vault -->
         <div class="manual-section" id="m-vault">
-          <h3><span class="num">8</span>The Personal Info Vault</h3>
+          <h3><span class="num">7</span>The Personal Info Vault</h3>
           <p>Save your details once. The agent uses them to fill forms on demand — only when you explicitly ask for a form-related task.</p>
           <h4>To set up</h4>
           <ol>
@@ -251,7 +220,6 @@
           <h4>Modes that never see your vault</h4>
           <ul>
             <li>Chat Mode (Quick or Pro)</li>
-            <li>Research Mode</li>
             <li>Workflow replay</li>
           </ul>
           <p>Only Agent Mode + keyword match = vault sent.</p>
@@ -259,13 +227,13 @@
 
         <!-- 9. Vision Escalation -->
         <div class="manual-section" id="m-vision">
-          <h3><span class="num">9</span>Vision Escalation explained</h3>
-          <p>When DOM-based actions fail, WebWright automatically climbs a 4-tier ladder. You don't trigger this manually — the agent escalates on its own when it detects it's stuck.</p>
+          <h3><span class="num">8</span>Vision Escalation explained</h3>
+          <p>When DOM-based actions fail, WebAgent Labs automatically climbs a 4-tier ladder. You don't trigger this manually — the agent escalates on its own when it detects it's stuck.</p>
           <ol>
             <li><strong>Tier 1 — DOM Analysis.</strong> Default. The agent reads the page's interactive elements and picks one. Fast and token-efficient.</li>
             <li><strong>Tier 2 — Vision + 80 marks.</strong> Triggered when a DOM click fails, an element isn't found, or the agent gets stuck in a loop. A screenshot is taken with up to 80 numbered markers overlaid on interactive elements, then sent to a vision-capable LLM.</li>
             <li><strong>Tier 3 — Vision + 160 marks.</strong> If Tier 2 still can't resolve the action, marker density is doubled for harder pages with many small elements.</li>
-            <li><strong>Tier 4 — Raw Coordinates.</strong> Last resort. The LLM picks an X,Y point on the screenshot and WebWright dispatches a synthetic click via the Chrome DevTools Protocol.</li>
+            <li><strong>Tier 4 — Raw Coordinates.</strong> Last resort. The LLM picks an X,Y point on the screenshot and WebAgent Labs dispatches a synthetic click via the Chrome DevTools Protocol.</li>
           </ol>
           <p>The agent also has <strong>anti-loop detection</strong>: if it repeats the same action three times, oscillates between two elements, or detects that a step claimed success but the page state didn't change, it changes strategy or escalates.</p>
           <div class="callout-tip"><strong>To enable vision escalation</strong> you must configure a vision-capable model in Settings → your provider tab → Vision Model. Without one, the agent stays at Tier 1.</div>
@@ -273,7 +241,7 @@
 
         <!-- 10. Settings reference -->
         <div class="manual-section" id="m-settings">
-          <h3><span class="num">10</span>Settings reference</h3>
+          <h3><span class="num">9</span>Settings reference</h3>
           <p>Open the gear icon in the side panel header.</p>
           <ul>
             <li><strong>Provider</strong> — which LLM service to use. Default: Ollama Cloud.</li>
@@ -290,7 +258,7 @@
 
         <!-- 11. Tips -->
         <div class="manual-section" id="m-prompting">
-          <h3><span class="num">11</span>Tips for best results</h3>
+          <h3><span class="num">10</span>Tips for best results</h3>
           <p>The accuracy of any AI agent is a function of two things you control: how specifically you prompt it, and which model you point it at.</p>
           <h4>Prompting</h4>
           <ul>
@@ -311,7 +279,7 @@
 
         <!-- 12. Troubleshooting -->
         <div class="manual-section" id="m-troubleshoot">
-          <h3><span class="num">12</span>Troubleshooting</h3>
+          <h3><span class="num">11</span>Troubleshooting</h3>
 
           <h4>"Ollama Cloud rejected the request (403)"</h4>
           <p>Your API key is missing, invalid, or has been rate-limited. Fix:</p>
@@ -336,16 +304,14 @@
           <h4>Agent ignores my personal info on a form</h4>
           <p>The vault is only sent when your goal includes form-related keywords. Try rephrasing: "<em>fill</em> this <em>form</em> with my saved info" instead of "do this for me."</p>
 
-          <h4>Research Mode keeps timing out on sources</h4>
-          <p>Some sites are slow or block bots. The 60-second per-source hard cap will skip them and move on. If many sources fail, switch to a faster Research Model or try a more specific topic that surfaces less spammy sources.</p>
 
           <h4>Side panel won't open</h4>
-          <p>Click the puzzle icon in your browser toolbar → pin WebWright. Then click its icon directly.</p>
+          <p>Click the puzzle icon in your browser toolbar → pin WebAgent Labs. Then click its icon directly.</p>
         </div>
 
         <!-- 13. Shortcuts -->
         <div class="manual-section" id="m-shortcuts">
-          <h3><span class="num">13</span>Keyboard shortcuts</h3>
+          <h3><span class="num">12</span>Keyboard shortcuts</h3>
           <ul>
             <li><kbd>Enter</kbd> in the input → smart send (auto-routes to Chat or Agent)</li>
             <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the input → force an Agent task</li>
@@ -366,7 +332,7 @@
         <a href="mailto:profoncode@gmail.com">Contact</a>
         <a href="https://github.com/profoncode-debug/WebWright/blob/main/LICENSE" target="_blank">MIT License</a>
       </div>
-      <div>WebWright — Built for action, not just browsing.</div>
+      <div>WebAgent Labs — Built for action, not just browsing.</div>
       <div class="footer-tag">© 2026 · A user-built, locally-running browser agent.</div>
     </div>
   </footer>

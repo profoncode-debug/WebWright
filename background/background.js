@@ -58,7 +58,6 @@ const agentState = {
   apiKey: "",
   model: "",
   visionModel: "",
-  researchModel: "",
   chatModel: "",
 
 };
@@ -300,26 +299,6 @@ function buildVoicePrompt(pageSummaryText, pageUrl) {
 }
 
 /* ───────────────────────────────────────────
- * Research State
- * ─────────────────────────────────────────── */
-
-const researchState = {
-  running: false,
-  aborted: false,
-  query: "",
-  tabId: null,
-  sources: [],       // { name, url, status, statusText }
-  results: [],       // completed source results
-  currentSourceIndex: 0,
-  reportId: null,
-  visitedUrls: new Set(),
-  abortController: null  // AbortController for instant cancellation
-};
-
-const RESEARCH_KEY = "webwright_research_reports";
-const MAX_RESEARCH_REPORTS = 5;
-
-/* ───────────────────────────────────────────
  * Provider Defaults
  * ─────────────────────────────────────────── */
 
@@ -329,7 +308,6 @@ const PROVIDER_DEFAULTS = {
     apiKey: "",
     model: "gpt-oss:120b-cloud",
     visionModel: "gemma4:31b-cloud",
-    researchModel: "gemma4:31b-cloud",
     chatModel: "gemma4:31b-cloud"
   },
   ollama_local: {
@@ -533,8 +511,6 @@ function applyConfig(cfg) {
   }
   // Store apiFormat for custom provider routing in callLLM
   agentState.apiFormat = p.apiFormat || "";
-  // Research model — falls back to primary model if not set
-  agentState.researchModel = p.researchModel || agentState.model;
   // Chat model — falls back to primary model if not set
   agentState.chatModel = p.chatModel || agentState.model;
 }
@@ -2973,54 +2949,36 @@ function resetAllState() {
  * Progress Summary — graceful exit instead of error
  * ═══════════════════════════════════════════ */
 
+// Build a short, natural-language recap (reads like a chat message) of what the
+// agent did and why it couldn't finish — not a mechanical step-by-step report.
 function buildProgressSummary(history, goal, stopReason) {
   const successful = history.filter(h => h.result === "success");
+  const reason = (stopReason || "the task stalled").replace(/\.$/, "");
 
   if (history.length === 0) {
-    return `I was unable to start working on "${goal}".\n\n` +
-      `Reason: ${stopReason}\n\n` +
-      `What you can do:\n` +
-      `- Make sure you're on the right page\n` +
-      `- Try refreshing the page and running the task again\n` +
-      `- Try completing this task manually`;
+    return `I couldn't get started on "${goal}" — ${reason.toLowerCase()}. ` +
+      `You might be on a page I can't act on; try opening the target site first, then run it again.`;
   }
 
-  let report = `PROGRESS REPORT\nGoal: "${goal}"\n\n`;
+  // Short prose of what actually got done (from the successful step descriptions).
+  const did = successful
+    .map(h => (h.description || h.action || "").toString().trim())
+    .filter(Boolean)
+    .slice(0, 6);
 
-  // What was accomplished
-  report += `Completed Steps (${successful.length}/${history.length}):\n`;
-  for (let i = 0; i < history.length; i++) {
-    const h = history[i];
-    const status = h.result === "success" ? "OK" : "FAILED";
-    let desc = h.description || h.action;
-    if (h.url) desc += ` -> ${h.url}`;
-    if (h.value) desc += ` "${h.value}"`;
-    if (h.summary) desc += ` (${h.summary})`;
-    report += `  ${i + 1}. [${status}] ${desc}\n`;
-    if (h.error) report += `     Error: ${h.error}\n`;
-  }
-
-  // What went wrong
-  report += `\nStopped because: ${stopReason}\n`;
-
-  // What the user should do next
   const lastAction = history[history.length - 1];
-  report += `\nTo complete this task manually:\n`;
-  if (lastAction && lastAction.pageUrl) {
-    report += `- You are currently on: ${lastAction.pageUrl}\n`;
-  }
-  if (lastAction && lastAction.error) {
-    report += `- The last action failed: ${lastAction.error}\n`;
-  }
-  if (lastAction && lastAction.remaining) {
-    report += `- Remaining: ${lastAction.remaining}\n`;
-  }
-  if (lastAction && lastAction.manual_steps) {
-    report += `- Steps to finish: ${lastAction.manual_steps}\n`;
-  }
-  report += `- Continue from where the agent stopped and complete the remaining steps yourself\n`;
+  const lastError = (lastAction && lastAction.error) ? String(lastAction.error).trim() : "";
 
-  return report;
+  let msg = `I worked on "${goal}" and completed ${successful.length} of ${history.length} step${history.length === 1 ? "" : "s"}, but couldn't finish it.`;
+  if (did.length) {
+    msg += `\n\nWhat I did: ${did.join("; ")}.`;
+  }
+  msg += `\n\nWhy I stopped: ${reason}.`;
+  if (lastError) msg += ` The last step failed with: ${lastError}.`;
+  if (lastAction && lastAction.manual_steps) {
+    msg += `\n\nTo finish it yourself: ${lastAction.manual_steps}`;
+  }
+  return msg;
 }
 
 function gracefulStop(goal, stopReason) {
@@ -3915,794 +3873,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
     }
 
-    // ══════════════════════════════════════════
-    // Research Mode Messages
-    // ══════════════════════════════════════════
-
-    case "RESEARCH_START": {
-      const query = msg.query;
-      if (!query) { sendResponse({ error: "Empty query." }); return true; }
-      if (researchState.running) { sendResponse({ error: "Research already running." }); return true; }
-      if (agentState.running) { sendResponse({ error: "Agent is running. Wait for it to finish." }); return true; }
-      (async () => {
-        try {
-          await loadConfig();
-          runResearchPipeline(query);
-          sendResponse({ success: true });
-        } catch (err) {
-          sendResponse({ error: err.message });
-        }
-      })();
-      return true;
-    }
-    case "RESEARCH_ABORT": {
-      researchState.aborted = true;
-      if (researchState.abortController) researchState.abortController.abort();
-      // Kill the research tab immediately so navigation stops
-      if (researchState.tabId) {
-        chrome.tabs.remove(researchState.tabId).catch(() => {});
-        researchState.tabId = null;
-      }
-      sendResponse({ success: true });
-      return true;
-    }
-    case "RESEARCH_LIST_REPORTS": {
-      (async () => {
-        const reports = await loadResearchReports();
-        sendResponse({ reports: reports.map(r => ({ id: r.id, query: r.query, createdAt: r.createdAt, status: r.status, sources: r.sources ? r.sources.map(s => ({ sourceName: s.sourceName })) : [] })) });
-      })();
-      return true;
-    }
-    case "RESEARCH_VIEW_REPORT": {
-      (async () => {
-        const reports = await loadResearchReports();
-        const rpt = reports.find(r => r.id === msg.id);
-        if (!rpt || !rpt.htmlReport) { sendResponse({ error: "Report not found." }); return; }
-        const encoded = btoa(unescape(encodeURIComponent(rpt.htmlReport)));
-        await chrome.tabs.create({ url: "data:text/html;base64," + encoded });
-        sendResponse({ success: true });
-      })();
-      return true;
-    }
-    case "RESEARCH_DELETE_REPORT": {
-      (async () => {
-        await deleteResearchReport(msg.id);
-        sendResponse({ success: true });
-      })();
-      return true;
-    }
   }
 });
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-/* ═══════════════════════════════════════════
- * RESEARCH MODE — Pipeline & Storage
- * ═══════════════════════════════════════════ */
-
-async function loadResearchReports() {
-  try {
-    const result = await chrome.storage.local.get(RESEARCH_KEY);
-    return result[RESEARCH_KEY] || [];
-  } catch { return []; }
-}
-
-async function saveResearchReport(report) {
-  const reports = await loadResearchReports();
-  reports.push(report);
-  const trimmed = reports.length > MAX_RESEARCH_REPORTS ? reports.slice(reports.length - MAX_RESEARCH_REPORTS) : reports;
-  await chrome.storage.local.set({ [RESEARCH_KEY]: trimmed });
-}
-
-async function deleteResearchReport(id) {
-  const reports = await loadResearchReports();
-  const filtered = reports.filter(r => r.id !== id);
-  await chrome.storage.local.set({ [RESEARCH_KEY]: filtered });
-}
-
-function broadcastResearchProgress() {
-  chrome.runtime.sendMessage({
-    type: "RESEARCH_PROGRESS",
-    sources: researchState.sources.map(s => ({ name: s.name, status: s.status, statusText: s.statusText }))
-  }).catch(() => {});
-}
-
-function broadcastResearchStatus(status, message, reportId) {
-  chrome.runtime.sendMessage({
-    type: "RESEARCH_STATUS",
-    status: status,
-    message: message || "",
-    reportId: reportId || null
-  }).catch(() => {});
-}
-
-function resetResearchState() {
-  researchState.running = false;
-  researchState.aborted = false;
-  researchState.query = "";
-  researchState.tabId = null;
-  researchState.sources = [];
-  researchState.results = [];
-  researchState.currentSourceIndex = 0;
-  researchState.reportId = null;
-  researchState.visitedUrls = new Set();
-  researchState.abortController = null;
-}
-
-// Returns a promise that rejects instantly when abort is signalled.
-// Race any blocking operation against this to make it cancellable.
-function researchAbortSignal() {
-  if (!researchState.abortController) return new Promise(() => {}); // never resolves
-  return new Promise((_, reject) => {
-    if (researchState.abortController.signal.aborted) { reject(new Error("aborted")); return; }
-    researchState.abortController.signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true });
-  });
-}
-
-// Abort-aware sleep — resolves after ms OR rejects instantly on abort
-function researchSleep(ms) {
-  return Promise.race([
-    new Promise(r => setTimeout(r, ms)),
-    researchAbortSignal()
-  ]);
-}
-
-
-async function runResearchPipeline(query) {
-  resetResearchState();
-  researchState.running = true;
-  researchState.abortController = new AbortController();
-  researchState.query = query;
-  researchState.reportId = "res_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-
-  // Helper: race any promise against the abort signal
-  function raceAbort(p) { return Promise.race([p, researchAbortSignal()]); }
-
-  let tab;
-  try {
-    tab = await chrome.tabs.create({ url: "about:blank", active: true });
-    researchState.tabId = tab.id;
-  } catch (err) {
-    broadcastResearchStatus("error", "Failed to create tab: " + err.message);
-    resetResearchState();
-    return;
-  }
-
-  const encodedQuery = encodeURIComponent(query);
-
-  /* ─── Phase 1: Google Search — screenshot AI summary + extract top 10 URLs ─── */
-  researchState.sources = [{ name: "Google Search", url: "https://www.google.com/search?q=" + encodedQuery, status: "active", statusText: "Searching..." }];
-  broadcastResearchProgress();
-
-  let googleResultUrls = [];
-  try {
-    await raceAbort(chrome.tabs.update(researchState.tabId, { url: "https://www.google.com/search?q=" + encodedQuery }));
-    await raceAbort(waitForTabLoad(researchState.tabId, 30000));
-    await researchSleep(2000);
-
-    // Screenshot the Google page → vision LLM for overview summary
-    let googleSummaryText = "";
-    try {
-      const screenshot = await raceAbort(captureScreenshot(researchState.tabId));
-      if (screenshot) {
-        researchState.sources[0].statusText = "Summarizing...";
-        broadcastResearchProgress();
-        const visionPrompt = [
-          { role: "system", content: "You summarize Google search results pages. Focus on the AI Overview/summary at the top if present, plus the key information visible." },
-          { role: "user", content: `Summarize the overview and key information from this Google search results page about "${query}". Be concise (3-5 sentences).` }
-        ];
-        const visionResult = await raceAbort(callLLM(visionPrompt, agentState.researchModel, "ResearchGoogleVision", screenshot, { forceJson: false, timeout: 45000, signal: researchState.abortController.signal }));
-        googleSummaryText = visionResult._rawContent || visionResult.content || "";
-      }
-    } catch (ex) {
-      if (researchState.aborted) throw ex;
-      /* vision failed */
-    }
-
-    if (researchState.aborted) throw new Error("aborted");
-
-    // Extract SERP text for URL extraction
-    await raceAbort(ensureContentScript(researchState.tabId));
-    const summary = await raceAbort(capturePageSummary(researchState.tabId));
-    const serpText = typeof summary === "string" ? summary : (summary.text || summary.content || JSON.stringify(summary));
-
-    // Store Google overview as the first source result
-    researchState.results.push({
-      url: "https://www.google.com/search?q=" + encodedQuery,
-      title: "Google Search Overview",
-      sourceName: "Google Search",
-      summary: googleSummaryText || serpText.slice(0, 1000),
-      extractionMethod: googleSummaryText ? "vision" : "text",
-      timestamp: new Date().toISOString()
-    });
-
-    // Extract top 10 result URLs directly from Google DOM (not LLM — text has no URLs)
-    try {
-      const [{ result: domLinks }] = await raceAbort(chrome.scripting.executeScript({
-        target: { tabId: researchState.tabId },
-        func: () => {
-          const results = [];
-          const seen = new Set();
-          document.querySelectorAll("div.g").forEach(g => {
-            const a = g.querySelector("a[href]");
-            const h3 = g.querySelector("h3");
-            if (a && a.href && a.href.startsWith("http") && !a.href.includes("google.com")) {
-              if (!seen.has(a.href)) {
-                seen.add(a.href);
-                results.push({ url: a.href, title: h3 ? h3.textContent.trim() : "" });
-              }
-            }
-          });
-          if (results.length < 5) {
-            document.querySelectorAll("a[href]").forEach(a => {
-              const h3 = a.querySelector("h3");
-              if (h3 && a.href.startsWith("http") && !a.href.includes("google.com") && !seen.has(a.href)) {
-                seen.add(a.href);
-                results.push({ url: a.href, title: h3.textContent.trim() });
-              }
-            });
-          }
-          return results.slice(0, 10);
-        }
-      }));
-      if (domLinks && domLinks.length > 0) {
-        googleResultUrls = domLinks;
-      }
-    } catch (ex) {
-      if (researchState.aborted) throw ex;
-      /* DOM extraction failed */
-    }
-
-    researchState.sources[0].status = "done";
-    researchState.sources[0].statusText = "Done";
-    researchState.visitedUrls.add("https://www.google.com/search?q=" + encodedQuery);
-  } catch (err) {
-    if (researchState.aborted) { await finalizeResearch(); return; }
-    researchState.sources[0].status = "error";
-    researchState.sources[0].statusText = err.message.slice(0, 40);
-  }
-  broadcastResearchProgress();
-
-  if (researchState.aborted) { await finalizeResearch(); return; }
-
-  /* ─── Phase 2: Visit top 10 Google results ─── */
-  googleResultUrls.forEach((r, i) => {
-    researchState.sources.push({
-      name: r.title ? r.title.slice(0, 80) : "Result #" + (i + 1),
-      url: r.url, status: "pending", statusText: "Pending"
-    });
-  });
-  broadcastResearchProgress();
-
-  for (let i = 0; i < googleResultUrls.length; i++) {
-    if (researchState.aborted) break;
-
-    const src = googleResultUrls[i];
-    const sourceIdx = i + 1; // +1 because Google SERP is index 0
-    researchState.sources[sourceIdx].status = "active";
-    researchState.sources[sourceIdx].statusText = "Opening page...";
-    broadcastResearchProgress();
-
-    // Per-source AbortController — when the 60s timer fires (or user aborts), this
-    // also cancels any in-flight fetch inside callLLM so the worker promise actually
-    // completes (rejects with AbortError) instead of being left orphaned.
-    const sourceAbort = new AbortController();
-    let sourceTimerId = null;
-    try {
-      const workerPromise = (async () => {
-        researchState.visitedUrls.add(src.url);
-
-        // All awaits race against both the 60s hard timeout AND the abort signal
-        await raceAbort(chrome.tabs.update(researchState.tabId, { url: src.url }));
-        await raceAbort(waitForTabLoad(researchState.tabId, 15000));
-        await researchSleep(1500);
-
-        // Scrape text
-        researchState.sources[sourceIdx].statusText = "Scraping text...";
-        broadcastResearchProgress();
-
-        let extractedText = "";
-        let extractionMethod = "text";
-
-        try {
-          await raceAbort(ensureContentScript(researchState.tabId));
-          const pageSummary = await raceAbort(capturePageSummary(researchState.tabId));
-          extractedText = typeof pageSummary === "string" ? pageSummary : (pageSummary.text || pageSummary.content || JSON.stringify(pageSummary));
-        } catch (ex) {
-          if (researchState.aborted) throw ex;
-          extractedText = "";
-        }
-
-        extractedText = extractedText.slice(0, 2500);
-        if (researchState.aborted) throw new Error("aborted");
-
-        // If text is sparse (<100 chars), try screenshot + vision
-        if (extractedText.trim().length < 100) {
-          researchState.sources[sourceIdx].statusText = "Low text, capturing screenshot...";
-          broadcastResearchProgress();
-          try {
-            const screenshot = await raceAbort(captureScreenshot(researchState.tabId));
-            if (screenshot && (agentState.visionModel || agentState.model)) {
-              extractionMethod = "vision";
-              researchState.sources[sourceIdx].statusText = "Sent to vision LLM...";
-              broadcastResearchProgress();
-              const visionPrompt = [
-                { role: "system", content: "You extract and summarize the main content visible on this web page screenshot." },
-                { role: "user", content: `Describe the main content of this page relevant to the research query: "${query}". Focus on factual information, key points, and notable details.` }
-              ];
-              const visionResult = await raceAbort(callLLM(visionPrompt, agentState.researchModel, "ResearchVision", screenshot, { forceJson: false, timeout: 45000, signal: sourceAbort.signal }));
-              extractedText = visionResult._rawContent || visionResult.content || extractedText;
-            }
-          } catch (ex) {
-            if (researchState.aborted) throw ex;
-            /* vision failed, continue with whatever text we have */
-          }
-        }
-
-        if (researchState.aborted) throw new Error("aborted");
-
-        // Skip if still no meaningful content
-        if (extractedText.trim().length < 30) {
-          researchState.sources[sourceIdx].status = "error";
-          researchState.sources[sourceIdx].statusText = "No content";
-          broadcastResearchProgress();
-          return;
-        }
-
-        // Summarize this source
-        const charCount = extractedText.trim().length;
-        researchState.sources[sourceIdx].statusText = "Scraped " + charCount + " chars, sent to LLM...";
-        broadcastResearchProgress();
-
-        const summarizePrompt = [
-          { role: "system", content: "You are a research assistant. Summarize the following web page content in detail, focusing on information relevant to the research query. Include key facts, dates, names, statistics, and notable details. Be factual and objective." },
-          { role: "user", content: `Research query: "${query}"\nSource: ${src.title || src.url}\n\nPage content:\n${extractedText}\n\nProvide a detailed summary of 15-25 lines covering all the important information from this source relevant to the research query.` }
-        ];
-
-        researchState.sources[sourceIdx].statusText = "Waiting for summary...";
-        broadcastResearchProgress();
-
-        const summaryResult = await raceAbort(callLLM(summarizePrompt, agentState.researchModel, "ResearchSummary", null, { forceJson: false, timeout: 45000, signal: sourceAbort.signal }));
-        const summaryText = summaryResult._rawContent || summaryResult.content || "";
-
-        researchState.results.push({
-          url: src.url,
-          title: src.title || "Result #" + (i + 1),
-          sourceName: src.title || "Result #" + (i + 1),
-          summary: summaryText,
-          extractionMethod: extractionMethod,
-          timestamp: new Date().toISOString()
-        });
-
-        researchState.sources[sourceIdx].status = "done";
-        researchState.sources[sourceIdx].statusText = "Done";
-      })();
-      // Swallow any orphan rejection that arrives after the race below has already
-      // settled (e.g. callLLM rejecting late after the 60s timer fired).
-      workerPromise.catch(() => {});
-
-      const timerPromise = new Promise((_, reject) => {
-        sourceTimerId = setTimeout(() => {
-          sourceAbort.abort();
-          reject(new Error("Timeout (60s)"));
-        }, 60000);
-      });
-
-      await Promise.race([
-        workerPromise,
-        timerPromise,
-        // Abort signal — rejects instantly when user clicks abort
-        researchAbortSignal()
-      ]);
-    } catch (err) {
-      if (researchState.aborted) {
-        researchState.sources[sourceIdx].status = "error";
-        researchState.sources[sourceIdx].statusText = "Aborted";
-        if (sourceTimerId) clearTimeout(sourceTimerId);
-        sourceAbort.abort();
-        break;
-      }
-      researchState.sources[sourceIdx].status = "error";
-      researchState.sources[sourceIdx].statusText = err.message.slice(0, 40);
-    } finally {
-      if (sourceTimerId) clearTimeout(sourceTimerId);
-      // Make sure any in-flight LLM fetch for this source is cancelled before
-      // moving on to the next URL — prevents leftover network work and
-      // late orphan rejections.
-      if (!sourceAbort.signal.aborted) sourceAbort.abort();
-    }
-
-    broadcastResearchProgress();
-    try { await researchSleep(500); } catch { break; } // break if aborted during gap
-  }
-
-  await finalizeResearch();
-}
-
-async function finalizeResearch() {
-  const report = {
-    id: researchState.reportId,
-    query: researchState.query,
-    createdAt: new Date().toISOString(),
-    status: researchState.aborted ? "aborted" : "done",
-    sources: researchState.results,
-    conclusion: ""
-  };
-
-  // Synthesize a final conclusion from all source summaries (skip if aborted)
-  if (researchState.results.length > 0 && !researchState.aborted) {
-    researchState.sources.push({ name: "Generating Conclusion", url: "", status: "active", statusText: "Synthesizing..." });
-    broadcastResearchProgress();
-
-    try {
-      let allSummaries = "";
-      researchState.results.forEach(function(s, i) {
-        allSummaries += "Source " + (i + 1) + " (" + (s.title || s.sourceName || s.url) + "):\n" + (s.summary || "No summary.") + "\n\n";
-      });
-      allSummaries = allSummaries.slice(0, 8000);
-
-      const conclusionPrompt = [
-        { role: "system", content: "You are a research analyst. Given multiple source summaries about a topic, write a comprehensive final conclusion. Structure it with clear paragraphs. Cover: key findings, common themes, notable details, and any conflicting information. Be factual, thorough, and well-organized. Use markdown formatting (bold for key terms, bullet lists where appropriate)." },
-        { role: "user", content: 'Research query: "' + researchState.query + '"\n\nSource summaries:\n' + allSummaries + "\nWrite a comprehensive conclusion synthesizing all the above sources. 15-25 lines." }
-      ];
-
-      // Race conclusion LLM call against abort signal — thread the signal into
-      // callLLM so a user-abort actually cancels the in-flight fetch instead of
-      // leaving an orphan rejection that could crash the SW.
-      const conclusionPromise = callLLM(conclusionPrompt, agentState.researchModel, "ResearchConclusion", null, { forceJson: false, timeout: 45000, signal: researchState.abortController.signal });
-      conclusionPromise.catch(() => {}); // swallow any late rejection after race settles
-      const conclusionResult = await Promise.race([
-        conclusionPromise,
-        researchAbortSignal()
-      ]);
-      report.conclusion = conclusionResult._rawContent || conclusionResult.content || "";
-
-      researchState.sources[researchState.sources.length - 1].status = "done";
-      researchState.sources[researchState.sources.length - 1].statusText = "Done";
-    } catch {
-      researchState.sources[researchState.sources.length - 1].status = "error";
-      researchState.sources[researchState.sources.length - 1].statusText = researchState.aborted ? "Aborted" : "Failed";
-    }
-    broadcastResearchProgress();
-  }
-
-  report.htmlReport = generateResearchHTML(report);
-  await saveResearchReport(report);
-
-  // Open report in new tab
-  try {
-    const encoded = btoa(unescape(encodeURIComponent(report.htmlReport)));
-    await chrome.tabs.create({ url: "data:text/html;base64," + encoded });
-  } catch { /* tab creation failed */ }
-
-  // Clean up research tab
-  try {
-    if (researchState.tabId) await chrome.tabs.remove(researchState.tabId);
-  } catch { /* tab may already be closed */ }
-
-  const status = researchState.aborted ? "aborted" : "done";
-  const reportId = researchState.reportId;
-  broadcastResearchStatus(status, status === "done" ? "Research complete" : "Research aborted", reportId);
-  resetResearchState();
-}
-
-/* ── HTML Report Generator ── */
-function escapeHtml(str) {
-  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-function summaryToHtml(text) {
-  if (!text) return "<p>No summary available.</p>";
-  return text.split(/\n\n+/).map(function(block) {
-    block = block.trim();
-    if (!block) return "";
-    block = escapeHtml(block);
-    block = block.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    block = block.replace(/\*(.+?)\*/g, "<em>$1</em>");
-    if (/^[-•]\s/.test(block)) {
-      var items = block.split(/\n/).map(function(l) {
-        return "<li>" + l.replace(/^[-•]\s*/, "") + "</li>";
-      }).join("");
-      return "<ul>" + items + "</ul>";
-    }
-    block = block.replace(/\n/g, "<br>");
-    return "<p>" + block + "</p>";
-  }).join("");
-}
-
-function generateResearchHTML(report) {
-  const q = escapeHtml(report.query);
-  const date = new Date(report.createdAt).toLocaleString();
-  const sourceCount = report.sources ? report.sources.length : 0;
-
-  // Separate Google overview from other sources
-  let googleOverview = null;
-  const otherSources = [];
-  (report.sources || []).forEach(function(s) {
-    if (s.sourceName === "Google Search" || s.sourceName === "Google Search Overview") {
-      googleOverview = s;
-    } else {
-      otherSources.push(s);
-    }
-  });
-
-  // Conclusion section (synthesized from all sources)
-  let conclusionHtml = "";
-  if (report.conclusion) {
-    conclusionHtml = `
-      <section class="conclusion">
-        <div class="section-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Final Conclusion</div>
-        <div class="conclusion-body">${summaryToHtml(report.conclusion)}</div>
-      </section>`;
-  }
-
-  // Google overview section
-  let overviewHtml = "";
-  if (googleOverview && googleOverview.summary) {
-    overviewHtml = `
-      <section class="overview">
-        <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Google AI Overview</div>
-        <div class="prose">${summaryToHtml(googleOverview.summary)}</div>
-      </section>`;
-  }
-
-  // Source cards for masonry grid
-  let sourceCards = "";
-  otherSources.forEach(function(s, i) {
-    const title = escapeHtml(s.title || s.sourceName || "Source " + (i + 1));
-    const url = escapeHtml(s.url || "");
-    const bodyHtml = summaryToHtml(s.summary);
-    const method = s.extractionMethod === "vision"
-      ? '<span class="badge vision">Vision</span>'
-      : '<span class="badge text">Text</span>';
-    sourceCards += `
-      <article class="card">
-        <header class="card-head">
-          <span class="card-num">${i + 1}</span>
-          <div class="card-meta">
-            <a class="card-title" href="${url}" target="_blank" rel="noopener">${title}</a>
-            <div class="card-url">${url}</div>
-          </div>
-          ${method}
-        </header>
-        <div class="card-body prose">${bodyHtml}</div>
-      </article>`;
-  });
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Research: ${q}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --accent: #7c6aef; --accent-light: #a78bfa; --accent-dim: rgba(124,106,239,0.10);
-      --bg: #f4f5f9; --bg-card: #ffffff; --bg-header: #111019;
-      --text: #1c1c2e; --text-body: #374151; --muted: #8b8da6;
-      --border: #e5e7eb; --radius: 16px;
-      --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-      --font-serif: "Source Serif 4", "Georgia", "Times New Roman", serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0b0b14; --bg-card: #151522; --bg-header: #0b0b14;
-        --text: #e8e9f0; --text-body: #c0c3d0; --muted: #6b6d82;
-        --border: #262638;
-      }
-    }
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: var(--font-sans);
-      background: var(--bg); color: var(--text);
-      line-height: 1.65; min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
-    }
-
-    /* ── Header ── */
-    .header {
-      background: var(--bg-header); color: #fff;
-      padding: 60px 32px 52px; text-align: center;
-      position: relative;
-    }
-    .header::after {
-      content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent));
-    }
-    .header h1 {
-      font-family: var(--font-sans);
-      font-size: 2.4em; font-weight: 800; letter-spacing: -0.03em;
-      line-height: 1.15; margin-bottom: 8px;
-    }
-    .header .sub { font-size: 0.88em; color: rgba(255,255,255,0.4); font-weight: 400; }
-
-    /* ── Container ── */
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 0 28px 72px; }
-
-    /* ── Stats bar ── */
-    .stats {
-      display: flex; gap: 12px; justify-content: center;
-      margin: -22px auto 36px; position: relative; z-index: 1;
-    }
-    .stat {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 12px 22px; text-align: center;
-      min-width: 110px; box-shadow: 0 1px 8px rgba(0,0,0,0.04);
-    }
-    .stat b { display: block; font-size: 1.4em; font-weight: 700; color: var(--accent); }
-    .stat small {
-      font-size: 0.68em; color: var(--muted); text-transform: uppercase;
-      letter-spacing: 0.8px; font-weight: 600;
-    }
-
-    /* ── Section labels ── */
-    .section-label {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 0.72em; font-weight: 700; color: var(--accent);
-      text-transform: uppercase; letter-spacing: 1px;
-      margin-bottom: 14px; padding-bottom: 10px;
-      border-bottom: 2px solid var(--accent);
-    }
-    .section-label svg { flex-shrink: 0; }
-
-    /* ── Prose (shared text styling) ── */
-    .prose {
-      font-family: var(--font-serif);
-      font-size: 0.95em; color: var(--text-body);
-      line-height: 1.9; letter-spacing: 0.006em;
-    }
-    .prose p { margin-bottom: 12px; }
-    .prose p:last-child { margin-bottom: 0; }
-    .prose strong { color: var(--text); font-weight: 600; }
-    .prose em { font-style: italic; }
-    .prose ul, .prose ol { margin: 8px 0 12px 22px; }
-    .prose li { margin-bottom: 5px; }
-
-    /* ── Conclusion ── */
-    .conclusion {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 28px 32px;
-      margin-bottom: 32px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-      border-top: 4px solid var(--accent);
-    }
-    .conclusion .conclusion-body {
-      font-family: var(--font-serif);
-      font-size: 1em; color: var(--text-body);
-      line-height: 1.95; letter-spacing: 0.006em;
-    }
-    .conclusion .conclusion-body p { margin-bottom: 14px; }
-    .conclusion .conclusion-body p:last-child { margin-bottom: 0; }
-    .conclusion .conclusion-body strong { color: var(--text); font-weight: 600; }
-    .conclusion .conclusion-body ul, .conclusion .conclusion-body ol { margin: 8px 0 14px 24px; }
-    .conclusion .conclusion-body li { margin-bottom: 6px; line-height: 1.8; }
-
-    /* ── Google overview ── */
-    .overview {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 24px 28px;
-      margin-bottom: 32px; box-shadow: 0 1px 8px rgba(0,0,0,0.04);
-      border-left: 4px solid var(--accent);
-    }
-
-    /* ── Multi-column masonry grid ── */
-    .grid-label {
-      font-size: 0.72em; font-weight: 700; color: var(--accent);
-      text-transform: uppercase; letter-spacing: 1px;
-      margin-bottom: 18px; padding-bottom: 10px;
-      border-bottom: 2px solid var(--accent);
-      display: flex; align-items: center; gap: 7px;
-    }
-    .masonry {
-      columns: 2; column-gap: 20px;
-    }
-    .card {
-      break-inside: avoid;
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px 22px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
-      transition: box-shadow 0.2s, border-color 0.2s;
-      display: inline-block; width: 100%;
-    }
-    .card:hover {
-      box-shadow: 0 4px 20px rgba(124,106,239,0.1);
-      border-color: rgba(124,106,239,0.35);
-    }
-    .card-head {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 12px; padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-    .card-num {
-      width: 26px; height: 26px; border-radius: 50%;
-      background: var(--accent); color: #fff;
-      font-size: 0.72em; font-weight: 700;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .card-meta { flex: 1; min-width: 0; }
-    .card-title {
-      font-family: var(--font-sans);
-      font-size: 0.88em; font-weight: 600; color: var(--accent);
-      text-decoration: none; display: block;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .card-title:hover { text-decoration: underline; }
-    .card-url {
-      font-family: var(--font-sans);
-      font-size: 0.68em; color: var(--muted); margin-top: 2px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .badge {
-      font-family: var(--font-sans);
-      font-size: 0.58em; font-weight: 600; padding: 2px 7px;
-      border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
-      flex-shrink: 0;
-    }
-    .badge.text { background: var(--accent-dim); color: var(--accent); }
-    .badge.vision { background: rgba(251,191,36,0.15); color: #b45309; }
-    .card-body.prose { font-size: 0.88em; line-height: 1.82; }
-    .card-body.prose p { margin-bottom: 8px; }
-
-    /* ── Footer ── */
-    .footer {
-      text-align: center; padding: 28px 0; margin-top: 44px;
-      border-top: 1px solid var(--border);
-      font-size: 0.78em; color: var(--muted);
-    }
-    .footer strong { color: var(--accent); }
-
-    /* ── Print ── */
-    @media print {
-      body { background: #fff; color: #111; }
-      .header { background: #111; }
-      .masonry { columns: 2; }
-      .card { box-shadow: none; break-inside: avoid; border: 1px solid #ddd; }
-      .conclusion, .overview { box-shadow: none; }
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-      .masonry { columns: 1; }
-    }
-    @media (max-width: 600px) {
-      .header h1 { font-size: 1.5em; }
-      .header { padding: 36px 16px 32px; }
-      .stats { flex-direction: column; align-items: center; }
-      .wrap { padding: 0 14px 40px; }
-      .conclusion, .overview { padding: 18px 20px; }
-      .card { padding: 16px 18px; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>${q}</h1>
-    <div class="sub">Research Report &mdash; WebWright</div>
-  </div>
-  <div class="wrap">
-    <div class="stats">
-      <div class="stat"><b>${sourceCount}</b><small>Sources</small></div>
-      <div class="stat"><b>${date.split(",")[0] || date}</b><small>Date</small></div>
-      <div class="stat"><b>${report.status === "done" ? "Complete" : "Partial"}</b><small>Status</small></div>
-    </div>
-    ${conclusionHtml}
-    ${overviewHtml}
-    <div class="grid-label"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Source Summaries</div>
-    <div class="masonry">
-      ${sourceCards}
-    </div>
-    <div class="footer">Generated by <strong>WebWright</strong> Research Mode</div>
-  </div>
-</body>
-</html>`;
-}
 
 /* ───────────────────────────────────────────
  * Workflow Recording Control
@@ -5027,7 +4202,15 @@ async function wfReplayWorkflow(workflowId, tabId, paramValues) {
   await loadConfig();
   const workflows = await loadWorkflows();
   const workflow = workflows.find(w => w.id === workflowId);
-  if (!workflow) { broadcastLog({ kind: "error", label: "Workflow not found" }); return; }
+  if (!workflow) {
+    broadcastLog({ kind: "error", label: "Workflow not found" });
+    chrome.runtime.sendMessage({ type: "REPLAY_STATUS", replaying: false, status: "error", message: "Workflow not found." }).catch(() => {});
+    return;
+  }
+  if (!workflow.steps || workflow.steps.length === 0) {
+    chrome.runtime.sendMessage({ type: "REPLAY_STATUS", replaying: false, status: "error", message: "This workflow has no steps to replay." }).catch(() => {});
+    return;
+  }
 
   workflowState.replaying = true;
   workflowState.replayWorkflowId = workflowId;
@@ -5038,108 +4221,131 @@ async function wfReplayWorkflow(workflowId, tabId, paramValues) {
   workflowState.replayPaused = false;
   workflowState.replayParamValues = paramValues || {};
 
-  // Attach debugger for trusted input events during replay
-  const replayDebugger = await attachDebugger(tabId);
-  if (replayDebugger) {
-    broadcastLog({ kind: "system", label: "Replay Debugger Attached", data: { tabId } });
-  }
+  let failedCount = 0;
+  let crashError = null;
+  async function tabAlive() { try { await chrome.tabs.get(tabId); return true; } catch { return false; } }
 
-  // Navigate to start URL
-  await chrome.tabs.update(tabId, { url: workflow.startUrl });
-  await waitForTabLoad(tabId, 15000);
-  await ensureContentScript(tabId);
+  try {
+    // Attach debugger for trusted input events during replay (non-fatal if it fails)
+    try {
+      const replayDebugger = await attachDebugger(tabId);
+      if (replayDebugger) broadcastLog({ kind: "system", label: "Replay Debugger Attached", data: { tabId } });
+    } catch (e) { broadcastLog({ kind: "system", label: "Replay running without debugger", data: { error: e.message } }); }
 
-  broadcastLog({ kind: "system", label: "Replay Started: " + workflow.name, data: { steps: workflow.steps.length } });
-  chrome.runtime.sendMessage({
-    type: "REPLAY_STATUS", replaying: true, step: 0, total: workflow.steps.length, workflowName: workflow.name
-  }).catch(() => {});
+    // Navigate to start URL
+    await chrome.tabs.update(tabId, { url: workflow.startUrl });
+    await waitForTabLoad(tabId, 15000);
+    await ensureContentScript(tabId);
 
-  for (let i = 0; i < workflow.steps.length; i++) {
-    if (workflowState.replayAborted) break;
-    workflowState.replayStep = i + 1;
-    const step = workflow.steps[i];
-
+    broadcastLog({ kind: "system", label: "Replay Started: " + workflow.name, data: { steps: workflow.steps.length } });
     chrome.runtime.sendMessage({
-      type: "REPLAY_STATUS", replaying: true, step: i + 1, total: workflow.steps.length,
-      description: step.description || (step.action + " step")
+      type: "REPLAY_STATUS", replaying: true, step: 0, total: workflow.steps.length, workflowName: workflow.name
     }).catch(() => {});
 
-    // Page state validation (skip for first navigate step)
-    if (i > 0 && step.pageUrl) {
-      const validation = await validatePageState(tabId, step);
+    for (let i = 0; i < workflow.steps.length; i++) {
       if (workflowState.replayAborted) break;
-      if (!validation.valid && validation.action === "abort") break;
-    }
 
-    // Navigate steps — skip if already on the target URL
-    if (step.action === "navigate" && step.url) {
-      // Wait for any in-progress navigation (e.g. from a prior click) to settle
-      try { await waitForTabLoad(tabId, 5000); } catch {}
-      const currentTab = await chrome.tabs.get(tabId);
-      if (currentTab.url === step.url) {
-        broadcastLog({ kind: "system", label: "Step " + (i + 1) + ": Already on page, skipping navigate" });
-        continue;
+      // Honour a pause requested elsewhere (e.g. login wall) — wait for Resume.
+      while (workflowState.replayPaused && !workflowState.replayAborted) await sleep(400);
+      if (workflowState.replayAborted) break;
+
+      // Bail cleanly if the user closed the working tab mid-replay.
+      if (!(await tabAlive())) { crashError = "the tab was closed during replay"; break; }
+
+      workflowState.replayStep = i + 1;
+      const step = workflow.steps[i];
+
+      chrome.runtime.sendMessage({
+        type: "REPLAY_STATUS", replaying: true, step: i + 1, total: workflow.steps.length,
+        description: step.description || (step.action + " step")
+      }).catch(() => {});
+
+      // A single bad step must never crash the whole replay.
+      try {
+        // Page state validation (skip for first navigate step)
+        if (i > 0 && step.pageUrl) {
+          const validation = await validatePageState(tabId, step);
+          if (workflowState.replayAborted) break;
+          if (!validation.valid && validation.action === "abort") { failedCount++; break; }
+        }
+
+        // Navigate steps — skip if already on the target URL
+        if (step.action === "navigate" && step.url) {
+          try { await waitForTabLoad(tabId, 5000); } catch {}
+          const currentTab = await chrome.tabs.get(tabId);
+          if (currentTab.url === step.url) {
+            broadcastLog({ kind: "system", label: "Step " + (i + 1) + ": Already on page, skipping navigate" });
+            continue;
+          }
+          broadcastLog({ kind: "system", label: "Step " + (i + 1) + ": Navigate", data: { url: step.url } });
+          await chrome.tabs.update(tabId, { url: step.url });
+          await waitForTabLoad(tabId, 15000);
+          await ensureContentScript(tabId);
+          continue;
+        }
+
+        // Scroll/wait (no element matching)
+        if (step.action === "scroll" || step.action === "wait") {
+          broadcastLog({ kind: "system", label: "Step " + (i + 1) + ": " + step.action });
+          await ensureContentScript(tabId);
+          await sendToTabRobust(tabId, { type: "EXECUTE_ACTION", action: step });
+          await sleep(500);
+          continue;
+        }
+
+        // Element-targeted actions: exact → fuzzy → agent fallback
+        broadcastLog({ kind: "system", label: "Step " + (i + 1) + ": " + (step.description || step.action) });
+        const workflowContext = {
+          name: workflow.name, stepIndex: i, totalSteps: workflow.steps.length,
+          steps: workflow.steps,
+          completedSteps: workflow.steps.slice(0, i).map(s => s.description || s.action)
+        };
+
+        let result = await exactReplayStep(tabId, step, workflowState.replayParamValues);
+        if (!result.success) {
+          broadcastLog({ kind: "system", label: "Exact replay failed, trying fuzzy match", data: { error: result.error } });
+          result = await fuzzyMatchStep(tabId, step, workflowState.replayParamValues);
+        }
+        if (!result.success) {
+          result = await agentFallbackStep(tabId, step, workflowState.replayParamValues, workflowContext);
+        }
+        if (!result.success) {
+          failedCount++;
+          broadcastLog({ kind: "error", label: "Step " + (i + 1) + " Failed", data: { error: result.error || "No match" } });
+        }
+
+        // Adaptive wait
+        try {
+          const settle = await sendToTabRobust(tabId, { type: "WAIT_FOR_SETTLE", quiet: 150, maxWait: 2000 });
+          const waited = (settle && settle.elapsed) || 0;
+          if (waited < 200) await sleep(200 - waited);
+        } catch { await sleep(800); }
+      } catch (stepErr) {
+        failedCount++;
+        broadcastLog({ kind: "error", label: "Step " + (i + 1) + " Errored", data: { error: stepErr.message } });
+        if (!(await tabAlive())) { crashError = "the tab was closed during replay"; break; }
       }
-      broadcastLog({ kind: "system", label: "Step " + (i + 1) + ": Navigate", data: { url: step.url } });
-      await chrome.tabs.update(tabId, { url: step.url });
-      await waitForTabLoad(tabId, 15000);
-      await ensureContentScript(tabId);
-      continue;
     }
+  } catch (err) {
+    crashError = (err && err.message) ? err.message : "unexpected error";
+    broadcastLog({ kind: "error", label: "Replay Error", data: { error: crashError } });
+  } finally {
+    // ALWAYS clean up — otherwise the replay hangs (debugger banner stuck, UI never finishes).
+    workflowState.replaying = false;
+    workflowState.replayPaused = false;
+    try { await detachDebugger(); } catch {}
 
-    // Scroll/wait (no element matching)
-    if (step.action === "scroll" || step.action === "wait") {
-      broadcastLog({ kind: "system", label: "Step " + (i + 1) + ": " + step.action });
-      await ensureContentScript(tabId);
-      await sendToTabRobust(tabId, { type: "EXECUTE_ACTION", action: step });
-      await sleep(500);
-      continue;
-    }
+    let status, message;
+    if (crashError) { status = "error"; message = "Replay stopped — " + crashError + "."; }
+    else if (workflowState.replayAborted) { status = "stopped"; message = "Replay stopped."; }
+    else if (failedCount > 0) { status = "error"; message = "Finished with " + failedCount + " step" + (failedCount === 1 ? "" : "s") + " that couldn't be completed."; }
+    else { status = "done"; message = "Replay complete — all " + workflow.steps.length + " steps done."; }
 
-    // Element-targeted actions: 3-step algorithm
-    broadcastLog({ kind: "system", label: "Step " + (i + 1) + ": " + (step.description || step.action) });
-
-    // Build workflow context for fallback
-    const workflowContext = {
-      name: workflow.name, stepIndex: i, totalSteps: workflow.steps.length,
-      steps: workflow.steps,
-      completedSteps: workflow.steps.slice(0, i).map(s => s.description || s.action)
-    };
-
-    // STEP 1: Exact replay (fastest — saved selector)
-    let result = await exactReplayStep(tabId, step, workflowState.replayParamValues);
-
-    // STEP 1.5: Fuzzy match (fast — local scoring, no LLM)
-    if (!result.success) {
-      broadcastLog({ kind: "system", label: "Exact replay failed, trying fuzzy match", data: { error: result.error } });
-      result = await fuzzyMatchStep(tabId, step, workflowState.replayParamValues);
-    }
-
-    // STEP 2: Agent fallback (slow — LLM call)
-    if (!result.success) {
-      result = await agentFallbackStep(tabId, step, workflowState.replayParamValues, workflowContext);
-    }
-
-    if (!result.success) {
-      broadcastLog({ kind: "error", label: "Step " + (i + 1) + " Failed", data: { error: result.error || "No match" } });
-    }
-
-    // Adaptive wait
-    try {
-      const settle = await sendToTabRobust(tabId, { type: "WAIT_FOR_SETTLE", quiet: 150, maxWait: 2000 });
-      const waited = (settle && settle.elapsed) || 0;
-      if (waited < 200) await sleep(200 - waited);
-    } catch { await sleep(800); }
+    broadcastLog({ kind: "system", label: (crashError || workflowState.replayAborted ? "Replay Stopped: " : "Replay Complete: ") + workflow.name });
+    chrome.runtime.sendMessage({
+      type: "REPLAY_STATUS", replaying: false, step: workflow.steps.length, total: workflow.steps.length, status, message
+    }).catch(() => {});
   }
-
-  workflowState.replaying = false;
-  workflowState.replayPaused = false;
-  await detachDebugger();  // Remove yellow banner after replay
-  const doneLabel = workflowState.replayAborted ? "Replay Stopped" : "Replay Complete";
-  broadcastLog({ kind: "system", label: doneLabel + ": " + workflow.name });
-  chrome.runtime.sendMessage({
-    type: "REPLAY_STATUS", replaying: false, step: workflow.steps.length, total: workflow.steps.length
-  }).catch(() => {});
 }
 
 console.log("[WebWright] Background service worker v2 loaded (multi-provider + chat).");

@@ -57,16 +57,6 @@
 
   var personalInfoBtn = document.getElementById("personalInfoBtn");
   var personalInfoDrawer = document.getElementById("personalInfoDrawer");
-  var researchBtn    = document.getElementById("researchBtn");
-  var researchDrawer = document.getElementById("researchDrawer");
-  var researchQueryInput = document.getElementById("researchQueryInput");
-  var researchStartBtn = document.getElementById("researchStartBtn");
-  var researchAbortBtn = document.getElementById("researchAbortBtn");
-  var researchProgress = document.getElementById("researchProgress");
-  var researchSourceList = document.getElementById("researchSourceList");
-  var researchViewBtn = document.getElementById("researchViewBtn");
-  var researchReportsSection = document.getElementById("researchReportsSection");
-  var researchReportsList = document.getElementById("researchReportsList");
   var noApiBanner    = document.getElementById("noApiBanner");
   var noApiSettingsBtn = document.getElementById("noApiSettingsBtn");
 
@@ -396,6 +386,53 @@
     scrollToBottom();
   }
 
+  /* ── Workflow replay log (same chat-like bubble as the agent log) ── */
+  var replayLogBubble = null;
+  var replayLogSteps = null;
+
+  function createReplayLog(name) {
+    hideEmpty();
+    var msg = document.createElement("div");
+    msg.className = "chat-msg agent-log";
+    var bubble = document.createElement("div");
+    bubble.className = "chat-bubble";
+    bubble.innerHTML =
+      '<div class="agent-log-header">' +
+        '<svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>' +
+        'Replaying ' + esc(name || "workflow") +
+      '</div>' +
+      '<div class="agent-log-steps"></div>';
+    msg.appendChild(bubble);
+    streamInner.insertBefore(msg, chatTyping);
+    replayLogBubble = msg;
+    replayLogSteps = bubble.querySelector(".agent-log-steps");
+    scrollToBottom();
+  }
+
+  function addReplayStep(text, dotCls) {
+    if (!replayLogSteps) createReplayLog("");
+    var step = document.createElement("div");
+    step.className = "agent-step-item";
+    step.innerHTML =
+      '<div class="agent-step-dot ' + (dotCls || "done") + '"></div>' +
+      '<div class="agent-step-text">' + esc(text) + '</div>';
+    replayLogSteps.appendChild(step);
+    scrollToBottom();
+  }
+
+  function finishReplayLog(text, ok) {
+    if (replayLogBubble) {
+      var header = replayLogBubble.querySelector(".agent-log-header");
+      if (header) {
+        header.innerHTML =
+          '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>' + esc(text || "Replay complete");
+        header.style.color = ok === false ? "var(--text-muted)" : "var(--text-secondary)";
+      }
+    }
+    replayLogBubble = null;
+    replayLogSteps = null;
+  }
+
   var lastShownLabel = "";
   var isReplaying = false;
 
@@ -696,9 +733,9 @@
       if (header) {
         if (type === "done") {
           header.innerHTML =
-            '<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+            '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>' +
             'Agent Completed';
-          header.style.color = "var(--green)";
+          header.style.color = "var(--text-secondary)";
         } else {
           header.innerHTML =
             '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
@@ -734,53 +771,10 @@
     if (typeof summary !== "string") summary = Array.isArray(summary) ? summary.join("\n") : String(summary || "Task complete!");
     summary = summary.trim() || "Task complete!";
 
-    if (type === "done") {
-      // Render the final summary as a normal assistant chat bubble below the agent-log bubble
-      addChatMessage("assistant", summary);
-    } else {
-      // Progress/stopped report — keep the existing inline summary rendering
-      var summaryEl = document.createElement("div");
-      summaryEl.className = "agent-done-summary";
-      var bulletLines = summary.split(/\r?\n/).filter(function(l) { return l.trim().indexOf("- ") === 0; });
-      if (bulletLines.length > 0) {
-        var listHtml = '<span class="done-check">&#10003;</span><ul class="done-bullets">';
-        bulletLines.forEach(function(line) {
-          listHtml += '<li>' + esc(line.trim().slice(2)) + '</li>';
-        });
-        listHtml += '</ul>';
-        summaryEl.innerHTML = listHtml;
-      } else {
-        summaryEl.innerHTML = '<span class="done-check">&#10003;</span>' + esc(summary);
-      }
-      agentLogSteps.appendChild(summaryEl);
-    }
-
-    // Show contextual action cards on successful completion (not during replay)
-    if (type === "done" && !isReplaying) {
-      var cards = document.createElement("div");
-      cards.className = "agent-action-cards";
-      var actions = [
-        { label: "Summarize", action: "chat", text: "Summarize" },
-        { label: "Ask a question", action: "focus" },
-        { label: "Extract info", action: "chat", text: "Extract the key information from this page as bullet points" }
-      ];
-      actions.forEach(function(a) {
-        var btn = document.createElement("button");
-        btn.className = "agent-action-card";
-        btn.textContent = a.label;
-        btn.addEventListener("click", function() {
-          cards.remove();
-          if (a.action === "chat") {
-            chatSend(a.text);
-          } else if (a.action === "focus") {
-            goalInput.focus();
-            goalInput.placeholder = "Ask anything about this page...";
-          }
-        });
-        cards.appendChild(btn);
-      });
-      agentLogSteps.appendChild(cards);
-    }
+    // Render the outcome as a normal assistant chat bubble — whether the agent
+    // finished or stopped early. On failure the summary reads as a short recap of
+    // what it did and why it couldn't finish (no green bullet list, no extra cards).
+    addChatMessage("assistant", summary);
 
     scrollToBottom();
 
@@ -1692,6 +1686,7 @@
 
   var pendingReplayWorkflowId = null;
   var pendingReplayTabId = null;
+  var pendingReplayName = "";
 
   function toggleWorkflows() {
     workflowDrawer.classList.toggle("open");
@@ -1702,8 +1697,6 @@
       settingsBtn.classList.remove("active");
       personalInfoDrawer.classList.remove("open");
       personalInfoBtn.classList.remove("active");
-      researchDrawer.classList.remove("open");
-      researchBtn.classList.remove("active");
     }
   }
 
@@ -1720,8 +1713,6 @@
       settingsBtn.classList.remove("active");
       workflowDrawer.classList.remove("open");
       workflowBtn.classList.remove("active");
-      researchDrawer.classList.remove("open");
-      researchBtn.classList.remove("active");
     }
   }
 
@@ -1764,130 +1755,6 @@
   async function savePersonalInfo() {
     await sendMsg({ type: "SAVE_PERSONAL_INFO", info: readPersonalInfo() });
     togglePersonalInfo();
-  }
-
-  /* ═══════════════════════════════════════════
-   * Research Mode
-   * ═══════════════════════════════════════════ */
-
-  var researchRunning = false;
-  var lastResearchReportId = null;
-
-  function toggleResearch() {
-    researchDrawer.classList.toggle("open");
-    researchBtn.classList.toggle("active");
-    if (researchDrawer.classList.contains("open")) {
-      loadResearchReports();
-      settingsDrawer.classList.remove("open");
-      settingsBtn.classList.remove("active");
-      workflowDrawer.classList.remove("open");
-      workflowBtn.classList.remove("active");
-      personalInfoDrawer.classList.remove("open");
-      personalInfoBtn.classList.remove("active");
-    }
-  }
-
-  async function startResearch() {
-    var query = researchQueryInput.value.trim();
-    if (!query || researchRunning || isRunning) return;
-    researchRunning = true;
-    lastResearchReportId = null;
-    researchStartBtn.disabled = true;
-    researchAbortBtn.classList.add("visible");
-    researchViewBtn.classList.remove("visible");
-    researchProgress.classList.remove("hidden");
-    researchSourceList.innerHTML = "";
-    var r = await sendMsg({ type: "RESEARCH_START", query: query });
-    if (r && r.error) {
-      researchRunning = false;
-      researchStartBtn.disabled = false;
-      researchAbortBtn.classList.remove("visible");
-      addChatMessage("system-info", "Research error: " + r.error);
-    }
-  }
-
-  async function abortResearch() {
-    // Immediately update UI — don't wait for the background round-trip
-    researchRunning = false;
-    researchStartBtn.disabled = false;
-    researchAbortBtn.classList.remove("visible");
-    addChatMessage("system-info", "Research aborted.");
-    await sendMsg({ type: "RESEARCH_ABORT" });
-  }
-
-  function updateResearchSources(sources) {
-    researchSourceList.innerHTML = "";
-    sources.forEach(function(src) {
-      var row = document.createElement("div");
-      row.className = "research-source-row";
-      var dot = document.createElement("div");
-      dot.className = "research-source-dot";
-      if (src.status === "active") dot.classList.add("active");
-      else if (src.status === "done") dot.classList.add("done");
-      else if (src.status === "error") dot.classList.add("error");
-      else if (src.status === "skipped") dot.classList.add("skipped");
-      var name = document.createElement("span");
-      name.className = "research-source-name";
-      name.textContent = src.name;
-      var stat = document.createElement("span");
-      stat.className = "research-source-status";
-      stat.textContent = src.statusText || "";
-      row.appendChild(dot);
-      row.appendChild(name);
-      row.appendChild(stat);
-      researchSourceList.appendChild(row);
-    });
-  }
-
-  function onResearchDone(reportId) {
-    researchRunning = false;
-    lastResearchReportId = reportId;
-    researchStartBtn.disabled = false;
-    researchAbortBtn.classList.remove("visible");
-    if (reportId) researchViewBtn.classList.add("visible");
-    loadResearchReports();
-  }
-
-  async function viewResearchReport(id) {
-    await sendMsg({ type: "RESEARCH_VIEW_REPORT", id: id });
-  }
-
-  async function deleteResearchReport(id) {
-    await sendMsg({ type: "RESEARCH_DELETE_REPORT", id: id });
-    loadResearchReports();
-  }
-
-  async function loadResearchReports() {
-    var r = await sendMsg({ type: "RESEARCH_LIST_REPORTS" });
-    if (!r || !r.reports || r.reports.length === 0) {
-      researchReportsSection.classList.add("hidden");
-      return;
-    }
-    researchReportsSection.classList.remove("hidden");
-    researchReportsList.innerHTML = "";
-    r.reports.forEach(function(rpt) {
-      var item = document.createElement("div");
-      item.className = "research-report-item";
-      var info = document.createElement("div");
-      info.className = "research-report-info";
-      var q = document.createElement("div");
-      q.className = "research-report-query";
-      q.textContent = rpt.query;
-      var meta = document.createElement("div");
-      meta.className = "research-report-meta";
-      meta.textContent = new Date(rpt.createdAt).toLocaleDateString() + " · " + (rpt.sources ? rpt.sources.length : 0) + " sources";
-      info.appendChild(q);
-      info.appendChild(meta);
-      info.addEventListener("click", function() { viewResearchReport(rpt.id); });
-      var del = document.createElement("button");
-      del.className = "research-report-delete";
-      del.title = "Delete";
-      del.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
-      del.addEventListener("click", function(e) { e.stopPropagation(); deleteResearchReport(rpt.id); });
-      item.appendChild(info);
-      item.appendChild(del);
-      researchReportsList.appendChild(item);
-    });
   }
 
   async function loadWorkflowList() {
@@ -2021,6 +1888,7 @@
 
     pendingReplayWorkflowId = workflowId;
     pendingReplayTabId = tab.id;
+    pendingReplayName = result.workflowName || "";
 
     if (result.params && result.params.length > 0) {
       // Show parameter form
@@ -2036,7 +1904,7 @@
       paramOverlay.classList.remove("hidden");
     } else {
       // No params — start replay directly
-      executeReplay(workflowId, tab.id, {});
+      executeReplay(workflowId, tab.id, {}, result.workflowName);
     }
   }
 
@@ -2049,14 +1917,15 @@
     return vals;
   }
 
-  async function executeReplay(workflowId, tabId, paramValues) {
-    addChatMessage("system-info", "Starting workflow replay...");
+  async function executeReplay(workflowId, tabId, paramValues, workflowName) {
+    createReplayLog(workflowName || "");
     workflowDrawer.classList.remove("open");
     workflowBtn.classList.remove("active");
 
     var result = await sendMsg({ type: "WF_REPLAY", workflowId: workflowId, tabId: tabId, paramValues: paramValues });
     if (!result || !result.success) {
-      addChatMessage("system-info", "Replay failed: " + (result && result.error || "Unknown error"));
+      addReplayStep((result && result.error) || "Couldn't start replay.", "error");
+      finishReplayLog("Replay failed", false);
     }
   }
 
@@ -2079,7 +1948,7 @@
     var vals = collectParamValues();
     paramOverlay.classList.add("hidden");
     if (pendingReplayWorkflowId) {
-      executeReplay(pendingReplayWorkflowId, pendingReplayTabId, vals);
+      executeReplay(pendingReplayWorkflowId, pendingReplayTabId, vals, pendingReplayName);
     }
   });
   paramCancelBtn.addEventListener("click", function() {
@@ -2160,8 +2029,6 @@
       personalInfoBtn.classList.remove("active");
       workflowDrawer.classList.remove("open");
       workflowBtn.classList.remove("active");
-      researchDrawer.classList.remove("open");
-      researchBtn.classList.remove("active");
     }
   }
 
@@ -2313,16 +2180,14 @@
       }
     }
 
-    // Workflow replay progress
+    // Workflow replay progress — streamed into the chat-like replay log bubble
     if (msg.type === "REPLAY_STATUS") {
       if (msg.replaying) {
-        setStatus("active", "Replaying step " + msg.step + "/" + msg.total);
         if (msg.description) {
-          addChatMessage("system-info", "Step " + msg.step + ": " + msg.description);
+          addReplayStep("Step " + msg.step + " of " + msg.total + " — " + msg.description, "done");
         }
       } else {
-        setStatus("idle", "Replay complete");
-        addChatMessage("system-info", "Workflow replay finished.");
+        finishReplayLog(msg.message || "Replay complete", msg.status !== "error");
         replayPausedBar.classList.add("hidden");
       }
     }
@@ -2330,25 +2195,10 @@
     // Replay paused (login wall, etc.)
     if (msg.type === "REPLAY_PAUSED") {
       pauseLabel.textContent = msg.reason || "Paused";
+      addReplayStep("Paused — " + (msg.reason || "waiting for you"), "acting");
       replayPausedBar.classList.remove("hidden");
     }
 
-    // Research mode broadcasts
-    if (msg.type === "RESEARCH_PROGRESS") {
-      updateResearchSources(msg.sources || []);
-    }
-    if (msg.type === "RESEARCH_STATUS") {
-      if (msg.status === "done" || msg.status === "error" || msg.status === "aborted") {
-        onResearchDone(msg.reportId || null);
-        if (msg.status === "error") {
-          addChatMessage("system-info", "Research error: " + (msg.message || "Unknown error"));
-        } else if (msg.status === "done") {
-          addChatMessage("system-info", "Research complete! Report opened in new tab.");
-        } else if (msg.status === "aborted") {
-          addChatMessage("system-info", "Research aborted. Partial report opened in new tab.");
-        }
-      }
-    }
 
   });
 
@@ -2389,7 +2239,6 @@
   }
   setupModelDropdown("ollamaCloudModel", "ollamaCloudModelCustom");
   setupModelDropdown("ollamaCloudVisionModel", "ollamaCloudVisionModelCustom");
-  setupModelDropdown("ollamaCloudResearchModel", "ollamaCloudResearchModelCustom");
   setupModelDropdown("ollamaCloudChatModel", "ollamaCloudChatModelCustom");
 
   // Personal Info
@@ -2397,18 +2246,6 @@
   document.getElementById("closePersonalInfoBtn").addEventListener("click", togglePersonalInfo);
   document.getElementById("cancelPersonalInfoBtn").addEventListener("click", togglePersonalInfo);
   document.getElementById("savePersonalInfoBtn").addEventListener("click", savePersonalInfo);
-
-  // Research Mode
-  researchBtn.addEventListener("click", toggleResearch);
-  document.getElementById("closeResearchBtn").addEventListener("click", toggleResearch);
-  researchStartBtn.addEventListener("click", startResearch);
-  researchAbortBtn.addEventListener("click", abortResearch);
-  researchViewBtn.addEventListener("click", function() {
-    if (lastResearchReportId) viewResearchReport(lastResearchReportId);
-  });
-  researchQueryInput.addEventListener("keydown", function(e) {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); startResearch(); }
-  });
 
 
   // Keyboard: Enter = smart auto-route (chat vs agent); Ctrl+Enter = force Agent

@@ -1,25 +1,25 @@
 <div align="center">
 
-# WebWright
+# WebAgent Labs
 
 ### Built for action, not just browsing.
 
 > ## **This is NOT a chat wrapper.**
-> WebWright is a **real agentic AI** that lives in your browser sidebar.
+> WebAgent Labs is a **real agentic AI** that lives in your browser sidebar.
 > It **perceives** the page (DOM + vision), **reasons** about it with an LLM,
 > and **takes real actions on your behalf** — clicks, types, navigates, fills
-> forms, books, buys, researches. You can even talk to it **hands-free**.
+> forms, books, buys. You can even talk to it **hands-free**.
 
 **Tell it what you want. Watch it work.**
 
 [Install](#installation) · [Features](#features) · [Architecture](#technical-architecture) · [Providers](#supported-providers) · [Privacy](#privacy--liability)
 
-[![Add to Chrome](https://img.shields.io/badge/Add%20to%20Chrome-7c6aef?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf)
-[![GitHub Pages](https://img.shields.io/badge/Landing%20page-profoncode--debug.github.io%2FWebWright-7c6aef)](https://profoncode-debug.github.io/WebWright/)
+[![Add to Chrome](https://img.shields.io/badge/Add%20to%20Chrome-D97757?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/webwright-built-for-actio/nlcbeaapcgechkhncblkbebdlchaoknf)
+[![Landing page](https://img.shields.io/badge/Landing%20page-profoncode--debug.github.io-D97757)](https://profoncode-debug.github.io/WebWright/)
 
 <br>
 
-![WebWright agent in action — autonomous YouTube task completion with live action log](screenshots/webwright_poster%20(1).png)
+![WebAgent Labs agent in action — autonomous YouTube task completion with live action log](screenshots/webwright_poster%20(1).png)
 
 </div>
 
@@ -39,9 +39,9 @@
 
 ---
 
-## What is WebWright?
+## What is WebAgent Labs?
 
-WebWright turns your browser into an **autonomous AI agent** — not a chat sidebar that answers questions, but a real agent that *acts*. You type (or say) a goal in plain English; the agent reads the page, navigates, clicks buttons, types into forms, escalates to vision when the DOM gets weird, and reports back with what happened.
+WebAgent Labs turns your browser into an **autonomous AI agent** — not a chat sidebar that answers questions, but a real agent that *acts*. You type (or say) a goal in plain English; the agent reads the page, navigates, clicks buttons, types into forms, escalates to vision when the DOM gets weird, and reports back with what happened.
 
 ```
 You:        "Search Amazon India for Sony WH-CH520 headphones,
@@ -56,7 +56,7 @@ Agent loop: 1. Navigated to amazon.in
 
 ### Why "agentic" actually means agentic here
 
-WebWright runs a real **perceive → reason → act → re-perceive** loop, not a single prompt:
+WebAgent Labs runs a real **perceive → reason → act → re-perceive** loop, not a single prompt:
 
 - **Perception loop** — the content script enumerates every interactive element on the page (`<button>`, `<a>`, `<input>`, custom roles, shadow-DOM nodes, iframes), ranks them by goal-relevance, and caps at 300. Refreshed every step.
 - **Reasoning loop** — the background service worker builds a prompt out of `{ goal, page state, action history, last thinking, optional personal info }` and asks the model for **one** action as JSON.
@@ -72,7 +72,7 @@ That is an agent loop. Not an autocomplete prompt.
 ## Features
 
 ### 🎙️ Voice Mode (NEW) — Hands-free browsing companion
-Toggle the mic and **talk to your browser**. WebWright transcribes your speech, auto-decides whether you're chatting or asking for an action, runs it, and **speaks back** in a warm, natural voice. It's a genuine conversational loop with four clear states shown in the bar:
+Toggle the mic and **talk to your browser**. WebAgent Labs transcribes your speech, auto-decides whether you're chatting or asking for an action, runs it, and **speaks back** in a warm, natural voice. It's a genuine conversational loop with four clear states shown in the bar:
 
 | State | Meaning | Mic |
 |-------|---------|-----|
@@ -95,17 +95,17 @@ Give a goal, the agent runs the loop until done. It will:
 - Auto-escalate from DOM analysis to visual understanding when stuck
 - Batch low-risk sequential actions into a single response for faster execution
 
-![Agent Mode — WebWright autonomously opening YouTube, searching, and reporting results](screenshots/webwright_poster%20(1).png)
+![Agent Mode — WebAgent Labs autonomously opening YouTube, searching, and reporting results](screenshots/webwright_poster%20(1).png)
 
 ### One smart input — no mode buttons
-There's a single input and a single **Send** button. WebWright classifies each message and routes it for you:
+There's a single input and a single **Send** button. WebAgent Labs classifies each message and routes it for you:
 
 | You press | What happens |
 |-----------|--------------|
 | **Enter** | Auto-routes: a question → Chat, an instruction → Agent (LLM intent classifier) |
 | **Ctrl+Enter** | Forces **Agent mode** regardless of phrasing |
 
-Agent tasks always run on the **current tab** — WebWright never hijacks a new one.
+Agent tasks always run on the **current tab** — WebAgent Labs never hijacks a new one.
 
 ### Chat Mode — Talk to any web page
 Multi-turn Q&A grounded in the page you're viewing, with **full markdown + LaTeX rendering** (tables, math, code blocks, GFM extensions). Replies that include `$E = mc^2$` or `$$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$` typeset properly via bundled KaTeX.
@@ -134,29 +134,16 @@ Mode choice persists across sessions.
 
 Screenshots are annotated with color-coded numbered boxes (Set-of-Marks): red = buttons, blue = links, green = inputs, amber = checkboxes/radios, purple = selects, cyan = custom components. The LLM picks an element by number; the agent maps it back to a real selector or coordinate.
 
-### Research Mode — Deep web research
-
-1. Searches Google and captures the AI Overview via screenshot + vision LLM
-2. Extracts the top 10 organic result URLs from the SERP
-3. Visits each source, scrapes text (with vision fallback for low-text pages)
-4. Summarizes each source individually using a dedicated **Research Model** (45 s LLM timeout, 60 s hard cap per source)
-5. Synthesizes a final cross-source conclusion
-6. Opens a polished multi-column HTML report in a new tab
-
-Drawer shows live per-source progress (active / done / error / skipped), an instant **Abort** button, and a history of previous reports you can re-open or delete.
-
-![Research Mode — Google AI Overview, 10 source summaries, and a synthesized report](screenshots/webwright_poster_research.png)
-
 ### Workflows — Record and replay
 Record an arbitrary browser action sequence across tabs, save with a name, replay with one click. Two-tier fallback during replay: **exact-selector match** first; if the element moved, **fuzzy fingerprint match** against ranked candidates. No LLM call needed for clean replays.
 
 ### Personal Info Vault
-Locally-stored personal details for form-filling. **The vault is only included in the LLM prompt when the goal contains one of ~20 form-related keywords** (`fill`, `form`, `register`, `signup`, `apply`, `checkout`, `booking`, `my name`, `my address`, etc.). Chat Mode, Voice Mode, Research Mode, and workflow replay never see your vault, regardless of what's in the message.
+Locally-stored personal details for form-filling. **The vault is only included in the LLM prompt when the goal contains one of ~20 form-related keywords** (`fill`, `form`, `register`, `signup`, `apply`, `checkout`, `booking`, `my name`, `my address`, etc.). Chat Mode, Voice Mode, and workflow replay never see your vault, regardless of what's in the message.
 
 ### Smart Suggestions
 A pool of 30+ pre-built task suggestions. A few random chips rotate on each session for one-tap launches.
 
-![WebWright sidebar with task suggestions and the Settings panel showing the 8 LLM providers](screenshots/webwright_poster_config_workflows%20(2).png)
+![WebAgent Labs sidebar with task suggestions and the Settings panel showing the 8 LLM providers](screenshots/webwright_poster_config_workflows%20(2).png)
 
 ---
 
@@ -221,7 +208,7 @@ A pool of 30+ pre-built task suggestions. A few random chips rotate on each sess
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │  SIDE PANEL (sidepanel/sidepanel.html + sidepanel.js)          │
-│  • Chat view, agent log, research drawer, voice bar           │
+│  • Chat view, agent log, voice bar           │
 │  • Provider/model settings, workflow controls, vault           │
 │  • VoiceController: STT (Web Speech / Groq Whisper) + TTS      │
 │  • Renders marked.js (markdown) + KaTeX (math) for chat        │
@@ -231,7 +218,6 @@ A pool of 30+ pre-built task suggestions. A few random chips rotate on each sess
 │  • runAgentLoop, handleChatMessage, voice chat handler         │
 │  • callLLM (8 providers, abort-controller, timeout)            │
 │  • CDP attach/detach, Input.* dispatch, Network.* idle wait    │
-│  • Research pipeline (Google → 10 sources → synthesis)         │
 │  • Vision tier orchestration (Set-of-Marks overlay)           │
 │  • Intent classifier (chat vs agent) for the unified input    │
 │  ↕ chrome.tabs.sendMessage  +  chrome.scripting.executeScript  │
@@ -296,7 +282,7 @@ The sidebar uses **marked.js** (markdown → HTML, GFM extensions enabled: table
 | **Grok** | `grok-3-mini` | — | No | OpenAI |
 | **Custom** | User-defined | User-defined | Depends | OpenAI- or Ollama-compatible |
 
-> **Model slots per provider:** Agent Model · Vision Model · Chat Model · (Ollama Cloud only) Research Model. Pick a frontier reasoning model for the agent, a vision-capable model for the visual escalation tiers, a cheap/fast model for chat. The "Custom" dropdown entry on Ollama Cloud lets you paste any free-form model name — including ones released after this build.
+> **Model slots per provider:** Agent Model · Vision Model · Chat Model. Pick a frontier reasoning model for the agent, a vision-capable model for the visual escalation tiers, a cheap/fast model for chat. The "Custom" dropdown entry on Ollama Cloud lets you paste any free-form model name — including ones released after this build.
 >
 > **Voice transcription** (optional) uses **Groq Whisper** and is configured separately under Settings → Speech-to-Text — it is independent of the chat/agent LLM provider above.
 
@@ -319,14 +305,14 @@ git clone https://github.com/profoncode-debug/WebWright/
 1. Open your browser's extensions page (`chrome://extensions/`, `edge://extensions/`, `brave://extensions/`, etc.)
 2. Enable **Developer mode**
 3. **Load unpacked** → select the `agentic-browser-ext` folder
-4. Pin the WebWright icon to your toolbar
+4. Pin the WebAgent Labs icon to your toolbar
 
 ---
 
 ## Quick Start
 
 ### Run an Agent task
-1. Click the WebWright icon → side panel opens
+1. Click the WebAgent Labs icon → side panel opens
 2. Type: *"Open YouTube and search for lofi study music"*
 3. Press **Enter** (auto-routes to Agent) or **Ctrl+Enter** to force it
 4. Watch the agent execute it step-by-step in the live log
@@ -342,12 +328,6 @@ git clone https://github.com/profoncode-debug/WebWright/
 2. (On Brave, or for best accuracy) set Settings → Speech-to-Text to **Groq Whisper** and paste a free Groq key
 3. Just talk — ask a question and it answers aloud, or say *"open Gmail and start a new email"* and it runs the task, then resumes listening
 
-### Research a topic
-1. Click the magnifying-glass icon → Research drawer opens
-2. Enter a topic: *"Recent advances in agentic AI"*
-3. Click **Research** — watch real-time per-source progress
-4. Multi-column HTML report opens in a new tab
-
 ### Fill a form
 1. Open the **Personal Info** drawer (person icon), save your details
 2. Navigate to a form page
@@ -358,7 +338,7 @@ git clone https://github.com/profoncode-debug/WebWright/
 
 ## Prompts and Models Matter
 
-WebWright's accuracy is a function of two things you control: how specifically you prompt it, and which model you point it at.
+WebAgent Labs's accuracy is a function of two things you control: how specifically you prompt it, and which model you point it at.
 
 | ❌ Vague prompt | ✅ Specific prompt |
 |----------------|------------------|
@@ -386,7 +366,7 @@ agentic-browser-ext/
 ├── mic-permission.html      # Microphone permission helper for Voice Mode
 ├── background/
 │   └── background.js        # Agent loop, LLM call, CDP dispatch, intent
-│                            # classifier, vision escalation, research,
+│                            # classifier, vision escalation,
 │                            # voice chat handler (~4,800 LoC)
 ├── content/
 │   └── content.js           # DOM extraction, ranking, SoM overlay, replay
@@ -419,7 +399,6 @@ agentic-browser-ext/
 | Step Delay | 2000 ms | Pause between actions |
 | LLM Timeout | 100 s | Max wait per LLM call (overridable per call type) |
 | Wall Timeout | 300 s | Max total task duration |
-| Research Model | `gemma4:31b-cloud` (Ollama Cloud only) | Falls back to primary model on other providers |
 | Chat Mode | Pro | Default chat-input mode (Pro attaches screenshot; switch to Quick from pill) |
 | Speech-to-Text Engine | Browser (Chrome) | Voice transcription engine — Browser or **Groq Whisper** (auto-used on Brave) |
 | Groq API Key | — | Stored locally; required only when the Groq Whisper engine is selected |
@@ -428,14 +407,14 @@ agentic-browser-ext/
 
 ## Permissions
 
-WebWright requests only what it needs to run as a browser agent. Full per-permission justifications (matching the Chrome Web Store submission) live in [`privacy-policy.html`](privacy-policy.html).
+WebAgent Labs requests only what it needs to run as a browser agent. Full per-permission justifications (matching the Chrome Web Store submission) live in [`privacy-policy.html`](privacy-policy.html).
 
 | Permission | Why |
 |------------|-----|
 | `activeTab` / `tabs` | Identify the active tab, inject the content script, capture screenshots via `chrome.tabs.captureVisibleTab`, drive `chrome.tabs.create` / `update` / `remove` for the agent's working tab |
 | `scripting` | `chrome.scripting.executeScript` injects `content/content.js` for DOM extraction and action execution |
-| `storage` | `chrome.storage.local` persists settings, API keys, Personal Info Vault, workflows, research reports. `chrome.storage.sync` is **not** used — data never leaves the device |
-| `sidePanel` | Display the WebWright sidebar UI |
+| `storage` | `chrome.storage.local` persists settings, API keys, Personal Info Vault, workflows. `chrome.storage.sync` is **not** used — data never leaves the device |
+| `sidePanel` | Display the WebAgent Labs sidebar UI |
 | `webNavigation` | One `chrome.webNavigation.onHistoryStateUpdated` listener — detects React-Router / Next.js SPA navigations so the agent re-perceives the page state |
 | `debugger` | Powers the CDP input dispatcher. Attached when an Agent task starts, detached when it ends. Only `Input.*` and `Network.*` CDP domains used (the latter purely for request-count idle detection — bodies never inspected). Never used for DOM introspection, JS evaluation, cookie/localStorage access, or background activity |
 | `<all_urls>` | The user — not the developer — decides which site the agent operates on at runtime. A narrow host pattern would prevent the agent from doing what the user installed it for |
@@ -448,15 +427,15 @@ WebWright requests only what it needs to run as a browser agent. Full per-permis
 
 ## Privacy & Liability
 
-WebWright stores all your data **locally** on your device. It only sends data to the LLM provider **you** choose and configure. There are no first-party servers, analytics, or telemetry.
+WebAgent Labs stores all your data **locally** on your device. It only sends data to the LLM provider **you** choose and configure. There are no first-party servers, analytics, or telemetry.
 
-**Voice Mode disclosure:** text-to-speech is fully on-device. Speech-to-text sends your microphone audio to a transcription service — **Google's** speech backend when using the default Browser engine, or **Groq** when you select the Groq Whisper engine (the default on Brave). No audio is stored by WebWright; it is sent only to produce a transcript and then discarded.
+**Voice Mode disclosure:** text-to-speech is fully on-device. Speech-to-text sends your microphone audio to a transcription service — **Google's** speech backend when using the default Browser engine, or **Groq** when you select the Groq Whisper engine (the default on Brave). No audio is stored by WebAgent Labs; it is sent only to produce a transcript and then discarded.
 
 The full policy is in [`privacy-policy.html`](privacy-policy.html). It also contains a **Disclaimer of Liability**:
 
-> WebWright is provided "as is". The developer is **not responsible** for any monetary loss, data loss, account suspension, legal consequences, or any other harm — direct or indirect — that may result from the use or misuse of this extension. The agent acts autonomously on your behalf based on your instructions, so **the user is solely responsible for all actions taken by the agent**, including financial transactions, submitted forms, and compliance with the terms of service of any site visited.
+> WebAgent Labs is provided "as is". The developer is **not responsible** for any monetary loss, data loss, account suspension, legal consequences, or any other harm — direct or indirect — that may result from the use or misuse of this extension. The agent acts autonomously on your behalf based on your instructions, so **the user is solely responsible for all actions taken by the agent**, including financial transactions, submitted forms, and compliance with the terms of service of any site visited.
 >
-> **By installing, enabling, or using WebWright, you acknowledge and agree to these terms in full.** If you do not agree, please uninstall the extension.
+> **By installing, enabling, or using WebAgent Labs, you acknowledge and agree to these terms in full.** If you do not agree, please uninstall the extension.
 
 ---
 
@@ -483,6 +462,6 @@ MIT
 
 <div align="center">
 
-**WebWright** — Stop browsing. Start commanding.
+**WebAgent Labs** — Stop browsing. Start commanding.
 
 </div>
